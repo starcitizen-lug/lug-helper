@@ -42,7 +42,6 @@ if [ "$i_changed_these" = "false" ]; then
     echo -e "the default paths to match your configuration!\n"
     read -n 1 -s -p "Press any key to exit..."
 else
-    echo -e "\n----------------------------------------------------------------\n"
     # Sanity checks
     if [ ! -d "$prefix" ]; then
 	echo "Invalid path: $prefix"
