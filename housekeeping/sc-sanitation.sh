@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#############################################################################
-#
+############################################################################
 # Star Citizen's Linux Users Group presents:
 # A Simple Star Citizen Sanitation Script!
 #
@@ -22,7 +21,7 @@
 # Written by
 # https://robertsspaceindustries.com/citizens/theSane
 # Source: https://git.io/Je0uQ
-#############################################################################
+############################################################################
 
 # Change these paths
 i_changed_these="false"  # Change this to true once you make your edits
@@ -34,8 +33,8 @@ backups="$HOME/Documents/Star Citizen"
 user="$path/USER"
 mappings="$user/Controls/Mappings"
 
-#############################################################################
-#############################################################################
+############################################################################
+############################################################################
 
 # Display a warning to modify the default variables
 if [ "$i_changed_these" = "false" ]; then
