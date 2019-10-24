@@ -3,7 +3,7 @@
 #############################################################################
 #
 # Star Citizen's Linux Users Group presents:
-# A Simple Star Citizen Housekeeping Script!
+# A Simple Star Citizen Sanitation Script!
 #
 # Edit the paths below to match your configuration,
 # then run this script whenever you update Star Citizen.
