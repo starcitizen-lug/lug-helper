@@ -54,11 +54,11 @@ elif [ ! -d "$path" ]; then
 else
    
     # Prompt user to back up the current keybinds in the game
-    echo -e "\nBefore proceeding, please be sure you have"
-    echo "made a backup of your Star Citizen keybinds!"
-    echo -e "\nTo do this from within the game, go to"
-    echo "Options->Keybindings->Control Profiles->Save Control Settings"
-    echo -e "\nGive it a name and save it to the backup location"
+    echo "Before proceeding, please be sure you have"
+    echo -e "made a backup of your Star Citizen keybinds!\n"
+    echo "To do this from within the game, go to"
+    echo -e "Options->Keybindings->Control Profiles->Save Control Settings\n"
+    echo "Give it a name and save it to the backup location"
     echo -e "that you specified in this script's variables\n"
     read -n 1 -s -p "Press any key to continue, or Ctrl-c to quit..."
     echo -e "\n----------------------------------------------------------------\n"
@@ -74,33 +74,33 @@ else
 
     # Back up keybinds
     if [ "$exported" -eq 1 ]; then
-	echo -e "\nBacking up all saved keybinds..."
+	echo "Backing up all saved keybinds..."
 	mkdir -p "$backups" && cp -r "$mappings/." "$backups/"
-	echo "Done."
+	echo -e "Done.\n"
     fi
     
     # Wipe the user directory
-    echo -e "\nWiping USER directory..."
+    echo "Wiping USER directory..."
     rm -rf "$user"
-    echo "Done."
+    echo -e "Done.\n"
 
     # Restore custom keybinds
     if [ "$exported" -eq 1 ]; then
-	echo -e "\nRestoring keybinds..."
+	echo "Restoring keybinds..."
 	mkdir -p "$mappings" && cp -r "$backups/." "$mappings/"
-	echo "Done."
-	echo -e "\n*NOTE*"
+	echo -e "Done.\n"
+	echo "*NOTE*"
 	echo "To re-import your keybinds, select it in-game from the list:"
-	echo "Options->Keybindings->Control Profiles"
+	echo -e "Options->Keybindings->Control Profiles\n"
     fi
 
 
 
     # Uncomment to wash Snagletooth's car
-    #echo -e "\nWashing the car..."
-    #echo -e "\nWorking at the car wash, yeah!"
+    #echo -e "Washing the car...\n"
+    #echo "Working at the car wash, yeah!"
     #echo "Come on and sing it with me, car wash!"
-    #echo "Sing it with the feeling now, car wash yeah!"
+    #echo -e "Sing it with the feeling now, car wash yeah!\n"
 
-    echo -e "\nAnd we're done here.  Have fun!"
+    echo "And we're done here.  Have fun!"
 fi
