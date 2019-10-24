@@ -96,7 +96,7 @@ else
 
 
 
-    # Uncomment to wash Snagletooth's car
+    # Special request:  Uncomment to wash Snagletooth's car
     #echo -e "Washing the car...\n"
     #echo "Working at the car wash, yeah!"
     #echo "Come on and sing it with me, car wash!"
