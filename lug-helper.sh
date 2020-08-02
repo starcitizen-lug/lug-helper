@@ -138,6 +138,7 @@ final_check() {
 mem_check() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
+    	main_dialog --info --text="vm.max_map_count is already set to the optimal value.  You're all set!"
 	exit 0
     fi
 
