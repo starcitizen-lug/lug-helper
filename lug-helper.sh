@@ -136,6 +136,12 @@ final_check() {
 
 # Check vm.max_map_count for the correct setting and let the user fix it if needed
 mem_check() {
+    # Zenity Check
+    if [ "$zenity" -eq 0 ]; then
+	echo "Zenity is not installed.  Text menus have not yet been implemented"
+	exit 0
+    fi
+    
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
     	main_dialog --info --text="vm.max_map_count is already set to the optimal value.  You're all set!"
