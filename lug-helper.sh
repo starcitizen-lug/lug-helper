@@ -39,37 +39,31 @@ mappings="$user/Controls/Mappings"
 ############################################################################
 ############################################################################
 
-# Check if Zenity is available
-zenity=0
-if [ -x "$(command -v zenity)" ]; then
-    zenity=1
-fi
-
 # Display a message to the user.  Expects a numerical argument followed by the string to display.
 message() {
-    if [ "$zenity" -eq 1 ]; then
-            if [ "$1" -eq 1 ]; then
-                # info
-                margs="--info --no-wrap --text="
-            elif [ "$1" -eq 2 ]; then
-                # warning
-                margs="--warning --no-wrap --text="
-            elif [ "$1" -eq 3 ]; then
-                # question
-                margs="--question --text="
-            elif [ "$1" -eq 4 ]; then
-                # radio list
-                margs="--list --radiolist --height=\"200\" --column=\" \" --column=\"What would you like to do?\" "
-            elif [ "$1" -eq 5]; then
-                # main menu radio list
-                margs="--list --radiolist --height=\"175\" --text="Welcome, fellow penguin, to the Star Citizen Linux Users Group Helper Script!" --column=\" \" --column=\"What would you like to do?\" " 
-            else
-                echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
-                read -n 1 -s -p "Press any key..."
-            fi
+    if [ "$has_zen" -eq 1 ]; then
+        if [ "$1" -eq 1 ]; then
+            # info
+            margs="--info --no-wrap --text="
+        elif [ "$1" -eq 2 ]; then
+            # warning
+            margs="--warning --no-wrap --text="
+        elif [ "$1" -eq 3 ]; then
+            # question
+            margs="--question --text="
+        elif [ "$1" -eq 4 ]; then
+            # radio list
+            margs="--list --radiolist --height=\"200\" --column=\" \" --column=\"What would you like to do?\" "
+        elif [ "$1" -eq 5 ]; then
+            # main menu radio list
+            margs="--list --radiolist --height=\"175\" --text=\"Welcome, fellow penguin, to the Star Citizen Linux Users Group Helper Script!\" --column=\" \" --column=\"What would you like to do?\" "
+        else
+            echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
+            read -n 1 -s -p "Press any key..."
+        fi
 
-            # Display the message
-            zenity "$margs$2" --icon-name='lutris' --width="400" --title="Star Citizen LUG Helper Script"
+        # Display the message
+	zenity "$margs" --icon-name='lutris' --width="400" --title="Star Citizen LUG Helper Script"
     else
         # Text based menu.  Does not work with message types 4 and 5 (zenity radio lists)
         # those need to be handled specially in the code
@@ -84,20 +78,20 @@ message() {
             exit 0
         elif [ "$1" -eq 3 ]; then
             # question
-            echo -e "\n$2\n" 
+            echo -e "$2" 
             while true; do
                 read -p "[y/n]: " yn
                 case "$yn" in
                     [Yy]*)
-                          return 0
-                          ;;
+                        return 0
+                        ;;
                     [Nn]*)
-                          return 1
-                          ;;
+                        return 1
+                        ;;
                     *)
-                          echo "Please type 'y' or 'n'"
-                          ;;
-                 esac
+                        echo "Please type 'y' or 'n'"
+                        ;;
+                esac
             done
         else
             echo -e "Invalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
@@ -193,71 +187,73 @@ set_map_count() {
     persist="Change setting and persist after reboot"
     manual="Show me the commands; I'll handle it myself"
 
-    if message 3 "Running Star Citizen requires changing a system setting.\n\nvm.max_map_count must be increased to at least 16777216 to avoid crashes in areas with lots of geometry.\n\nAs far as this script can detect, the setting has not been changed on your system.\n\nWould you like to change the setting now?"; then
-        if [ "$zenity" -eq 1 ]; then
+    if message 3 "Running Star Citizen requires changing a system setting.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\nAs far as this script can detect,\nthe setting has not been changed on your system.\n\nWould you like to change the setting now?"; then
+        if [ "$has_zen" -eq 1 ]; then
             # zenity menu
             RESULT="$(message 4 "TRUE $once \ FALSE $persist \ FALSE $manual")"
             case "$RESULT" in
                 "$once")
-        		pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-        		;;
+        	    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+        	    ;;
                 "$persist")
-        		if [ -d "/etc/sysctl.d" ]; then
-                	    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
-        		else
-                            pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-        		fi
-        		;;
+        	    if [ -d "/etc/sysctl.d" ]; then
+                	pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
+        	    else
+                        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
+        	    fi
+        	    ;;
                 "$manual")
-        		if [ -d "/etc/sysctl.d" ]; then
-                	    message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
-        		else
-                	    message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
-        		fi
-        		# Anyone who wants to do it manually doesn't need another warning
-        		trap - EXIT
-        		;;
+        	    if [ -d "/etc/sysctl.d" ]; then
+                	message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+        	    else
+                	message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
+        	    fi
+        	    # Anyone who wants to do it manually doesn't need another warning
+        	    trap - EXIT
+        	    ;;
                 *)
-        		echo "Dialog canceled or unknown option selected: $RESULT"
-        		;;
-        	esac
+        	    echo "Dialog canceled or unknown option selected: $RESULT"
+        	    ;;
+            esac
         else
             # text menu
-            options="($once $persist $manual)"
+	    echo -e "\n"
+            options=("$once" "$persist" "$manual")
             PS3="Enter selection number or 'q' to quit: "
 
             select choice in "${options[@]}"
             do
                 case "$REPLY" in
                     "1")
-                		pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-                                break
-                		;;
+                	pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+                        break
+                	;;
                     "2")
-                		if [ -d "/etc/sysctl.d" ]; then
-                        	    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
-                		else
-                                    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-                		fi
-                                break
-                		;;
+                	if [ -d "/etc/sysctl.d" ]; then
+                            pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
+                	else
+                            pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
+                	fi
+                        break
+                	;;
                     "3")
-                		if [ -d "/etc/sysctl.d" ]; then
-                        	    message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
-                		else
-                        	    message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
-                		fi
-                		# Anyone who wants to do it manually doesn't need another warning
-                		trap - EXIT
-                                break
-                		;;
+			clear
+                	if [ -d "/etc/sysctl.d" ]; then
+                            message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+                	else
+                            message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
+                	fi
+                	# Anyone who wants to do it manually doesn't need another warning
+                	trap - EXIT
+                        break
+                	;;
                     "q")
-                                break
-                                ;;
+                        break
+                        ;;
                     *)
-                		echo -e "\nInvalid selection"
-                                continue
-                		;;
+                	echo -e "\nInvalid selection"
+                        continue
+                	;;
             	esac
             done
         fi
@@ -268,8 +264,14 @@ set_map_count() {
 # MAIN
 ############################################################################
 
+# Check if Zenity is available
+has_zen=0
+if [ -x "$(command -v zenity)" ]; then
+    has_zen=1
+fi
+
 # Use Zenity if it is available
-if [ "$zenity" -eq 1 ]; then
+if [ "$has_zen" -eq 1 ]; then
     check="Check my system settings for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
     options="$(message 5 "TRUE $check \ FALSE $clean")"
@@ -285,7 +287,7 @@ if [ "$zenity" -eq 1 ]; then
 	    ;;
     esac
 else
-# Use a text menu if Zenity is not available
+    # Use a text menu if Zenity is not available
     echo -e "\nWelcome, fellow penguin, to the Star Citizen Linux Users Group Helper Script!\nWhat would you like to do?\n"
 
     options=("Check my system settings for optimal performance" "Delete my USER folder and preserve my keybinds")
