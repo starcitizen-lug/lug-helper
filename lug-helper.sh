@@ -62,6 +62,11 @@ message() {
             read -n 1 -s -p "Press any key..."
         fi
 
+	# DEBUG
+	echo "DEBUG ARGUMENTS:"
+	echo "$margs$2"
+	echo -e "\n"
+	
         # Display the message
 	zenity "$margs$2" --icon-name='lutris' --width="400" --title="Star Citizen LUG Helper Script"
     else
@@ -274,13 +279,15 @@ fi
 if [ "$has_zen" -eq 1 ]; then
     check="Check my system settings for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
-    options="$(message 5 "TRUE $check \ FALSE $clean")"
-
-    case "$options" in
-	"$check")
+    arg2="\"TRUE\" \"$check\" \ \"FALSE\" \"$clean\""
+#    message 5 "TRUE $check \ FALSE $clean"
+    message 5 "$arg2"
+    choice="$?"
+    case "$choice" in
+	"check")
 	    set_map_count
 	    ;;
-	"$clean")
+	"clean")
 	    sanitize
 	    ;;
 	*)
