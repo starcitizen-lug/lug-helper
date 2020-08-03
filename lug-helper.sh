@@ -63,7 +63,7 @@ message() {
         fi
 
         # Display the message
-	zenity "$margs" --icon-name='lutris' --width="400" --title="Star Citizen LUG Helper Script"
+	zenity "$margs$2" --icon-name='lutris' --width="400" --title="Star Citizen LUG Helper Script"
     else
         # Text based menu.  Does not work with message types 4 and 5 (zenity radio lists)
         # those need to be handled specially in the code
