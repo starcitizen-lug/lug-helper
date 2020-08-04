@@ -270,6 +270,7 @@ set_map_count() {
 ############################################################################
 # MAIN
 ############################################################################
+clear
 
 # Check if Zenity is available
 has_zen=0
@@ -279,7 +280,7 @@ fi
 
 # Use Zenity if it is available
 if [ "$has_zen" -eq 1 ]; then
-    check="Check my system settings for optimal performance"
+    check="Check vm.max_map_count for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
     list=("TRUE" "$check" "FALSE" "$clean")
 
@@ -298,7 +299,7 @@ else
     # Use a text menu if Zenity is not available
     echo -e "\nWelcome, fellow penguin, to the Star Citizen Linux Users Group Helper Script!\nWhat would you like to do?\n"
 
-    options=("Check my system settings for optimal performance" "Delete my USER folder and preserve my keybinds")
+    options=("Check vm.max_map_count for optimal performance" "Delete my USER folder and preserve my keybinds")
     PS3="Enter selection number or 'q' to quit: "
 
     select choice in "${options[@]}"
