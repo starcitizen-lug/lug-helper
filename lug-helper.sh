@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 ############################################################################
 # Star Citizen's Linux Users Group Helper Script
@@ -44,31 +44,32 @@ message() {
     if [ "$has_zen" -eq 1 ]; then
         if [ "$1" -eq 1 ]; then
             # info
-            margs="--info --no-wrap --text="
+            margs=("--info" "--no-wrap" "--text=")
         elif [ "$1" -eq 2 ]; then
             # warning
-            margs="--warning --no-wrap --text="
+            margs=("--warning" "--no-wrap" "--text=")
         elif [ "$1" -eq 3 ]; then
             # question
-            margs="--question --text="
+            margs=("--question" "--text=")
         elif [ "$1" -eq 4 ]; then
             # radio list
-            margs="--list --radiolist --height=\"200\" --column=\" \" --column=\"What would you like to do?\" "
+            margs=("--list" "--radiolist" "--height=200" "--column=" "--column=What would you like to do?")
         elif [ "$1" -eq 5 ]; then
             # main menu radio list
-            margs="--list --radiolist --height=\"175\" --text=\"Welcome, fellow penguin, to the Star Citizen Linux Users Group Helper Script!\" --column=\" \" --column=\"What would you like to do?\" "
+            margs=("--list" "--radiolist" "--height=175" "--text=Welcome, fellow penguin, to the Star Citizen LUG Helper Script!" "--column=" "--column=What would you like to do?")
         else
             echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
             read -n 1 -s -p "Press any key..."
         fi
 
-	# DEBUG
-	echo "DEBUG ARGUMENTS:"
-	echo "$margs$2"
-	echo -e "\n"
-	
         # Display the message
-	zenity "$margs$2" --icon-name='lutris' --width="400" --title="Star Citizen LUG Helper Script"
+	if [ "$1" -eq 4 ] || [ "$1" -eq 5 ]; then
+	    # requires a space between the assembled arguments
+	    zenity "${margs[@]}" "${@:2}" --width="400" --title="Star Citizen LUG Helper Script"
+	else
+	    # no space between the assmebled arguments
+	    zenity "${margs[@]}""${@:2}" --width="400" --title="Star Citizen LUG Helper Script"
+	fi
     else
         # Text based menu.  Does not work with message types 4 and 5 (zenity radio lists)
         # those need to be handled specially in the code
@@ -110,7 +111,7 @@ sanitize() {
     clear
     # Display a warning to modify the default variables
     if [ "$i_changed_these" = "false" ]; then
-        message 2 "Before this script can do its job, please edit it to change the default\nStar Citizen paths to match your configuration!\n"
+        message 2 "The file picker is not implemented yet.\n\nPlease edit this script to change the default\nStar Citizen paths to match your configuration.\n"
     else
 	# Sanity checks
 	if [ ! -d "$prefix" ]; then
@@ -195,7 +196,8 @@ set_map_count() {
     if message 3 "Running Star Citizen requires changing a system setting.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\nAs far as this script can detect,\nthe setting has not been changed on your system.\n\nWould you like to change the setting now?"; then
         if [ "$has_zen" -eq 1 ]; then
             # zenity menu
-            RESULT="$(message 4 "TRUE $once \ FALSE $persist \ FALSE $manual")"
+            list=("TRUE" "$once" "FALSE" "$persist" "FALSE" "$manual")
+            RESULT="$(message 4 "${list[@]}")"
             case "$RESULT" in
                 "$once")
         	    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
@@ -279,15 +281,14 @@ fi
 if [ "$has_zen" -eq 1 ]; then
     check="Check my system settings for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
-    arg2="\"TRUE\" \"$check\" \ \"FALSE\" \"$clean\""
-#    message 5 "TRUE $check \ FALSE $clean"
-    message 5 "$arg2"
-    choice="$?"
-    case "$choice" in
-	"check")
+    list=("TRUE" "$check" "FALSE" "$clean")
+
+    options="$(message 5 "${list[@]}")"
+    case "$options" in
+	"$check")
 	    set_map_count
 	    ;;
-	"clean")
+	"$clean")
 	    sanitize
 	    ;;
 	*)
