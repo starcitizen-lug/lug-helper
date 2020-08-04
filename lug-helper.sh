@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 ############################################################################
 # Star Citizen's Linux Users Group Helper Script
@@ -65,10 +65,12 @@ message() {
         # Display the message
 	if [ "$1" -eq 4 ] || [ "$1" -eq 5 ]; then
 	    # requires a space between the assembled arguments
-	    zenity "${margs[@]}" "${@:2}" --width="400" --title="Star Citizen LUG Helper Script"
+	    shift 1   # drop the first numerical argument and shift the remaining up one
+	    zenity "${margs[@]}" "$@" --width="400" --title="Star Citizen LUG Helper Script"
 	else
 	    # no space between the assmebled arguments
-	    zenity "${margs[@]}""${@:2}" --width="400" --title="Star Citizen LUG Helper Script"
+	    shift 1   # drop the first numerical argument and shift the remaining up one
+	    zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper Script"
 	fi
     else
         # Text based menu.  Does not work with message types 4 and 5 (zenity radio lists)
