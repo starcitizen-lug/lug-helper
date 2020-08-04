@@ -193,7 +193,7 @@ set_map_count() {
     persist="Change setting and persist after reboot"
     manual="Show me the commands; I'll handle it myself"
 
-    if message 3 "Running Star Citizen requires changing a system setting.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\nAs far as this script can detect,\nthe setting has not been changed on your system.\n\nWould you like to change the setting now?"; then
+    if message 3 "Running Star Citizen requires changing a system setting.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\nAs far as this script can detect, the setting\nhas not been changed on your system.\n\nWould you like to change the setting now?"; then
         if [ "$has_zen" -eq 1 ]; then
             # zenity menu
             list=("TRUE" "$once" "FALSE" "$persist" "FALSE" "$manual")
