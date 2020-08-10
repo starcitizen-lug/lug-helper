@@ -27,7 +27,7 @@
 ############################################################################
 
 # Change these paths
-i_changed_these="false"  # Change this to true once you make your edits
+i_changed_these="true"  # Change this to true once you make your edits
 prefix="$HOME/.wine"
 path="$prefix/drive_c/Program Files/Roberts Space Industries/Star Citizen/LIVE"
 backups="$HOME/Documents/Star Citizen"
@@ -38,6 +38,7 @@ mappings="$user/Controls/Mappings"
 
 ############################################################################
 ############################################################################
+
 
 # Display a message to the user.  Expects a numerical argument followed by the string to display.
 message() {
@@ -105,6 +106,56 @@ message() {
             echo -e "Invalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
             read -n 1 -s -p "Press any key..."
         fi
+    fi
+}
+
+# Prompt the user for the paths to their wine prefix, game directory, and a backup directory
+getdirs() {
+    message 1 "On the next screens, please select your WINE prefix,\nyour Star Citizen installation's LIVE directory,\nand a backup directory for your keybinds."
+    if [ "$has_zen" -eq 1 ]; then
+	prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/")"
+	if [ "$?" -eq -1 ]; then
+	    message 2 "An unexpected error has occurred."
+	fi
+	path="$(zenity --file-selection --directory --title="Select your Star Citizen LIVE directory" --filename="$prefix/")"
+	if [ "$?" -eq -1 ]; then
+	    message 2 "An unexpected error has occurred."
+	fi
+	backups="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
+	if [ "$?" -eq -1 ]; then
+	    message 2 "An unexpected error has occurred."
+	fi
+    else
+	clear
+	echo -e "Enter the full path to your WINE prefix directory"
+	echo -e "ie. /home/USER/.wine/"
+	while read -rp ": " prefix; do
+	    if [ ! -d "$prefix" ]; then
+		echo -e "That directory is invalid or does not exist. Please try again.\n"
+	    else
+		break
+	    fi
+	done
+
+	echo -e "\nEnter the full path to your Star Citizen installation LIVE directory"
+	echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/Star Citizen/LIVE/"
+	while read -rp ": " path; do
+	    if [ ! -d "$path" ]; then
+		echo -e "That directory is invalid or does not exist. Please try again.\n"
+	    else
+		break
+	    fi
+	done
+
+	echo -e "\nEnter the full path to a backup directory for your keybinds"
+	echo -e "ie. /home/USER/backups/"
+	while read -rp ": " backups; do
+	    if [ ! -d "$backups" ]; then
+		echo -e "That directory is invalid or does not exist. Please try again.\n"
+	    else
+		break
+	    fi
+	done
     fi
 }
 
@@ -277,14 +328,14 @@ clear
 # Check if Zenity is available
 has_zen=0
 if [ -x "$(command -v zenity)" ]; then
-    has_zen=1
+    has_zen=0
 fi
 
 # Use Zenity if it is available
 if [ "$has_zen" -eq 1 ]; then
     check="Check vm.max_map_count for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
-    list=("TRUE" "$check" "FALSE" "$clean")
+    list=("TRUE" "$check" "FALSE" "$clean" "FALSE" "test")
 
     options="$(message 5 "${list[@]}")"
     case "$options" in
@@ -293,6 +344,12 @@ if [ "$has_zen" -eq 1 ]; then
 	    ;;
 	"$clean")
 	    sanitize
+	    ;;
+	"test")
+	    getdirs
+	    echo "$prefix"
+	    echo "$path"
+	    echo "$backups"
 	    ;;
 	*)
 	    ;;
@@ -315,6 +372,14 @@ else
 	    "2")
 		echo -e "\n"
 		sanitize
+		break
+		;;
+	    "3")
+		echo -e "\n"
+		getdirs
+		echo "$prefix"
+		echo "$path"
+		echo "$backups"
 		break
 		;;
 	    "q")
