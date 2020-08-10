@@ -17,24 +17,25 @@
 # whenever there is a major version update.  It will back up your
 # exported keybinds, delete your USER folder, then restore your keybinds.
 #
-# Edit the default paths below to match your configuration.
-#
-#
 # To export your keybinds from within the game, go to
 # Options->Keybindings->Control Profiles->Save Control Settings
-# Give it a name and save it in the backup location you specify below.
 #
 ############################################################################
 
-# Change these paths
-i_changed_these="true"  # Change this to true once you make your edits
-prefix="$HOME/.wine"
-path="$prefix/drive_c/Program Files/Roberts Space Industries/Star Citizen/LIVE"
-backups="$HOME/Documents/Star Citizen"
+wine_conf="winedir.conf"
+game_conf="gamedir.conf"
+backup_conf="backupdir.conf"
 
-# You shouldn't need to change these
-user="$path/USER"
-mappings="$user/Controls/Mappings"
+# Use the XDG config directory if defined
+if [ -z "$XDG_CONFIG_HOME" ]; then
+    conf_dir="$HOME/.config"
+    echo "DEBUG: XDG DIR NOT FOUND"
+else
+    conf_dir="$XDG_CONFIG_HOME"
+    echo "DEBUG: XDG DIR FOUND"
+fi
+
+conf_subdir="starcitizen-lug"
 
 ############################################################################
 ############################################################################
@@ -109,76 +110,134 @@ message() {
     fi
 }
 
-# Prompt the user for the paths to their wine prefix, game directory, and a backup directory
+# Get paths to the user's wine prefix, game directory, and a backup directory
 getdirs() {
-    message 1 "On the next screens, please select your WINE prefix,\nyour Star Citizen installation's LIVE directory,\nand a backup directory for your keybinds."
+    # Sanity checks
+    if [ ! -d "$conf_dir" ]; then
+	message 2 "Invalid config path:\n$conf_dir\nAborting."
+        exit 0
+    fi
+
+    if [ ! -d "$conf_dir/$conf_subdir" ]; then
+        mkdir "$conf_dir/$conf_subdir"
+    fi
+
+    # Check if the config files already exist
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        found_wine_conf=1
+        wine_prefix="$(cat $conf_dir/$conf_subdir/$wine_conf")"
+    fi
+    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+        found_game_conf=1
+        game_path="$(cat $conf_dir/$conf_subdir/$game_conf")"
+    fi
+    if [ -f "$conf_dir/$conf_subdir/$backup_conf" ]; then
+        found_backup_conf=1
+        backup_path="$(cat $conf_dir/$conf_subdir/$backup_conf")"
+    fi
+        
+    if [ -z "$found_wine_config" ] || [ -z "$found_game_conf" ] || [ -z "$found_backup_conf" ]; then
+    message 1 "You will now be asked to provide some directories needed by this script.\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
     if [ "$has_zen" -eq 1 ]; then
-	prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/")"
-	if [ "$?" -eq -1 ]; then
-	    message 2 "An unexpected error has occurred."
-	fi
-	path="$(zenity --file-selection --directory --title="Select your Star Citizen LIVE directory" --filename="$prefix/")"
-	if [ "$?" -eq -1 ]; then
-	    message 2 "An unexpected error has occurred."
-	fi
-	backups="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
-	if [ "$?" -eq -1 ]; then
-	    message 2 "An unexpected error has occurred."
-	fi
+        # Get the wine prefix directory
+        if [ -z "$found_wine_conf" ]; then
+            wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/")"
+	    if [ "$?" -eq -1 ]; then
+                message 2 "An unexpected error has occurred."
+            fi
+        fi
+
+        # Get the game path
+        if [ -z "$found_game_conf" ]; then
+            while true; do
+                game_path="$(zenity --file-selection --directory --title="Select your Star Citizen LIVE directory" --filename="$prefix/")"
+	        if [ "$?" -eq -1 ]; then
+	            message 2 "An unexpected error has occurred."
+                fi
+
+                if [ "$(basename $game_path)" != "LIVE" ]; then
+                    message 2 "You must select your LIVE directory."
+                else
+                    break
+                fi
+            done
+        fi
+
+        # Get the backup directory
+        if [ -z "$found_backup_conf" ]; then
+            backup_path="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
+            if [ "$?" -eq -1 ]; then
+	        message 2 "An unexpected error has occurred."
+            fi
+        fi
     else
 	clear
+
+        # Get the wine prefix directory
+        if [ -z "$found_wine_conf" ]; then
 	echo -e "Enter the full path to your WINE prefix directory"
 	echo -e "ie. /home/USER/.wine/"
-	while read -rp ": " prefix; do
-	    if [ ! -d "$prefix" ]; then
+	while read -rp ": " wine_prefix; do
+	    if [ ! -d "$wine_prefix" ]; then
 		echo -e "That directory is invalid or does not exist. Please try again.\n"
 	    else
 		break
 	    fi
 	done
 
-	echo -e "\nEnter the full path to your Star Citizen installation LIVE directory"
-	echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/Star Citizen/LIVE/"
-	while read -rp ": " path; do
-	    if [ ! -d "$path" ]; then
-		echo -e "That directory is invalid or does not exist. Please try again.\n"
-	    else
-		break
-	    fi
-	done
+        # Get the game path
+        if [ -z "$found_game_conf" ]; then
+            echo -e "\nEnter the full path to your Star Citizen installation LIVE directory"
+            echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/Star Citizen/LIVE/"
+            while read -rp ": " game_path; do
+	        if [ ! -d "$game_path" ]; then
+                    echo -e "That directory is invalid or does not exist. Please try again.\n"
+                elif [ "$(basename $game_path)" != "LIVE" ]; then
+                    echo -e "You must select your LIVE directory."
+                else
+		    break
+	        fi
+            done
+        fi
 
-	echo -e "\nEnter the full path to a backup directory for your keybinds"
-	echo -e "ie. /home/USER/backups/"
-	while read -rp ": " backups; do
-	    if [ ! -d "$backups" ]; then
-		echo -e "That directory is invalid or does not exist. Please try again.\n"
-	    else
-		break
-	    fi
-	done
+        # Get the backup directory
+        if [ -z "$found_backup_conf" ]; then
+	    echo -e "\nEnter the full path to a backup directory for your keybinds"
+            echo -e "ie. /home/USER/backups/"
+            while read -rp ": " backup_path; do
+	        if [ ! -d "$backup_path" ]; then
+                    echo -e "That directory is invalid or does not exist. Please try again.\n"
+                else
+		    break
+                fi
+            done
+        fi
     fi
+    
+        # Save the paths for later use
+        echo "$wine_prefix" > "$conf_dir/$conf_subdir/$wine_conf"
+        echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
+        echo "$backup_path" > "$conf_dir/$conf_subdir/$backup_conf"
+    fi
+
+    # Set some remaining directory paths
+    user_dir="$game_path/USER"
+    mappings_dir="$user_dir/Controls/Mappings"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 sanitize() {
     clear
-    # Display a warning to modify the default variables
-    if [ "$i_changed_these" = "false" ]; then
-        message 2 "The file picker is not implemented yet.\n\nPlease edit this script to change the default\nStar Citizen paths to match your configuration.\n"
-    else
-	# Sanity checks
-	if [ ! -d "$prefix" ]; then
-	    message 2 "Invalid path:\n$prefix\nAborting."
-	elif [ ! -d "$path" ]; then
-	    message 2 "Invalid path:\n$path\nAborting."
-	else
-	    
+		    
 	    # Prompt user to back up the current keybinds in the game
-	    message 1 "Before proceeding, please be sure you have\nmade a backup of your Star Citizen keybinds!\nTo do this from within the game, go to\nOptions->Keybindings->Control Profiles->Save Control Settings\nGive it a name and save it to the backup location\nthat you specified in this script's variables."
+	    message 1 "Before proceeding, please be sure you have\nexported your Star Citizen keybinds from within the game!\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings"
+
+	    # Get/Set directory paths
+	    getdirs
 
 	    # Check for exported keybind files
 	    exported=0  # Default to none found
-	    if [ ! -d "$mappings" ] || [ -z "$(ls -A $mappings)" ]; then
+	    if [ ! -d "$mappings_dir" ] || [ -z "$(ls -A $mappings_dir)" ]; then
 		message 1 "Warning: No exported keybindings found.  Keybinds will not be backed up!"
 		exported=0
 	    else
@@ -188,34 +247,24 @@ sanitize() {
 	    # Back up keybinds
 	    if [ "$exported" -eq 1 ]; then
 		echo "Backing up all saved keybinds..."
-		mkdir -p "$backups" && cp -r "$mappings/." "$backups/"
+		mkdir -p "$backup_path" && cp -r "$mappings_dir/." "$backup_path/"
 		echo -e "Done.\n"
 	    fi
 	    
 	    # Wipe the user directory
 	    echo "Wiping USER directory..."
-	    rm -rf "$user"
+	    rm -rf "$user_dir"
 	    echo -e "Done.\n"
 
 	    # Restore custom keybinds
 	    if [ "$exported" -eq 1 ]; then
 		echo "Restoring keybinds..."
-		mkdir -p "$mappings" && cp -r "$backups/." "$mappings/"
+		mkdir -p "$mappings_dir" && cp -r "$backup_path/." "$mappings_dir/"
 		echo -e "Done.\n"
 		message 1 "\nTo re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles\n"
 	    fi
 
-
-
-	    # Special request:  Uncomment to wash Snagletooth's car
-	    #echo -e "Washing the car...\n"
-	    #echo "Working at the car wash, yeah!"
-	    #echo "Come on and sing it with me, car wash!"
-	    #echo -e "Sing it with the feeling now, car wash yeah!\n"
-
-	    echo "And we're done here.  Have fun!"
-	fi
-    fi
+    message 1 "Your USER directory has been cleaned up!"
 }
 
 check_map_count() {
