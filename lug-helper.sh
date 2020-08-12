@@ -29,14 +29,11 @@ backup_conf="backupdir.conf"
 # Use the XDG config directory if defined
 if [ -z "$XDG_CONFIG_HOME" ]; then
     conf_dir="$HOME/.config"
-    echo "DEBUG: XDG DIR NOT FOUND"
 else
     conf_dir="$XDG_CONFIG_HOME"
-    echo "DEBUG: XDG DIR FOUND"
 fi
 
 conf_subdir="starcitizen-lug"
-
 ############################################################################
 ############################################################################
 
@@ -89,8 +86,7 @@ message() {
         elif [ "$1" -eq 3 ]; then
             # question
             echo -e "$2" 
-            while true; do
-                read -p "[y/n]: " yn
+            while read -p "[y/n]: " yn; do
                 case "$yn" in
                     [Yy]*)
                         return 0
@@ -124,58 +120,70 @@ getdirs() {
 
     # Check if the config files already exist
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        found_wine_conf=1
         wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
-        found_game_conf=1
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
     fi
     if [ -f "$conf_dir/$conf_subdir/$backup_conf" ]; then
-        found_backup_conf=1
         backup_path="$(cat "$conf_dir/$conf_subdir/$backup_conf")"
     fi
     
-    if [ -z "$found_wine_config" ] || [ -z "$found_game_conf" ] || [ -z "$found_backup_conf" ]; then
-	message 1 "You will now be asked to provide some directories needed by this script.\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
+    if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
+	message 1 "You will now be asked to provide some directories needed by this script.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
 	if [ "$has_zen" -eq 1 ]; then
             # Get the wine prefix directory
-            if [ -z "$found_wine_conf" ]; then
-		wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/")"
+            if [ -z "$wine_prefix" ]; then
+		wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine")"
 		if [ "$?" -eq -1 ]; then
                     message 2 "An unexpected error has occurred."
+		    exit 0
+		elif [ -z "$wine_prefix" ]; then
+		    # User clicked cancel
+		    message 2 "Operation cancelled. The script will now exit."
+		    exit 0
 		fi
             fi
 
             # Get the game path
-            if [ -z "$found_game_conf" ]; then
-		while true; do
-                    game_path="$(zenity --file-selection --directory --title="Select your Star Citizen LIVE directory" --filename="$prefix/")"
+            if [ -z "$game_path" ]; then
+		while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen LIVE directory" --filename="$wine_prefix/")"; do
 	            if [ "$?" -eq -1 ]; then
 			message 2 "An unexpected error has occurred."
-                    fi
-
-                    if [ "$(basename "$game_path")" != "LIVE" ]; then
+			exit 0
+                    elif [ "$(basename "$game_path")" != "LIVE" ]; then
 			message 2 "You must select your LIVE directory."
-                    else
+		    else
+			# All good or cancel
 			break
                     fi
 		done
+		
+		if [ -z "$game_path" ]; then
+		    # User clicked cancel
+		    message 2 "Operation cancelled. The script will now exit."
+		    exit 0
+		fi
             fi
 
             # Get the backup directory
-            if [ -z "$found_backup_conf" ]; then
+            if [ -z "$backup_path" ]; then
 		backup_path="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
 		if [ "$?" -eq -1 ]; then
 	            message 2 "An unexpected error has occurred."
+		    exit 0
+		elif [ -z "$backup_path" ]; then
+		    # User clicked cancel
+		    message 2 "Operation cancelled. The script will now exit."
+		    exit 0
 		fi
             fi
 	else
 	    clear
 
             # Get the wine prefix directory
-            if [ -z "$found_wine_conf" ]; then
-		echo -e "Enter the full path to your WINE prefix directory"
+            if [ -z "$wine_prefix" ]; then
+		echo -e "Enter the full path to your WINE prefix directory (case sensitive)"
 		echo -e "ie. /home/USER/.wine/"
 		while read -rp ": " wine_prefix; do
 		    if [ ! -d "$wine_prefix" ]; then
@@ -186,8 +194,8 @@ getdirs() {
 		done
 
 		# Get the game path
-		if [ -z "$found_game_conf" ]; then
-		    echo -e "\nEnter the full path to your Star Citizen installation LIVE directory"
+		if [ -z "$game_path" ]; then
+		    echo -e "\nEnter the full path to your Star Citizen installation LIVE directory\n(case sensitive)"
 		    echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/Star Citizen/LIVE/"
 		    while read -rp ": " game_path; do
 			if [ ! -d "$game_path" ]; then
@@ -201,8 +209,8 @@ getdirs() {
 		fi
 
 		# Get the backup directory
-		if [ -z "$found_backup_conf" ]; then
-		    echo -e "\nEnter the full path to a backup directory for your keybinds"
+		if [ -z "$backup_path" ]; then
+		    echo -e "\nEnter the full path to a backup directory for your keybinds (case sensitive)"
 		    echo -e "ie. /home/USER/backups/"
 		    while read -rp ": " backup_path; do
 			if [ ! -d "$backup_path" ]; then
@@ -248,19 +256,19 @@ sanitize() {
     # Back up keybinds
     if [ "$exported" -eq 1 ]; then
 	echo "Backing up all saved keybinds..."
-	mkdir -p "$backup_path" && cp -r "$mappings_dir/." "$backup_path/"
+	mkdir -p "$backup_path" && cp -r "$mappings_dir/." "$backup_path/keybinds/"
 	echo -e "Done.\n"
     fi
     
     # Wipe the user directory
     echo "Wiping USER directory..."
-    rm -rf "$user_dir"
+    mv "$user_dir" "$backup_path/userbackup"
     echo -e "Done.\n"
 
     # Restore custom keybinds
     if [ "$exported" -eq 1 ]; then
 	echo "Restoring keybinds..."
-	mkdir -p "$mappings_dir" && cp -r "$backup_path/." "$mappings_dir/"
+	mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/" "$mappings_dir/"
 	echo -e "Done.\n"
 	message 1 "\nTo re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles\n"
     fi
@@ -378,14 +386,14 @@ clear
 # Check if Zenity is available
 has_zen=0
 if [ -x "$(command -v zenity)" ]; then
-    has_zen=0
+    has_zen=1
 fi
 
 # Use Zenity if it is available
 if [ "$has_zen" -eq 1 ]; then
     check="Check vm.max_map_count for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
-    list=("TRUE" "$check" "FALSE" "$clean" "FALSE" "test")
+    list=("TRUE" "$check" "FALSE" "$clean")
 
     options="$(message 5 "${list[@]}")"
     case "$options" in
@@ -394,12 +402,6 @@ if [ "$has_zen" -eq 1 ]; then
 	    ;;
 	"$clean")
 	    sanitize
-	    ;;
-	"test")
-	    getdirs
-	    echo "$prefix"
-	    echo "$path"
-	    echo "$backups"
 	    ;;
 	*)
 	    ;;
@@ -422,14 +424,6 @@ else
 	    "2")
 		echo -e "\n"
 		sanitize
-		break
-		;;
-	    "3")
-		echo -e "\n"
-		getdirs
-		echo "$prefix"
-		echo "$path"
-		echo "$backups"
 		break
 		;;
 	    "q")
