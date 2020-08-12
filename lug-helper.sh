@@ -262,13 +262,13 @@ sanitize() {
     
     # Wipe the user directory
     echo "Wiping USER directory..."
-    mv "$user_dir" "$backup_path/userbackup"
+    mkdir -p "$backup_path" && mv "$user_dir" "$backup_path/userbackup_$(date +"%Y%m%d-%H%M%S")"
     echo -e "Done.\n"
 
     # Restore custom keybinds
     if [ "$exported" -eq 1 ]; then
 	echo "Restoring keybinds..."
-	mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/" "$mappings_dir/"
+	mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/." "$mappings_dir/"
 	echo -e "Done.\n"
 	message 1 "\nTo re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles\n"
     fi
