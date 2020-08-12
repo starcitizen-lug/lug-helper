@@ -244,11 +244,20 @@ sanitize() {
     # Get/Set directory paths
     getdirs
 
+    # Sanity check
+    if [ ! -d "$user_dir" ]; then
+	message 2 "Directory not found. The script will now exit.\n$user_dir"
+	exit 0
+    fi
+
     # Check for exported keybind files
-    exported=0  # Default to none found
     if [ ! -d "$mappings_dir" ] || [ -z "$(ls -A "$mappings_dir")" ]; then
-	message 1 "Warning: No exported keybindings found.  Keybinds will not be backed up!"
-	exported=0
+	if message 3 "Warning: No exported keybindings found. Keybinds will not be backed up!\n\nDo you want to continue anyway?"; then
+	    exported=0
+	else
+	    message 2 "The script will now exit."
+	    exit 0
+	fi
     else
 	exported=1
     fi
