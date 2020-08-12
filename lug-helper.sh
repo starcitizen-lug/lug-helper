@@ -265,13 +265,13 @@ sanitize() {
     # Back up keybinds
     if [ "$exported" -eq 1 ]; then
 	echo "Backing up all saved keybinds..."
-	mkdir -p "$backup_path" && cp -r "$mappings_dir/." "$backup_path/keybinds/"
+	cp -r "$mappings_dir/." "$backup_path/keybinds/"
 	echo -e "Done.\n"
     fi
     
     # Wipe the user directory
     echo "Wiping USER directory..."
-    mkdir -p "$backup_path" && mv "$user_dir" "$backup_path/userbackup_$(date +"%Y%m%d-%H%M%S")"
+    mv "$user_dir" "$backup_path/userbackup_$(date +"%Y%m%d-%H%M%S")"
     echo -e "Done.\n"
 
     # Restore custom keybinds
