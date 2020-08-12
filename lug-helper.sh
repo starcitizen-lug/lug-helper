@@ -46,7 +46,7 @@ message() {
             margs=("--info" "--no-wrap" "--text=")
         elif [ "$1" -eq 2 ]; then
             # warning
-            margs=("--warning" "--no-wrap" "--text=")
+            margs=("--warning" "--text=")
         elif [ "$1" -eq 3 ]; then
             # question
             margs=("--question" "--text=")
@@ -110,7 +110,7 @@ message() {
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
-	message 2 "Invalid config path:\n$conf_dir\nAborting."
+	message 2 "Config directory not found. The script will now exit.\n\n$conf_dir"
         exit 0
     fi
 
@@ -246,7 +246,7 @@ sanitize() {
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-	message 2 "Directory not found. The script will now exit.\n$user_dir"
+	message 2 "Directory not found. The script will now exit.\n\n$user_dir"
 	exit 0
     fi
 
