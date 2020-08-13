@@ -303,7 +303,7 @@ set_map_count() {
     trap check_map_count EXIT
 
     if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then  
-	if message 3 "It looks like you already configured your system to work with Star Citizen\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
+	if message 3 "It looks like you've already configured your system to work with Star Citizen\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 	fi
 	exit 0
@@ -339,7 +339,6 @@ set_map_count() {
         	    trap - EXIT
         	    ;;
                 *)
-        	    echo "Dialog canceled or unknown option selected: $RESULT"
         	    ;;
             esac
         else
