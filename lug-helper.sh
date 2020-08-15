@@ -72,11 +72,11 @@ message() {
             5)
 		# main menu radio list
 		# call format: message 5 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
-		# IMPORTANT: Adjust the height value below based on the number of items listed in the main menu
+		# IMPORTANT: Adjust the height value below based on the number of items listed in the menu
 		margs=("--list" "--radiolist" "--height=240" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper Script!</big>\n\nThis script is designed to help you optimize your system for Star Citizen.</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
 		;;
 	    *)
-		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
+		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by string arguments.\n"
 		read -n 1 -s -p "Press any key..."
 		;;
         esac
@@ -344,6 +344,9 @@ set_map_count() {
     persist="Change setting and persist after reboot"
     manual="Show me the commands; I'll handle it myself"
     goback="Return to the main menu"
+    
+    newsysctl_msg="To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+    oldsysctl_msg="To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
 
     if message 3 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this script can detect, the setting\nhas not been changed on your system.\n\nWould you like to change the setting now?"; then
         if [ "$has_zen" -eq 1 ]; then
@@ -365,9 +368,9 @@ set_map_count() {
         	    ;;
                 "$manual")
         	    if [ -d "/etc/sysctl.d" ]; then
-                	message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+                	message 1 "$newsysctl_msg"
         	    else
-                	message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
+                	message 1 "$oldsysctl_msg"
         	    fi
         	    ;;
                 *)
@@ -401,9 +404,9 @@ set_map_count() {
                 	;;
                     "$manual")
                 	if [ -d "/etc/sysctl.d" ]; then
-                            message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+                            message 1 "$newsysctl_msg"
                 	else
-                            message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
+                            message 1 "$oldsysctl_msg"
                 	fi
                         break
                 	;;
