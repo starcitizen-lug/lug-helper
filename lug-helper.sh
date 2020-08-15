@@ -76,15 +76,18 @@ message() {
         # those need to be handled specially in the code
         if [ "$1" -eq 1 ]; then
             # info
+	    clear
             echo -e "\n$2\n"
             read -n 1 -s -p "Press any key..."
         elif [ "$1" -eq 2 ]; then
             # warning
+	    clear
             echo -e "\n$2\n" 
             read -n 1 -s -p "Press any key..."
             return 0
         elif [ "$1" -eq 3 ]; then
             # question
+	    clear
             echo -e "$2" 
             while read -p "[y/n]: " yn; do
                 case "$yn" in
@@ -100,7 +103,7 @@ message() {
                 esac
             done
         else
-            echo -e "Invalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
+            echo -e "\nInvalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
             read -n 1 -s -p "Press any key..."
         fi
     fi
@@ -130,7 +133,6 @@ getdirs() {
     fi
     
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
-	clear
 	message 1 "You will now be asked to provide some directories needed by this script.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
 	if [ "$has_zen" -eq 1 ]; then
             # Get the wine prefix directory
@@ -235,9 +237,7 @@ getdirs() {
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
-sanitize() {
-    clear
-    
+sanitize() {    
     # Prompt user to back up the current keybinds in the game
     message 1 "Before proceeding, please be sure you have\nexported your Star Citizen keybinds from within the game!\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings"
 
@@ -298,7 +298,6 @@ check_map_count() {
 
 # Check vm.max_map_count for the correct setting and let the user fix it if needed
 set_map_count() {
-    clear
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
     	message 1 "vm.max_map_count is already set to the optimal value.  You're all set!"
@@ -370,7 +369,6 @@ set_map_count() {
                         break
                 	;;
                     "$manual")
-			clear
                 	if [ -d "/etc/sysctl.d" ]; then
                             message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
                 	else
