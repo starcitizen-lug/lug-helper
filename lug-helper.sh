@@ -44,28 +44,42 @@ conf_subdir="starcitizen-lug"
 # followed by a string of arguments that will be passed to zenity or echoed to the user.
 #
 # To call this function, use the following format: message [number] [string]
-# See the message types below for instructions on formatting the string.
+# See the message types below for specific instructions on formatting the string.
 message() {
     if [ "$has_zen" -eq 1 ]; then
-        if [ "$1" -eq 1 ]; then
-            # info
-            margs=("--info" "--no-wrap" "--text=")
-        elif [ "$1" -eq 2 ]; then
-            # warning
-            margs=("--warning" "--text=")
-        elif [ "$1" -eq 3 ]; then
-            # question
-            margs=("--question" "--text=")
-        elif [ "$1" -eq 4 ]; then
-            # radio list
-            margs=("--list" "--radiolist" "--text=Choose from the following options:" "--hide-header" "--column=" "--column=Option")
-        elif [ "$1" -eq 5 ]; then
-            # main menu radio list
-            margs=("--list" "--radiolist" "--height=240" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper Script!</big>\n\nThis script is designed to help you optimize your system for Star Citizen.</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
-        else
-            echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
-            read -n 1 -s -p "Press any key..."
-        fi
+        case "$1" in
+	    1)
+		# info message
+		# call format: message 1 "text to display"
+		margs=("--info" "--no-wrap" "--text=")
+		;;
+            2)
+		# warning message
+		# call format: message 2 "text to display"
+		margs=("--warning" "--text=")
+		;;
+            3)
+		# question
+		# call format: message 3 "question to ask?"
+		margs=("--question" "--text=")
+		;;
+            4)
+		# radio button list
+		# call format: message 4 "--height=165" "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
+		# IMPORTANT: When calling, specify an appropriate height for the dialog based on the number of items in your list
+		margs=("--list" "--radiolist" "--text=Choose from the following options:" "--hide-header" "--column=" "--column=Option")
+		;;
+            5)
+		# main menu radio list
+		# call format: message 5 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
+		# IMPORTANT: Adjust the height value below based on the number of items listed in the main menu
+		margs=("--list" "--radiolist" "--height=240" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper Script!</big>\n\nThis script is designed to help you optimize your system for Star Citizen.</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
+		;;
+	    *)
+		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
+		read -n 1 -s -p "Press any key..."
+		;;
+        esac
 
         # Display the message
 	if [ "$1" -eq 4 ] || [ "$1" -eq 5 ]; then
@@ -80,38 +94,46 @@ message() {
     else
         # Text based menu.  Does not work with message types 4 and 5 (zenity radio lists)
         # those need to be handled specially in the code
-        if [ "$1" -eq 1 ]; then
-            # info
-	    clear
-            echo -e "\n$2\n"
-            read -n 1 -s -p "Press any key..."
-        elif [ "$1" -eq 2 ]; then
-            # warning
-	    clear
-            echo -e "\n$2\n" 
-            read -n 1 -s -p "Press any key..."
-            return 0
-        elif [ "$1" -eq 3 ]; then
-            # question
-	    clear
-            echo -e "$2" 
-            while read -p "[y/n]: " yn; do
-                case "$yn" in
-                    [Yy]*)
-                        return 0
-                        ;;
-                    [Nn]*)
-                        return 1
-                        ;;
-                    *)
-                        echo "Please type 'y' or 'n'"
-                        ;;
-                esac
-            done
-        else
-            echo -e "\nInvalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
-            read -n 1 -s -p "Press any key..."
-        fi
+        case "$1" in
+	    1)
+		# info message
+		# call format: message 1 "text to display"
+		clear
+		echo -e "\n$2\n"
+		read -n 1 -s -p "Press any key..."
+		;;
+            2)
+		# warning message
+		# call format: message 2 "text to display"
+		clear
+		echo -e "\n$2\n" 
+		read -n 1 -s -p "Press any key..."
+		return 0
+		;;
+            3)
+		# question
+		# call format: message 3 "question to ask?"
+		clear
+		echo -e "$2" 
+		while read -p "[y/n]: " yn; do
+                    case "$yn" in
+			[Yy]*)
+                            return 0
+                            ;;
+			[Nn]*)
+                            return 1
+                            ;;
+			*)
+                            echo "Please type 'y' or 'n'"
+                            ;;
+                    esac
+		done
+		;;
+	    *)
+		echo -e "\nInvalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
+		read -n 1 -s -p "Press any key..."
+		;;
+        esac
     fi
 }
 
@@ -245,7 +267,7 @@ getdirs() {
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 sanitize() {    
     # Prompt user to back up the current keybinds in the game
-    message 1 "Before proceeding, please be sure you have\nexported your Star Citizen keybinds from within the game!\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings"
+    message 1 "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings"
 
     # Get/Set directory paths
     getdirs
@@ -262,7 +284,7 @@ sanitize() {
 
     # Check for exported keybind files
     if [ ! -d "$mappings_dir" ] || [ -z "$(ls -A "$mappings_dir")" ]; then
-	if message 3 "Warning: No exported keybindings found. Keybinds will not be backed up!\n\nDo you want to continue anyway?"; then
+	if message 3 "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
 	    exported=0
 	else
 	    # User said no
