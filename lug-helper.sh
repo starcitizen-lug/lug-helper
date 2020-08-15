@@ -4,18 +4,20 @@
 # Star Citizen's Linux Users Group Helper Script
 ############################################################################
 #
-# Greetings, fellow penguin!
+# Greetings, fellow Penguin!
 #
 #
-# This script is designed to help you with some housekeeping tasks.
+# This script is designed to help you optimize your system to run
+# Star Citizen as smoothly as possible.
 #
-# It will check your system for optimal settings,
-# allowing you to change them as needed to prevent game crashes.
+# It presents options to check your system for optimal settings
+# and helps you change them as needed to prevent game crashes.
 #
 #
 # It also includes an easy way for you to wipe your USER folder
-# whenever there is a major version update.  It will back up your
-# exported keybinds, delete your USER folder, then restore your keybinds.
+# as is recommended after major version updates.
+# It will back up your exported keybinds, delete your USER folder,
+# then restore your keybinds.
 #
 # To export your keybinds from within the game, go to
 # Options->Keybindings->Control Profiles->Save Control Settings
@@ -38,7 +40,11 @@ conf_subdir="starcitizen-lug"
 ############################################################################
 
 
-# Display a message to the user.  Expects a numerical argument followed by the string to display.
+# Display a message to the user.  Expects a numerical argument to indicate the message type,
+# followed by a string of arguments that will be passed to zenity or echoed to the user.
+#
+# To call this function, use the following format: message [number] [string]
+# See the message types below for instructions on formatting the string.
 message() {
     if [ "$has_zen" -eq 1 ]; then
         if [ "$1" -eq 1 ]; then
@@ -55,7 +61,7 @@ message() {
             margs=("--list" "--radiolist" "--text=Choose from the following options:" "--hide-header" "--column=" "--column=Option")
         elif [ "$1" -eq 5 ]; then
             # main menu radio list
-            margs=("--list" "--radiolist" "--height=240" "--text=<b><big>Welcome, fellow penguin, to the Star Citizen LUG Helper Script!</big>\n\nThis script is designed to help you optimize your system for Star Citizen.</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
+            margs=("--list" "--radiolist" "--height=240" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper Script!</big>\n\nThis script is designed to help you optimize your system for Star Citizen.</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
         else
             echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by the string to display.\n"
             read -n 1 -s -p "Press any key..."
@@ -292,7 +298,7 @@ sanitize() {
 # Check if setting vm.max_map_count was successful
 check_map_count() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        message 2 "As far as this script can detect, your system is not configured\nto allow Star Citizen to use more than ~8GB or memory.\n\nYou will most likely experience crashes."
+        message 2 "As far as this script can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
     fi
 }
 
@@ -304,12 +310,11 @@ set_map_count() {
 	return 0
     fi
 
-    trap check_map_count EXIT
-
     if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then  
 	if message 3 "It looks like you've already configured your system to work with Star Citizen\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 	fi
+	check_map_count
 	return 0
     fi
     
@@ -318,7 +323,7 @@ set_map_count() {
     manual="Show me the commands; I'll handle it myself"
     goback="Return to the main menu"
 
-    if message 3 "Running Star Citizen requires changing a system setting.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\nAs far as this script can detect, the setting\nhas not been changed on your system.\n\nWould you like to change the setting now?"; then
+    if message 3 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this script can detect, the setting\nhas not been changed on your system.\n\nWould you like to change the setting now?"; then
         if [ "$has_zen" -eq 1 ]; then
             # zenity menu
             options_mapcount=("--height=165" "TRUE" "$once" "FALSE" "$persist" "FALSE" "$manual")
@@ -326,6 +331,7 @@ set_map_count() {
             case "$choice" in
                 "$once")
         	    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+		    check_map_count
         	    ;;
                 "$persist")
         	    if [ -d "/etc/sysctl.d" ]; then
@@ -333,6 +339,7 @@ set_map_count() {
         	    else
                         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
         	    fi
+		    check_map_count
         	    ;;
                 "$manual")
         	    if [ -d "/etc/sysctl.d" ]; then
@@ -340,10 +347,10 @@ set_map_count() {
         	    else
                 	message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
         	    fi
-        	    # Anyone who wants to do it manually doesn't need another warning
-        	    trap - EXIT
         	    ;;
                 *)
+		    check_map_count
+		    return 0
         	    ;;
             esac
         else
@@ -358,6 +365,7 @@ set_map_count() {
                 case "$choice" in
                     "$once")
                 	pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+			check_map_count
                         break
                 	;;
                     "$persist")
@@ -366,6 +374,7 @@ set_map_count() {
                 	else
                             pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
                 	fi
+			check_map_count
                         break
                 	;;
                     "$manual")
@@ -374,11 +383,10 @@ set_map_count() {
                 	else
                             message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
                 	fi
-                	# Anyone who wants to do it manually doesn't need another warning
-                	trap - EXIT
                         break
                 	;;
                     "$goback")
+			check_map_count
                         break
                         ;;
                     *)
@@ -420,7 +428,7 @@ main_menu() {
     else
 	# Use a text menu if Zenity is not available
 	clear
-	echo -e "\nWelcome, fellow penguin, to the Star Citizen Linux Users Group Helper Script!\n\nThis script is designed to help you optimize your system for Star Citizen.\nYou may choose from the following options:\n"
+	echo -e "\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper Script!\n\nThis script is designed to help you optimize your system for Star Citizen.\nYou may choose from the following options:\n"
 
 	options_main=("$check" "$clean" "$quit")
 	PS3="Enter selection number: "
