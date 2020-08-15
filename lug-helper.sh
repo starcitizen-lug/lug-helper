@@ -82,7 +82,7 @@ message() {
             # warning
             echo -e "\n$2\n" 
             read -n 1 -s -p "Press any key..."
-            exit 0
+            return 0
         elif [ "$1" -eq 3 ]; then
             # question
             echo -e "$2" 
@@ -110,8 +110,8 @@ message() {
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
-	message 2 "Config directory not found. The script will now exit.\n\n$conf_dir"
-        exit 0
+	message 2 "Config directory not found. The script is unable to proceed.\n\n$conf_dir"
+        return 1
     fi
 
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -130,18 +130,19 @@ getdirs() {
     fi
     
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
+	clear
 	message 1 "You will now be asked to provide some directories needed by this script.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
 	if [ "$has_zen" -eq 1 ]; then
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
 		wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine")"
 		if [ "$?" -eq -1 ]; then
-                    message 2 "An unexpected error has occurred."
-		    exit 0
+                    message 2 "An unexpected error has occurred. The script is unable to proceed."
+		    return 1
 		elif [ -z "$wine_prefix" ]; then
 		    # User clicked cancel
-		    message 2 "Operation cancelled. The script will now exit."
-		    exit 0
+		    message 2 "Operation cancelled.\nNo changes have been made to your game."
+		    return 1
 		fi
             fi
 
@@ -149,8 +150,8 @@ getdirs() {
             if [ -z "$game_path" ]; then
 		while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen LIVE directory" --filename="$wine_prefix/")"; do
 	            if [ "$?" -eq -1 ]; then
-			message 2 "An unexpected error has occurred."
-			exit 0
+			message 2 "An unexpected error has occurred. The script is unable to proceed."
+			return 1
                     elif [ "$(basename "$game_path")" != "LIVE" ]; then
 			message 2 "You must select your LIVE directory."
 		    else
@@ -161,8 +162,8 @@ getdirs() {
 		
 		if [ -z "$game_path" ]; then
 		    # User clicked cancel
-		    message 2 "Operation cancelled. The script will now exit."
-		    exit 0
+		    message 2 "Operation cancelled.\nNo changes have been made to your game."
+		    return 1
 		fi
             fi
 
@@ -170,17 +171,16 @@ getdirs() {
             if [ -z "$backup_path" ]; then
 		backup_path="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
 		if [ "$?" -eq -1 ]; then
-	            message 2 "An unexpected error has occurred."
-		    exit 0
+	            message 2 "An unexpected error has occurred. The script is unable to proceed."
+		    return 1
 		elif [ -z "$backup_path" ]; then
 		    # User clicked cancel
-		    message 2 "Operation cancelled. The script will now exit."
-		    exit 0
+		    message 2 "Operation cancelled.\nNo changes have been made to your game."
+		    return 1
 		fi
             fi
 	else
 	    clear
-
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
 		echo -e "Enter the full path to your WINE prefix directory (case sensitive)"
@@ -243,11 +243,15 @@ sanitize() {
 
     # Get/Set directory paths
     getdirs
+    if [ "$?" -eq 1 ]; then
+	# User cancelled and wants to return to the main menu, or there was an error
+	return 0
+    fi
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-	message 2 "Directory not found. The script will now exit.\n\n$user_dir"
-	exit 0
+	message 2 "Directory not found. The script is unable to proceed.\n\n$user_dir"
+	return 0
     fi
 
     # Check for exported keybind files
@@ -255,8 +259,8 @@ sanitize() {
 	if message 3 "Warning: No exported keybindings found. Keybinds will not be backed up!\n\nDo you want to continue anyway?"; then
 	    exported=0
 	else
-	    message 2 "The script will now exit."
-	    exit 0
+	    # User said no
+	    return 0
 	fi
     else
 	exported=1
@@ -298,7 +302,7 @@ set_map_count() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
     	message 1 "vm.max_map_count is already set to the optimal value.  You're all set!"
-	exit 0
+	return 0
     fi
 
     trap check_map_count EXIT
@@ -307,7 +311,7 @@ set_map_count() {
 	if message 3 "It looks like you've already configured your system to work with Star Citizen\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 	fi
-	exit 0
+	return 0
     fi
     
     once="Change setting until next reboot"
