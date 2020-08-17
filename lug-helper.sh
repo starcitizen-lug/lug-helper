@@ -311,7 +311,7 @@ sanitize() {
 	echo "Restoring keybinds..."
 	mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/." "$mappings_dir/"
 	echo -e "Done.\n"
-	message 1 "\nTo re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles\n"
+	message 1 "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
     fi
 
     message 1 "Your USER directory has been cleaned up!"
