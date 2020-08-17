@@ -1,9 +1,9 @@
 # lug-helper
-_Star Citizen's Linux Users Group Helper Script_
+**Star Citizen's Linux Users Group Helper Script**
 
 https://robertsspaceindustries.com/orgs/LUG
 
-**Greetings, fellow Penguin!**
+*Greetings, fellow Penguin!*
 
 This script is designed to help you optimize your system to run Star Citizen as smoothly as possible. It presents options to check your system for optimal settings and helps you change them as needed to prevent game crashes.
 
