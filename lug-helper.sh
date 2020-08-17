@@ -318,14 +318,14 @@ sanitize() {
 }
 
 # Check if setting vm.max_map_count was successful
-check_map_count() {
+check_mapcount() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
         message 2 "As far as this script can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
     fi
 }
 
 # Check vm.max_map_count for the correct setting and let the user fix it if needed
-set_map_count() {
+set_mapcount() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
     	message 1 "vm.max_map_count is already set to the optimal value.  You're all set!"
@@ -333,10 +333,10 @@ set_map_count() {
     fi
 
     if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then  
-	if message 3 "It looks like you've already configured your system to work with Star Citizen\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
+	if message 3 "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 	fi
-	check_map_count
+	check_mapcount
 	return 0
     fi
     
@@ -356,7 +356,7 @@ set_map_count() {
             case "$choice" in
                 "$once")
         	    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-		    check_map_count
+		    check_mapcount
         	    ;;
                 "$persist")
         	    if [ -d "/etc/sysctl.d" ]; then
@@ -364,7 +364,7 @@ set_map_count() {
         	    else
                         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
         	    fi
-		    check_map_count
+		    check_mapcount
         	    ;;
                 "$manual")
         	    if [ -d "/etc/sysctl.d" ]; then
@@ -374,7 +374,7 @@ set_map_count() {
         	    fi
         	    ;;
                 *)
-		    check_map_count
+		    check_mapcount
 		    return 0
         	    ;;
             esac
@@ -390,7 +390,7 @@ set_map_count() {
                 case "$choice" in
                     "$once")
                 	pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-			check_map_count
+			check_mapcount
                         break
                 	;;
                     "$persist")
@@ -399,7 +399,7 @@ set_map_count() {
                 	else
                             pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
                 	fi
-			check_map_count
+			check_mapcount
                         break
                 	;;
                     "$manual")
@@ -411,7 +411,7 @@ set_map_count() {
                         break
                 	;;
                     "$goback")
-			check_map_count
+			check_mapcount
                         break
                         ;;
                     *)
@@ -424,24 +424,90 @@ set_map_count() {
     fi
 }
 
+# Delete the shaders directory
+rm_shaders() {    
+    shaders_dir="$user_dir/Shaders"
+
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+	# User cancelled and wants to return to the main menu, or there was an error
+	return 0
+    fi
+
+    # Sanity check
+    if [ ! -d "$shaders_dir" ]; then
+	message 2 "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
+	return 0
+    fi
+
+    # Delete the shader directory
+    echo "Deleting shaders..."
+    rm -r "$shaders_dir"
+    echo -e "Done.\n"
+
+    message 1 "Your shaders have been deleted!"
+}
+
+# Delete DXVK and OpenGL caches
+rm_vidcache() {    
+    dxvk_cache="$game_path/StarCitizen-dxvk.cache"
+    opengl_cach="$game_path/"
+
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+	# User cancelled and wants to return to the main menu, or there was an error
+	return 0
+    fi
+
+    # Sanity check
+    if [ ! -f "$dxvk_cache" ] && [ ! -f "$opengl_cache" ]; then
+	message 2 "Unable to find the DXVK or OpenGL cache files. There is nothing to delete!\n\n$dxvk_cache\n$opengl_cache"
+	return 0
+    fi
+
+    # Delete the cache files
+    if [ -f "$dxvk_cache" ]; then
+        echo "Deleting DXVK cache..."
+        rm "$dxvk_cache"
+        echo -e "Done.\n"
+    fi
+    if [ -f "$opengl_cache" ]; then
+        echo "Deleting OpenGL cache..."
+        rm "$opengl_cache"
+        echo -e "Done.\n"
+    fi
+
+    message 1 "Your DXVK/OpenGL cache has been deleted!"
+}
+
 # Display the main menu
 main_menu() {
     # Set the menu options
-    check="Check vm.max_map_count for optimal performance"
+    mapcount="Check vm.max_map_count for optimal performance"
     clean="Delete my USER folder and preserve my keybinds"
+    shaders="Delete my shaders only"
+    vidcache="Delete my DXVK and OpenGL caches"
     quit="Quit"
 
     # Use Zenity if it is available
     if [ "$has_zen" -eq 1 ]; then
-	options_main=("TRUE" "$check" "FALSE" "$clean" "FALSE" "$quit")
+	options_main=("TRUE" "$mapcount" "FALSE" "$clean" "FALSE" "$shaders" "FALSE" "$vidcache" "FALSE" "$quit")
 
 	choice="$(message 5 "${options_main[@]}")"
 	case "$choice" in
-	    "$check")
-		set_map_count
+	    "$mapcount")
+		set_mapcount
 		;;
 	    "$clean")
 		sanitize
+		;;
+	    "$shaders")
+		rm_shaders
+		;;
+	    "$vidcache")
+		rm_vidcache
 		;;
 	    "$quit")
 		exit 0
@@ -455,20 +521,30 @@ main_menu() {
 	clear
 	echo -e "\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper Script!\n\nThis script is designed to help you optimize your system for Star Citizen.\nYou may choose from the following options:\n"
 
-	options_main=("$check" "$clean" "$quit")
+	options_main=("$mapcount" "$clean" "$shaders" "$vidcache" "$quit")
 	PS3="Enter selection number: "
 
 	select choice in "${options_main[@]}"
 	do
 	    case "$choice" in
-		"$check")
+		"$mapcount")
 		    echo -e "\n"
-		    set_map_count
+		    set_mapcount
 		    break
 		    ;;
 		"$clean")
 		    echo -e "\n"
 		    sanitize
+		    break
+		    ;;
+		"$shaders")
+		    echo -e "\n"
+		    rm_shaders
+		    break
+		    ;;
+		"$vidcache")
+		    echo -e "\n"
+		    rm_vidcache
 		    break
 		    ;;
 		"$quit")
