@@ -73,7 +73,7 @@ message() {
 		# main menu radio list
 		# call format: message 5 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
 		# IMPORTANT: Adjust the height value below based on the number of items listed in the menu
-		margs=("--list" "--radiolist" "--height=240" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
+		margs=("--list" "--radiolist" "--height=290" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
 		;;
 	    *)
 		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by string arguments.\n"
@@ -498,7 +498,7 @@ main_menu() {
 
     # Use Zenity if it is available
     if [ "$has_zen" -eq 1 ]; then
-	options_main=("TRUE" "$mapcount" "FALSE" "$clean" "FALSE" "$shaders" "FALSE" "$vidcache" "FALSE" "$changever" "FALSE" "$quit")
+	options_main=("TRUE" "$mapcount" "FALSE" "$clean" "FALSE" "$shaders" "FALSE" "$vidcache" "FALSE" "$changever")
 
 	choice="$(message 5 "${options_main[@]}")"
 	case "$choice" in
@@ -525,9 +525,6 @@ main_menu() {
 		    echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
 		    live_or_ptu="LIVE"
 		fi
-		;;
-	    "$quit")
-		exit 0
 		;;
 	    *)
 		exit 0
