@@ -456,7 +456,7 @@ rm_shaders() {
 # Delete DXVK and OpenGL caches
 rm_vidcache() {    
     dxvk_cache="$game_path/$live_or_ptu/StarCitizen-dxvk.cache"
-    opengl_cach="$game_path/$live_or_ptu"
+    opengl_cach="$game_path/$live_or_ptu/StarCitizen-opengl.cache"
 
     # Get/Set directory paths
     getdirs
@@ -486,45 +486,50 @@ rm_vidcache() {
     message 1 "Your DXVK/OpenGL cache has been deleted!"
 }
 
+# Toggle between targeting the LIVE and PTU game directories for all helper functions
+set_version() {
+    if [ "$live_or_ptu" == "LIVE" ]; then
+	live_or_ptu="PTU"
+	message 1 "The helper will now target your Star Citizen PTU installation."
+    elif [ "$live_or_ptu" == "PTU" ]; then
+	live_or_ptu="LIVE"
+	message 1 "The helper will now target your Star Citizen LIVE installation."
+    else
+	echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
+	live_or_ptu="LIVE"
+    fi
+}
+
 # Display the main menu
 main_menu() {
     # Set the menu options
-    mapcount="Check vm.max_map_count for optimal performance"
-    clean="Delete my USER folder and preserve my keybinds"
-    shaders="Delete my shaders only"
-    vidcache="Delete my DXVK and OpenGL caches"
-    changever="Switch the helper between LIVE and PTU (default is LIVE)"
-    quit="Quit"
+    mapcount_msg="Check vm.max_map_count for optimal performance"
+    sanitize_msg="Delete my USER folder and preserve my keybinds"
+    shaders_msg="Delete my shaders only"
+    vidcache_msg="Delete my DXVK/OpenGL cache"
+    version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
+    quit_msg="Quit"
 
     # Use Zenity if it is available
     if [ "$has_zen" -eq 1 ]; then
-	options_main=("TRUE" "$mapcount" "FALSE" "$clean" "FALSE" "$shaders" "FALSE" "$vidcache" "FALSE" "$changever")
+	options_main=("TRUE" "$mapcount_msg" "FALSE" "$sanitize_msg" "FALSE" "$shaders_msg" "FALSE" "$vidcache_msg" "FALSE" "$version_msg")
 
 	choice="$(message 5 "${options_main[@]}")"
 	case "$choice" in
-	    "$mapcount")
+	    "$mapcount_msg")
 		set_mapcount
 		;;
-	    "$clean")
+	    "$sanitize_msg")
 		sanitize
 		;;
-	    "$shaders")
+	    "$shaders_msg")
 		rm_shaders
 		;;
-	    "$vidcache")
+	    "$vidcache_msg")
 		rm_vidcache
 		;;
-	    "$changever")
-		if [ "$live_or_ptu" == "LIVE" ]; then
-		    live_or_ptu="PTU"
-		    message 1 "The helper will now target your Star Citizen PTU installation."
-		elif [ "$live_or_ptu" == "PTU" ]; then
-		    live_or_ptu="LIVE"
-		    message 1 "The helper will now target your Star Citizen LIVE installation."
-		else
-		    echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
-		    live_or_ptu="LIVE"
-		fi
+	    "$version_msg")
+		set_version
 		;;
 	    *)
 		exit 0
@@ -535,47 +540,38 @@ main_menu() {
 	clear
 	echo -e "\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:\n"
 
-	options_main=("$mapcount" "$clean" "$shaders" "$vidcache" "$changever" "$quit")
+	options_main=("$mapcount_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
 	PS3="Enter selection number: "
 
 	select choice in "${options_main[@]}"
 	do
 	    case "$choice" in
-		"$mapcount")
+		"$mapcount_msg")
 		    echo -e "\n"
 		    set_mapcount
 		    break
 		    ;;
-		"$clean")
+		"$sanitize_msg")
 		    echo -e "\n"
 		    sanitize
 		    break
 		    ;;
-		"$shaders")
+		"$shaders_msg")
 		    echo -e "\n"
 		    rm_shaders
 		    break
 		    ;;
-		"$vidcache")
+		"$vidcache_msg")
 		    echo -e "\n"
 		    rm_vidcache
 		    break
 		    ;;
-		"$changever")
+		"$version_msg")
 		    echo -e "\n"
-		    if [ "$live_or_ptu" == "LIVE" ]; then
-			live_or_ptu="PTU"
-			message 1 "This helper will now target your Star Citizen PTU installation."
-		    elif [ "$live_or_ptu" == "PTU" ]; then
-			live_or_ptu="LIVE"
-			message 1 "This helper will now target your Star Citizen LIVE installation."
-		    else
-			echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
-			live_or_ptu="LIVE"
-		    fi
+		    set_version
 		    break
 		    ;;
-		"$quit")
+		"$quit_msg")
 		    exit 0
 		    ;;
 		*)
