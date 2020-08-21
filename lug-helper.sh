@@ -453,10 +453,9 @@ rm_shaders() {
     message 1 "Your shaders have been deleted!"
 }
 
-# Delete DXVK and OpenGL caches
+# Delete DXVK cache
 rm_vidcache() {    
     dxvk_cache="$game_path/$live_or_ptu/StarCitizen-dxvk.cache"
-    opengl_cach="$game_path/$live_or_ptu/StarCitizen-opengl.cache"
 
     # Get/Set directory paths
     getdirs
@@ -466,24 +465,17 @@ rm_vidcache() {
     fi
 
     # Sanity check
-    if [ ! -f "$dxvk_cache" ] && [ ! -f "$opengl_cache" ]; then
-	message 2 "Unable to find the DXVK or OpenGL cache files. There is nothing to delete!\n\n$dxvk_cache\n$opengl_cache"
+    if [ ! -f "$dxvk_cache" ]; then
+	message 2 "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
 	return 0
     fi
 
-    # Delete the cache files
-    if [ -f "$dxvk_cache" ]; then
-        echo "Deleting DXVK cache..."
-        rm "$dxvk_cache"
-        echo -e "Done.\n"
-    fi
-    if [ -f "$opengl_cache" ]; then
-        echo "Deleting OpenGL cache..."
-        rm "$opengl_cache"
-        echo -e "Done.\n"
-    fi
+    # Delete the cache file
+    echo "Deleting DXVK cache..."
+    rm "$dxvk_cache"
+    echo -e "Done.\n"
 
-    message 1 "Your DXVK/OpenGL cache has been deleted!"
+    message 1 "Your DXVK cache has been deleted!"
 }
 
 # Toggle between targeting the LIVE and PTU game directories for all helper functions
@@ -506,7 +498,7 @@ main_menu() {
     mapcount_msg="Check vm.max_map_count for optimal performance"
     sanitize_msg="Delete my USER folder and preserve my keybinds"
     shaders_msg="Delete my shaders only"
-    vidcache_msg="Delete my DXVK/OpenGL cache"
+    vidcache_msg="Delete my DXVK cache"
     version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
     quit_msg="Quit"
 
