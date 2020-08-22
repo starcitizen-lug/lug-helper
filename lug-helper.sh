@@ -14,13 +14,16 @@
 # and helps you change them as needed to prevent game crashes.
 #
 #
-# It also includes an easy way for you to wipe your USER folder
-# as is recommended after major version updates.
+# It also gives you a fast and easy way to wipe your Star Citizen
+# USER folder as is recommended by CIG after major version updates.
 # It will back up your exported keybinds, delete your USER folder,
-# then restore your keybinds.
+# then restore your keybind file(s).
 #
 # To export your keybinds from within the game, go to
 # Options->Keybindings->Control Profiles->Save Control Settings
+#
+# To import your keybinds from within the game, select them from the list:
+# Options->Keybindings->Control Profiles
 #
 ############################################################################
 
