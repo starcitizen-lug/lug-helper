@@ -144,7 +144,6 @@ getdirs() {
 	message 2 "Config directory not found. The helper is unable to proceed.\n\n$conf_dir"
         return 1
     fi
-
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
         mkdir "$conf_dir/$conf_subdir"
     fi
@@ -152,18 +151,27 @@ getdirs() {
     # Check if the config files already exist
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
         wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+	if [ ! -d "$wine_prefix" ]; then
+	    echo -e "\nThe saved wine prefix does not exist, ignoring.\n"
+	    wine_prefix=""
+	fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
-	if [ "$(basename "$game_path")" != "Star Citizen" ]; then
+	if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "Star Citizen" ]; then
 	    echo -e "\nUnexpected game path found in config file, ignoring.\n"
 	    game_path=""
 	fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$backup_conf" ]; then
         backup_path="$(cat "$conf_dir/$conf_subdir/$backup_conf")"
+	if [ ! -d "$backup_path" ]; then
+	    echo -e "\nThe saved backup path does not exist, ignoring.\n"
+	    backup_path=""
+	fi
     fi
-    
+
+    # If we don't have the directory paths we need yet, ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
 	message 1 "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
 	if [ "$has_zen" -eq 1 ]; then
@@ -282,7 +290,7 @@ sanitize() {
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-	message 2 "Directory not found. The helper is unable to proceed.\n\n$user_dir"
+	message 2 "USER directory not found. There is nothing to delete!\n\n$user_dir"
 	return 0
     fi
 
@@ -336,6 +344,7 @@ set_mapcount() {
 	return 0
     fi
 
+    # Otherwise, check to see if it was supposed to be set by sysctl
     if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then  
 	if message 3 "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
@@ -430,14 +439,14 @@ set_mapcount() {
 
 # Delete the shaders directory
 rm_shaders() {    
-    shaders_dir="$user_dir/Shaders"
-
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
 	# User cancelled and wants to return to the main menu, or there was an error
 	return 0
     fi
+
+    shaders_dir="$user_dir/Shaders"
 
     # Sanity check
     if [ ! -d "$shaders_dir" ]; then
@@ -455,15 +464,15 @@ rm_shaders() {
 
 # Delete DXVK cache
 rm_vidcache() {    
-    dxvk_cache="$game_path/$live_or_ptu/StarCitizen-dxvk.cache"
-
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
 	# User cancelled and wants to return to the main menu, or there was an error
 	return 0
     fi
-
+    
+    dxvk_cache="$game_path/$live_or_ptu/StarCitizen-dxvk.cache"
+    
     # Sanity check
     if [ ! -f "$dxvk_cache" ]; then
 	message 2 "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
