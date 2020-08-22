@@ -364,79 +364,78 @@ set_mapcount() {
     newsysctl_msg="To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
     oldsysctl_msg="To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
 
-    if message 3 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nWould you like to change the setting now?"; then
-        if [ "$has_zen" -eq 1 ]; then
-            # zenity menu
-            options_mapcount=("--height=165" "TRUE" "$once" "FALSE" "$persist" "FALSE" "$manual")
-            choice="$(message 4 "${options_mapcount[@]}")"
+    message 1 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
+    if [ "$has_zen" -eq 1 ]; then
+        # zenity menu
+        options_mapcount=("--height=165" "TRUE" "$once" "FALSE" "$persist" "FALSE" "$manual")
+        choice="$(message 4 "${options_mapcount[@]}")"
+        case "$choice" in
+            "$once")
+        	pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+		check_mapcount
+        	;;
+            "$persist")
+        	if [ -d "/etc/sysctl.d" ]; then
+                    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
+        	else
+                    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
+        	fi
+		check_mapcount
+        	;;
+            "$manual")
+        	if [ -d "/etc/sysctl.d" ]; then
+                    message 1 "$newsysctl_msg"
+        	else
+                    message 1 "$oldsysctl_msg"
+        	fi
+        	;;
+            *)
+		check_mapcount
+		return 0
+        	;;
+        esac
+    else
+        # text menu
+	clear
+	echo -e "\nThis helper can change vm.max_map_count for you.\nChoose from the following options:\n"
+        options_mapcount=("$once" "$persist" "$manual" "$goback")
+        PS3="Enter selection number: "
+
+        select choice in "${options_mapcount[@]}"
+        do
             case "$choice" in
                 "$once")
-        	    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+                    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 		    check_mapcount
-        	    ;;
+                    break
+                    ;;
                 "$persist")
-        	    if [ -d "/etc/sysctl.d" ]; then
-                	pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
-        	    else
+                    if [ -d "/etc/sysctl.d" ]; then
+                        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
+                    else
                         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-        	    fi
+                    fi
 		    check_mapcount
-        	    ;;
+                    break
+                    ;;
                 "$manual")
-        	    if [ -d "/etc/sysctl.d" ]; then
-                	message 1 "$newsysctl_msg"
-        	    else
-                	message 1 "$oldsysctl_msg"
-        	    fi
-        	    ;;
-                *)
+                    if [ -d "/etc/sysctl.d" ]; then
+                        message 1 "$newsysctl_msg"
+                    else
+                        message 1 "$oldsysctl_msg"
+                    fi
+                    break
+                    ;;
+                "$goback")
 		    check_mapcount
-		    return 0
-        	    ;;
+                    break
+                    ;;
+                *)
+                    echo -e "\nInvalid selection"
+                    continue
+                    ;;
             esac
-        else
-            # text menu
-	    clear
-	    echo -e "\nThis helper can change vm.max_map_count for you.\nChoose from the following options:\n"
-            options_mapcount=("$once" "$persist" "$manual" "$goback")
-            PS3="Enter selection number: "
-
-            select choice in "${options_mapcount[@]}"
-            do
-                case "$choice" in
-                    "$once")
-                	pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-			check_mapcount
-                        break
-                	;;
-                    "$persist")
-                	if [ -d "/etc/sysctl.d" ]; then
-                            pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
-                	else
-                            pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-                	fi
-			check_mapcount
-                        break
-                	;;
-                    "$manual")
-                	if [ -d "/etc/sysctl.d" ]; then
-                            message 1 "$newsysctl_msg"
-                	else
-                            message 1 "$oldsysctl_msg"
-                	fi
-                        break
-                	;;
-                    "$goback")
-			check_mapcount
-                        break
-                        ;;
-                    *)
-                	echo -e "\nInvalid selection"
-                        continue
-                	;;
-            	esac
-            done
-        fi
+        done
     fi
 }
 
