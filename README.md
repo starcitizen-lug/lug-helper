@@ -7,7 +7,7 @@ https://robertsspaceindustries.com/orgs/LUG
 
 This script is designed to help you optimize your system to run Star Citizen as smoothly as possible. It presents options to check your system for optimal settings and helps you change them as needed to prevent game crashes.
 
-It also gives you a fast and easy way to wipe your `USER` folder as is recommended by CIG after major version updates. It will back up your exported keybinds, delete your `USER` folder, then restore your keybind file(s).
+It also gives you a fast and easy way to wipe your Star Citizen `USER` folder as is recommended by CIG after major version updates. It will back up your exported keybinds, delete your `USER` folder, then restore your keybind file(s).
 
 ## Options:
 
