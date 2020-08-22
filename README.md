@@ -17,8 +17,8 @@ It also gives you a fast and easy way to wipe your Star Citizen `USER` folder as
 
 `Delete my USER folder and preserve my keybinds`
 - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
-- To export your keybinds from within the game, go to: `Options->Keybindings->Control Profiles->Save Control Settings`
-- To re-import your keybinds from within the game, select them from the list: `Options->Keybindings->Control Profiles`
+- To export your keybinds from within the game, go to: *Options->Keybindings->Control Profiles->Save Control Settings*
+- To re-import your keybinds from within the game, select them from the list: *Options->Keybindings->Control Profiles*
 
 `Delete my shaders only`
 - Sometimes all you need to do between major version updates is delete your shaders directory.
