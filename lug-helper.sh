@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 ############################################################################
 # Star Citizen's Linux Users Group Helper Script
