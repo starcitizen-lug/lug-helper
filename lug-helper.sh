@@ -309,27 +309,29 @@ sanitize() {
 	exported=1
     fi
 
-    # Back up keybinds
-    if [ "$exported" -eq 1 ]; then
-	echo "Backing up all saved keybinds..."
-	cp -r "$mappings_dir/." "$backup_path/keybinds/"
+    if message 3 "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
+	# Back up keybinds
+	if [ "$exported" -eq 1 ]; then
+	    echo "Backing up all saved keybinds..."
+	    cp -r "$mappings_dir/." "$backup_path/keybinds/"
+	    echo -e "Done.\n"
+	fi
+	
+	# Wipe the user directory
+	echo "Wiping USER directory..."
+	rm -r "$user_dir"
 	echo -e "Done.\n"
-    fi
-    
-    # Wipe the user directory
-    echo "Wiping USER directory..."
-    mv "$user_dir" "$backup_path/userbackup_$(date +"%Y%m%d-%H%M%S")"
-    echo -e "Done.\n"
 
-    # Restore custom keybinds
-    if [ "$exported" -eq 1 ]; then
-	echo "Restoring keybinds..."
-	mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/." "$mappings_dir/"
-	echo -e "Done.\n"
-	message 1 "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
-    fi
+	# Restore custom keybinds
+	if [ "$exported" -eq 1 ]; then
+	    echo "Restoring keybinds..."
+	    mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/." "$mappings_dir/"
+	    echo -e "Done.\n"
+	    message 1 "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
+	fi
 
-    message 1 "Your USER directory has been cleaned up!"
+	message 1 "Your Star Citizen USER directory has been cleaned up!"
+    fi
 }
 
 # Check if setting vm.max_map_count was successful
@@ -467,11 +469,12 @@ rm_shaders() {
     fi
 
     # Delete the shader directory
-    echo "Deleting shaders..."
-    rm -r "$shaders_dir"
-    echo -e "Done.\n"
-
-    message 1 "Your shaders have been deleted!"
+    if message 3 "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
+	echo "Deleting shaders..."
+	rm -r "$shaders_dir"
+	echo -e "Done.\n"
+	message 1 "Your shaders have been deleted!"
+    fi
 }
 
 # Delete DXVK cache
@@ -492,11 +495,12 @@ rm_vidcache() {
     fi
 
     # Delete the cache file
-    echo "Deleting DXVK cache..."
-    rm "$dxvk_cache"
-    echo -e "Done.\n"
-
-    message 1 "Your DXVK cache has been deleted!"
+    if message 3 "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
+	echo "Deleting DXVK cache..."
+	rm "$dxvk_cache"
+	echo -e "Done.\n"
+	message 1 "Your DXVK cache has been deleted!"
+    fi
 }
 
 # Toggle between targeting the LIVE and PTU game directories for all helper functions
@@ -518,7 +522,7 @@ main_menu() {
     # Set the menu options
     mapcount_msg="Check vm.max_map_count for optimal performance"
     filelimit_msg="Check my open file descriptors limit"
-    sanitize_msg="Delete my USER folder and preserve my keybinds"
+    sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
     shaders_msg="Delete my shaders only"
     vidcache_msg="Delete my DXVK cache"
     version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
