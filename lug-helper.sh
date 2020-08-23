@@ -447,7 +447,7 @@ check_filelimit() {
     if [ "$filelimit" -ge 524288 ]; then
 	message 1 "Your open files limit is already set to the optimal value.\nYou're all set!"
     else
-	message 2 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\nThe current value on your system appears to be $filelimit.\n\nTo increase this value, add the following line to\n/etc/security/limits.conf\n\n*  hard  nofile  524288"
+	message 2 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\nThe current value on your system appears to be $filelimit.\n\nA future version of this helper will help you increase this value."
     fi
 }
 
