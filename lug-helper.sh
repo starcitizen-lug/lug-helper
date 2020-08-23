@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 ############################################################################
 # Star Citizen's Linux Users Group Helper Script
@@ -76,7 +76,7 @@ message() {
 		# main menu radio list
 		# call format: message 5 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
 		# IMPORTANT: Adjust the height value below based on the number of items listed in the menu
-		margs=("--list" "--radiolist" "--height=290" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
+		margs=("--list" "--radiolist" "--height=320" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
 		;;
 	    *)
 		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by string arguments.\n"
@@ -343,7 +343,7 @@ check_mapcount() {
 set_mapcount() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
-    	message 1 "vm.max_map_count is already set to the optimal value.  You're all set!"
+    	message 1 "vm.max_map_count is already set to the optimal value.\nYou're all set!"
 	return 0
     fi
 
@@ -439,6 +439,16 @@ set_mapcount() {
     fi
 }
 
+# Check the hard open file descriptors limit
+check_filelimit() {
+    filelimit="$(ulimit -Hn)"
+    if [ "$filelimit" -ge 524288 ]; then
+	message 1 "Your open files limit is already set to the optimal value.\nYou're all set!"
+    else
+	message 2 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\nThe current value on your system appears to be $filelimit.\n\nTo increase this value, add the following line to\n/etc/security/limits.conf\n\n*  hard  nofile  524288"
+    fi
+}
+
 # Delete the shaders directory
 rm_shaders() {    
     # Get/Set directory paths
@@ -507,6 +517,7 @@ set_version() {
 main_menu() {
     # Set the menu options
     mapcount_msg="Check vm.max_map_count for optimal performance"
+    filelimit_msg="Check my open file descriptors limit"
     sanitize_msg="Delete my USER folder and preserve my keybinds"
     shaders_msg="Delete my shaders only"
     vidcache_msg="Delete my DXVK cache"
@@ -515,12 +526,15 @@ main_menu() {
 
     # Use Zenity if it is available
     if [ "$has_zen" -eq 1 ]; then
-	options_main=("TRUE" "$mapcount_msg" "FALSE" "$sanitize_msg" "FALSE" "$shaders_msg" "FALSE" "$vidcache_msg" "FALSE" "$version_msg")
+	options_main=("TRUE" "$mapcount_msg" "FALSE" "$filelimit_msg" "FALSE" "$sanitize_msg" "FALSE" "$shaders_msg" "FALSE" "$vidcache_msg" "FALSE" "$version_msg")
 
 	choice="$(message 5 "${options_main[@]}")"
 	case "$choice" in
 	    "$mapcount_msg")
 		set_mapcount
+		;;
+	    "$filelimit_msg")
+		check_filelimit
 		;;
 	    "$sanitize_msg")
 		sanitize
@@ -543,7 +557,7 @@ main_menu() {
 	clear
 	echo -e "\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:\n"
 
-	options_main=("$mapcount_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
+	options_main=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
 	PS3="Enter selection number: "
 
 	select choice in "${options_main[@]}"
@@ -552,6 +566,11 @@ main_menu() {
 		"$mapcount_msg")
 		    echo -e "\n"
 		    set_mapcount
+		    break
+		    ;;
+		"$filelimit_msg")
+		    echo -e "\n"
+		    check_filelimit
 		    break
 		    ;;
 		"$sanitize_msg")
