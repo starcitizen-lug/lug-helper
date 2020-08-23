@@ -18,7 +18,7 @@ It also gives you a fast and easy way to wipe your Star Citizen *USER* folder as
 `Check my open file descriptors limit`
 - We recommend setting this to at least 524288.
 
-`Delete my USER folder and preserve my keybinds`
+`Delete my Star Citizen USER folder and preserve my keybinds`
 - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
 - To export your keybinds from within the game, go to:
   - *Options->Keybindings->Control Profiles->Save Control Settings*
