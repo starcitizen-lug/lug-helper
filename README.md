@@ -16,7 +16,9 @@ It also gives you a fast and easy way to wipe your Star Citizen *USER* folder as
 - The helper will offer to set it for you or show you the commands to do it yourself.
 
 `Check my open file descriptors limit`
-- We recommend setting this to at least 524288.
+- We recommend setting the hard open files limit to at least 524288.
+- The helper will offer to set it for you and try to auto-detect the correct method to do so.
+- It is able to update either */etc/systemd/system.conf* or */etc/security/limits.conf*
 
 `Delete my Star Citizen USER folder and preserve my keybinds`
 - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
