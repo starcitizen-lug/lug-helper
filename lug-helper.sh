@@ -441,13 +441,42 @@ set_mapcount() {
     fi
 }
 
-# Check the hard open file descriptors limit
+# Check if setting the open file descriptors limit was successful
 check_filelimit() {
+    if [ "$(ulimit -Hn)" -lt 524288 ]; then
+        message 2 "As far as this helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
+    fi
+}
+
+# Check the open file descriptors limit for the correct setting and let the user fix it if needed
+set_filelimit() {
     filelimit="$(ulimit -Hn)"
+
+    # If the file limit is already set, no need to do anything
     if [ "$filelimit" -ge 524288 ]; then
 	message 1 "Your open files limit is already set to the optimal value.\nYou're all set!"
-    else
-	message 2 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nTo increase this value, edit the file\n/etc/systemd/system.conf\n\nUncomment the following line, adjust its value, and reboot:\nDefaultLimitNOFILE=524288"
+        return 0
+    fi
+
+    if message 3 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
+        if [ -f "/etc/systed/system.conf" ]; then
+            # Using systemd
+            echo -e "Updating /etc/systemd/system.conf..."
+            # Append to the file
+            pkexec sh -c 'echo "DefaultLimitNOFILE=524288 >> /etc/systemd/system.conf && systemctl daemon-reexec'
+            echo -e "Done.\n"
+            check_filelimit
+        elif [ -f "/etc/security/limits.conf" ]; then
+            # Using limits.conf
+            echo -e "Updating /etc/security/limits.conf..."
+            # Insert before the last line in the file
+            pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
+            echo -e "Done.\n"
+            check_filelimit
+        else
+            # Don't know what to use
+            message 2 "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
+        fi
     fi
 }
 
@@ -538,7 +567,7 @@ main_menu() {
 		set_mapcount
 		;;
 	    "$filelimit_msg")
-		check_filelimit
+		set_filelimit
 		;;
 	    "$sanitize_msg")
 		sanitize
@@ -574,7 +603,7 @@ main_menu() {
 		    ;;
 		"$filelimit_msg")
 		    echo -e "\n"
-		    check_filelimit
+		    set_filelimit
 		    break
 		    ;;
 		"$sanitize_msg")
