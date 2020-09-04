@@ -458,6 +458,7 @@ set_filelimit() {
         return 0
     fi
 
+    # Adjust the limit
     if message 3 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
         if [ -f "/etc/systed/system.conf" ]; then
             # Using systemd
@@ -465,19 +466,21 @@ set_filelimit() {
             # Append to the file
             pkexec sh -c 'echo "DefaultLimitNOFILE=524288 >> /etc/systemd/system.conf && systemctl daemon-reexec'
             echo -e "Done.\n"
-            check_filelimit
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
             echo -e "Updating /etc/security/limits.conf..."
             # Insert before the last line in the file
             pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
             echo -e "Done.\n"
-            check_filelimit
         else
-            # Don't know what to use
+            # Don't know what method to use
             message 2 "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
+	    return 0
         fi
     fi
+
+    # Verify that setting the limit was successful
+    check_filelimit
 }
 
 # Delete the shaders directory
