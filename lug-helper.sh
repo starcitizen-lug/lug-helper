@@ -282,7 +282,7 @@ getdirs() {
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 sanitize() {    
     # Prompt user to back up the current keybinds in the game
-    message 1 "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings"
+    message 1 "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
 
     # Get/Set directory paths
     getdirs
