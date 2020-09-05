@@ -464,7 +464,7 @@ set_filelimit() {
             # Using systemd
             echo -e "Updating /etc/systemd/system.conf..."
             # Append to the file
-            pkexec sh -c 'echo "DefaultLimitNOFILE=524288 >> /etc/systemd/system.conf && systemctl daemon-reexec'
+            pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
             echo -e "Done.\n"
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
