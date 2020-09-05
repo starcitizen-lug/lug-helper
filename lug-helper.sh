@@ -460,7 +460,7 @@ set_filelimit() {
 
     # Adjust the limit
     if message 3 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
-        if [ -f "/etc/systed/system.conf" ]; then
+        if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
             echo -e "Updating /etc/systemd/system.conf..."
             # Append to the file
