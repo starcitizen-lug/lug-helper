@@ -43,11 +43,12 @@ conf_subdir="starcitizen-lug"
 ############################################################################
 
 
-# Display a message to the user.  Expects a numerical argument to indicate the message type,
-# followed by a string of arguments that will be passed to zenity or echoed to the user.
+# Display a message to the user.
+# Expects a numerical argument to indicate the message type, followed by
+# a string of arguments that will be passed to zenity or echoed to the user.
 #
 # To call this function, use the following format: message [number] [string]
-# See the message types below for specific instructions on formatting the string.
+# See the message types below for instructions on formatting the string.
 message() {
     if [ "$has_zen" -eq 1 ]; then
         case "$1" in
@@ -67,16 +68,12 @@ message() {
 		margs=("--question" "--text=")
 		;;
             4)
-		# radio button list
-		# call format: message 4 "--height=165" "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
-		# IMPORTANT: When calling, specify an appropriate height for the dialog based on the number of items in your list
-		margs=("--list" "--radiolist" "--text=Choose from the following options:" "--hide-header" "--column=" "--column=Option")
-		;;
-            5)
-		# main menu radio list
-		# call format: message 5 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
-		# IMPORTANT: Adjust the height value below based on the number of items listed in the menu
-		margs=("--list" "--radiolist" "--height=320" "--text=<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:" "--hide-header" "--column=" "--column=Option")
+		# radio button menu
+		# call format: message 4 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
+		# IMPORTANT: Set the variables "menu_height" and "menu_zenity_text" with appropriate values
+		# for the height of the dialog based on the number of items in your list and
+		# the text to be displayed on the menu
+		margs=("--list" "--radiolist" "--height=$menu_height" "--text=$menu_zenity_text" "--hide-header" "--column=" "--column=Option")
 		;;
 	    *)
 		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by string arguments.\n"
@@ -85,7 +82,7 @@ message() {
         esac
 
         # Display the message
-	if [ "$1" -eq 4 ] || [ "$1" -eq 5 ]; then
+	if [ "$1" -eq 4 ]; then
 	    # requires a space between the assembled arguments
 	    shift 1   # drop the first numerical argument and shift the remaining up one
 	    zenity "${margs[@]}" "$@" --width="400" --title="Star Citizen LUG Helper"
@@ -95,8 +92,8 @@ message() {
 	    zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper"
 	fi
     else
-        # Text based menu.  Does not work with message types 4 and 5 (zenity radio lists)
-        # those need to be handled specially in the code
+        # Text based menu.  Does not work with type 4 (zenity radio lists)
+        # that type is handled specially in the menu() function
         case "$1" in
 	    1)
 		# info message
@@ -133,10 +130,116 @@ message() {
 		done
 		;;
 	    *)
-		echo -e "\nInvalid message type.\n\nText menus are not compatible with message types 4 and 5 (zenity radio lists)\nand require special handling.\n"
+		echo -e "\nInvalid message type.\n\nThe message() function is incompatible with message type 4 (zenity radio lists).\nIt requires special handling (see the menu() function).\n"
 		read -n 1 -s -p "Press any key..."
 		;;
         esac
+    fi
+}
+
+# Display a menu to the user.
+# Uses Zenity for a gui menu with a fallback to plain old text.
+#
+# How to call this function:
+#
+# Requires two arrays to be set: "menu_options" and "menu_actions"
+# two string variables: "menu_zenity_text" and "menu_terminal_text"
+# and one integer variable: "menu_height".
+#
+# The array "menu_options" is expected to contain the strings of each option.
+# The array "menu_actions" is expected to contain function names to be called.
+# The strings "menu_zenity_text" and "menu_terminal_text" are expected to
+# contain menu text formatted for zenity and the terminal, respectively.
+# The integer "menu_height" specifies the height of the zenity menu.
+# 
+# The final element in each array is expected to be a quit option.
+#
+# IMPORTANT: The indices of the elements in "menu_actions"
+# *MUST* correspond to the indeces in "menu_options".
+# In other words, it is expected that menu_actions[1] is the correct action
+# to be executed when menu_options[1] is selected, and so on for each element.
+menu() {
+    # Sanity checks
+    if [ "${#menu_options[@]}" -eq 0 ]; then
+	echo -e "\nScript error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+	exit 0
+    elif [ "${#menu_actions[@]}" -eq 0 ]; then
+	echo -e "\nScript error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+	exit 0
+    elif [ -z "$menu_zenity_text" ]; then
+	echo -e "\nScript error: The string 'menu_zenity_text' was not set\nbefore calling the menu function. Aborting."
+	exit 0
+    elif [ -z "$menu_terminal_text" ]; then
+	echo -e "\nScript error: The string 'menu_terminal_text' was not set\nbefore calling the menu function. Aborting."
+	exit 0
+    elif [ -z "$menu_height" ]; then
+	echo -e "\nScript error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+	exit 0
+    fi
+    
+    # Use Zenity if it is available
+    if [ "$has_zen" -eq 1 ]; then
+	# Format the options array for Zenity by adding
+	# TRUE or FALSE to indicate default selections
+	for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
+	    if [ "$i" -eq 0 ]; then
+		# Select the first radio button by default
+		zen_options=("TRUE")
+		zen_options+=("${menu_options[i]}")
+	    else
+		zen_options+=("FALSE")
+		zen_options+=("${menu_options[i]}")
+	    fi
+	done
+
+	# Display the zenity menu
+	choice="$(message 4 "${zen_options[@]}")"
+
+	# Loop through the options array to match the chosen option
+	matched="false"
+	for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+	    if [ "$choice" == "${menu_options[i]}" ]; then
+		# Execute the corresponding action
+		"${menu_actions[i]}"
+		matched="true"
+		break
+	    fi
+	done
+
+	# If no match was found, the user clicked cancel
+	if [ "$matched" == "false" ]; then
+	    # Execute the last option in the actions array
+	    "${menu_actions[${#menu_actions[@]}-1]}"
+	fi
+    else
+	# Use a text menu if Zenity is not available
+	clear
+	echo -e "$menu_terminal_text"
+
+	PS3="Enter selection number: "
+	select choice in "${menu_options[@]}"
+	do
+	    # Loop through the options array to match the chosen option
+	    matched="false"
+	    for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+		if [ "$choice" == "${menu_options[i]}" ]; then
+		    # Execute the corresponding action
+		    echo -e "\n"
+		    "${menu_actions[i]}"
+		    matched="true"
+		    break
+		fi
+	    done
+
+	    # If no match was found, the user entered an invalid option
+	    if [ "$matched" == "false" ]; then
+		echo -e "\nInvalid selection"
+		continue
+	    else
+		# Match was found and actioned, so exit the menu
+		break
+	    fi
+	done
     fi
 }
 
@@ -341,7 +444,34 @@ check_mapcount() {
     fi
 }
 
-# Check vm.max_map_count for the correct setting and let the user fix it if needed
+# Sets vm.max_map_count for the current session only
+mapcount_once() {
+    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+    check_mapcount
+}
+
+# Sets vm.max_map_count to persist between reboots
+mapcount_persist() {
+    if [ -d "/etc/sysctl.d" ]; then
+        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
+    else
+        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
+    fi
+    check_mapcount
+}
+
+# Displays instructions for the user to manually set vm.max_map_count
+mapcount_manual() {
+    if [ -d "/etc/sysctl.d" ]; then
+        # Newer versions of sysctl
+        message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+    else
+        # Older versions of sysctl
+        message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
+    fi
+}
+
+# Check vm.max_map_count for the correct setting and let the user fix it
 set_mapcount() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
@@ -358,87 +488,27 @@ set_mapcount() {
 	return 0
     fi
     
+    # Configure the menu
+    menu_zenity_text="<b>This helper can change vm.max_map_count for you.</b>\n\nChoose from the following options:"
+    menu_terminal_text="\nThis helper can change vm.max_map_count for you.\n\nChoose from the following options:\n"
+    menu_height="200"
+    
+    # Configure the menu options
     once="Change setting until next reboot"
     persist="Change setting and persist after reboot"
     manual="Show me the commands; I'll handle it myself"
     goback="Return to the main menu"
     
-    newsysctl_msg="To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
-    oldsysctl_msg="To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
-
+    # Set the menu options
+    menu_options=("$once" "$persist" "$manual" "$goback")
+    # Set the corresponding functions to be called for each of the options
+    menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "check_mapcount")
+    
+    # Display an informational message to the user
     message 1 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
-    if [ "$has_zen" -eq 1 ]; then
-        # zenity menu
-        options_mapcount=("--height=165" "TRUE" "$once" "FALSE" "$persist" "FALSE" "$manual")
-        choice="$(message 4 "${options_mapcount[@]}")"
-        case "$choice" in
-            "$once")
-        	pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-		check_mapcount
-        	;;
-            "$persist")
-        	if [ -d "/etc/sysctl.d" ]; then
-                    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
-        	else
-                    pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-        	fi
-		check_mapcount
-        	;;
-            "$manual")
-        	if [ -d "/etc/sysctl.d" ]; then
-                    message 1 "$newsysctl_msg"
-        	else
-                    message 1 "$oldsysctl_msg"
-        	fi
-        	;;
-            *)
-		check_mapcount
-		return 0
-        	;;
-        esac
-    else
-        # text menu
-	clear
-	echo -e "\nThis helper can change vm.max_map_count for you.\nChoose from the following options:\n"
-        options_mapcount=("$once" "$persist" "$manual" "$goback")
-        PS3="Enter selection number: "
-
-        select choice in "${options_mapcount[@]}"
-        do
-            case "$choice" in
-                "$once")
-                    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-		    check_mapcount
-                    break
-                    ;;
-                "$persist")
-                    if [ -d "/etc/sysctl.d" ]; then
-                        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl -p'
-                    else
-                        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-                    fi
-		    check_mapcount
-                    break
-                    ;;
-                "$manual")
-                    if [ -d "/etc/sysctl.d" ]; then
-                        message 1 "$newsysctl_msg"
-                    else
-                        message 1 "$oldsysctl_msg"
-                    fi
-                    break
-                    ;;
-                "$goback")
-		    check_mapcount
-                    break
-                    ;;
-                *)
-                    echo -e "\nInvalid selection"
-                    continue
-                    ;;
-            esac
-        done
-    fi
+    
+    # Call the menu function
+    menu
 }
 
 # Check if setting the open file descriptors limit was successful
@@ -448,7 +518,7 @@ check_filelimit() {
     fi
 }
 
-# Check the open file descriptors limit for the correct setting and let the user fix it if needed
+# Check the open file descriptors limit and let the user fix it if needed
 set_filelimit() {
     filelimit="$(ulimit -Hn)"
 
@@ -488,7 +558,7 @@ rm_shaders() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
-	# User cancelled and wants to return to the main menu, or there was an error
+	# User cancelled and wants to return to the main menu, or error
 	return 0
     fi
 
@@ -549,96 +619,8 @@ set_version() {
     fi
 }
 
-# Display the main menu
-main_menu() {
-    # Set the menu options
-    mapcount_msg="Check vm.max_map_count for optimal performance"
-    filelimit_msg="Check my open file descriptors limit"
-    sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
-    shaders_msg="Delete my shaders only"
-    vidcache_msg="Delete my DXVK cache"
-    version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
-    quit_msg="Quit"
-
-    # Use Zenity if it is available
-    if [ "$has_zen" -eq 1 ]; then
-	options_main=("TRUE" "$mapcount_msg" "FALSE" "$filelimit_msg" "FALSE" "$sanitize_msg" "FALSE" "$shaders_msg" "FALSE" "$vidcache_msg" "FALSE" "$version_msg")
-
-	choice="$(message 5 "${options_main[@]}")"
-	case "$choice" in
-	    "$mapcount_msg")
-		set_mapcount
-		;;
-	    "$filelimit_msg")
-		set_filelimit
-		;;
-	    "$sanitize_msg")
-		sanitize
-		;;
-	    "$shaders_msg")
-		rm_shaders
-		;;
-	    "$vidcache_msg")
-		rm_vidcache
-		;;
-	    "$version_msg")
-		set_version
-		;;
-	    *)
-		exit 0
-		;;
-	esac
-    else
-	# Use a text menu if Zenity is not available
-	clear
-	echo -e "\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:\n"
-
-	options_main=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
-	PS3="Enter selection number: "
-
-	select choice in "${options_main[@]}"
-	do
-	    case "$choice" in
-		"$mapcount_msg")
-		    echo -e "\n"
-		    set_mapcount
-		    break
-		    ;;
-		"$filelimit_msg")
-		    echo -e "\n"
-		    set_filelimit
-		    break
-		    ;;
-		"$sanitize_msg")
-		    echo -e "\n"
-		    sanitize
-		    break
-		    ;;
-		"$shaders_msg")
-		    echo -e "\n"
-		    rm_shaders
-		    break
-		    ;;
-		"$vidcache_msg")
-		    echo -e "\n"
-		    rm_vidcache
-		    break
-		    ;;
-		"$version_msg")
-		    echo -e "\n"
-		    set_version
-		    break
-		    ;;
-		"$quit_msg")
-		    exit 0
-		    ;;
-		*)
-		    echo -e "\nInvalid selection"
-		    continue
-		    ;;
-	    esac
-	done
-    fi
+quit() {
+    exit 0
 }
 
 ############################################################################
@@ -656,5 +638,25 @@ live_or_ptu="LIVE"
 
 # Loop the main menu until the user selects quit
 while true; do
-    main_menu
+    # Configure the menu
+    menu_zenity_text="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
+    menu_terminal_text="\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:\n"
+    menu_height="315"
+
+    # Configure the menu options
+    mapcount_msg="Check vm.max_map_count for optimal performance"
+    filelimit_msg="Check my open file descriptors limit"
+    sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+    shaders_msg="Delete my shaders only"
+    vidcache_msg="Delete my DXVK cache"
+    version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
+    quit_msg="Quit"
+    
+    # Set the menu options
+    menu_options=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
+    # Set the corresponding functions to be called for each of the options
+    menu_actions=("set_mapcount" "set_filelimit" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    
+    # Call the menu function
+    menu
 done
