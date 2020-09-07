@@ -438,7 +438,7 @@ sanitize() {
 }
 
 # Check if setting vm.max_map_count was successful
-check_mapcount() {
+mapcount_check() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
         message 2 "As far as this helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
     fi
@@ -447,7 +447,7 @@ check_mapcount() {
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
     pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-    check_mapcount
+    mapcount_check
 }
 
 # Sets vm.max_map_count to persist between reboots
@@ -457,7 +457,7 @@ mapcount_persist() {
     else
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
     fi
-    check_mapcount
+    mapcount_check
 }
 
 # Displays instructions for the user to manually set vm.max_map_count
@@ -472,7 +472,7 @@ mapcount_manual() {
 }
 
 # Check vm.max_map_count for the correct setting and let the user fix it
-set_mapcount() {
+mapcount_set() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
     	message 1 "vm.max_map_count is already set to the optimal value.\nYou're all set!"
@@ -484,7 +484,7 @@ set_mapcount() {
 	if message 3 "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 	fi
-	check_mapcount
+	mapcount_check
 	return 0
     fi
     
@@ -502,7 +502,7 @@ set_mapcount() {
     # Set the menu options
     menu_options=("$once" "$persist" "$manual" "$goback")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "check_mapcount")
+    menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "mapcount_check")
     
     # Display an informational message to the user
     message 1 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
@@ -655,7 +655,7 @@ while true; do
     # Set the menu options
     menu_options=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("set_mapcount" "set_filelimit" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    menu_actions=("mapcount_set" "set_filelimit" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
     
     # Call the menu function
     menu
