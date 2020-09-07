@@ -51,6 +51,7 @@ conf_subdir="starcitizen-lug"
 # See the message types below for instructions on formatting the string.
 message() {
     if [ "$has_zen" -eq 1 ]; then
+        # Use zenity messages if available
         case "$1" in
 	    1)
 		# info message
@@ -67,14 +68,6 @@ message() {
 		# call format: message 3 "question to ask?"
 		margs=("--question" "--text=")
 		;;
-            4)
-		# radio button menu
-		# call format: message 4 "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
-		# IMPORTANT: Set the variables "menu_height" and "menu_zenity_text" with appropriate values
-		# for the height of the dialog based on the number of items in your list and
-		# the text to be displayed on the menu
-		margs=("--list" "--radiolist" "--height=$menu_height" "--text=$menu_zenity_text" "--hide-header" "--column=" "--column=Option")
-		;;
 	    *)
 		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by string arguments.\n"
 		read -n 1 -s -p "Press any key..."
@@ -82,18 +75,10 @@ message() {
         esac
 
         # Display the message
-	if [ "$1" -eq 4 ]; then
-	    # requires a space between the assembled arguments
-	    shift 1   # drop the first numerical argument and shift the remaining up one
-	    zenity "${margs[@]}" "$@" --width="400" --title="Star Citizen LUG Helper"
-	else
-	    # no space between the assmebled arguments
-	    shift 1   # drop the first numerical argument and shift the remaining up one
-	    zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper"
-	fi
+        shift 1   # drop the first numerical argument and shift the remaining up one
+        zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper"
     else
-        # Text based menu.  Does not work with type 4 (zenity radio lists)
-        # that type is handled specially in the menu() function
+        # Fall back to text-based messages when zenity is not available
         case "$1" in
 	    1)
 		# info message
@@ -130,7 +115,7 @@ message() {
 		done
 		;;
 	    *)
-		echo -e "\nInvalid message type.\n\nThe message() function is incompatible with message type 4 (zenity radio lists).\nIt requires special handling (see the menu() function).\n"
+		echo -e "\nInvalid message type.\n"
 		read -n 1 -s -p "Press any key..."
 		;;
         esac
@@ -181,6 +166,7 @@ menu() {
     if [ "$has_zen" -eq 1 ]; then
 	# Format the options array for Zenity by adding
 	# TRUE or FALSE to indicate default selections
+	# ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
 	for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
 	    if [ "$i" -eq 0 ]; then
 		# Select the first radio button by default
@@ -192,8 +178,8 @@ menu() {
 	    fi
 	done
 
-	# Display the zenity menu
-	choice="$(message 4 "${zen_options[@]}")"
+	# Display the zenity radio button menu
+	choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_zenity_text" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}")"
 
 	# Loop through the options array to match the chosen option
 	matched="false"
