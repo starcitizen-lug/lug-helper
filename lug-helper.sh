@@ -513,14 +513,14 @@ mapcount_set() {
 }
 
 # Check if setting the open file descriptors limit was successful
-check_filelimit() {
+filelimit_check() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
         message warning "As far as this helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
     fi
 }
 
 # Check the open file descriptors limit and let the user fix it if needed
-set_filelimit() {
+filelimit_set() {
     filelimit="$(ulimit -Hn)"
 
     # If the file limit is already set, no need to do anything
@@ -551,7 +551,7 @@ set_filelimit() {
     fi
 
     # Verify that setting the limit was successful
-    check_filelimit
+    filelimit_check
 }
 
 # Delete the shaders directory
@@ -656,7 +656,7 @@ while true; do
     # Set the menu options
     menu_options=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("mapcount_set" "set_filelimit" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    menu_actions=("mapcount_set" "filelimit_set" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
     
     # Call the menu function
     menu
