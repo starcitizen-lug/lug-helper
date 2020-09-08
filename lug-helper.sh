@@ -88,14 +88,14 @@ message() {
     else
         # Fall back to text-based messages when zenity is not available
         case "$1" in
-	    1)
+	    "info")
 		# info message
 		# call format: message info "text to display"
 		clear
 		echo -e "\n$2\n"
 		read -n 1 -s -p "Press any key..."
 		;;
-            2)
+            "warning")
 		# warning message
 		# call format: message warning "text to display"
 		clear
@@ -103,7 +103,7 @@ message() {
 		read -n 1 -s -p "Press any key..."
 		return 0
 		;;
-            3)
+            "question")
 		# question
 		# call format: message question "question to ask?"
 		clear
