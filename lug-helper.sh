@@ -50,8 +50,15 @@ conf_subdir="starcitizen-lug"
 # To call this function, use the following format: message [type] "[string]"
 # See the message types below for instructions on formatting the string.
 message() {
+    # Sanity check
+    if [ "$#" -lt 2 ]; then
+	echo -e "\nScript error: The message function expects two arguments. Aborting."
+	read -n 1 -s -p "Press any key..."
+	exit 0
+    fi
+    
+    # Use zenity messages if available
     if [ "$has_zen" -eq 1 ]; then
-        # Use zenity messages if available
         case "$1" in
 	    "info")
 		# info message
@@ -69,7 +76,7 @@ message() {
 		margs=("--question" "--text=")
 		;;
 	    *)
-		echo -e "\nInvalid message type passed to the message function. Aborting."
+		echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
 		read -n 1 -s -p "Press any key..."
 		exit 0
 		;;
@@ -116,7 +123,7 @@ message() {
 		done
 		;;
 	    *)
-		echo -e "\nInvalid message type passed to the message function. Aborting."
+		echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
 		read -n 1 -s -p "Press any key..."
 		exit 0
 		;;
