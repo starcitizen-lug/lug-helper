@@ -231,13 +231,14 @@ menu() {
 		fi
 	    done
 
-	    # If no match was found, the user entered an invalid option
-	    if [ "$matched" == "false" ]; then
+	    # Check if we're done looping the menu
+	    if [ "$matched" == "true" ]; then
+	        # Match was found and actioned, so exit the menu
+		break
+	    else
+		# If no match was found, the user entered an invalid option
 		echo -e "\nInvalid selection."
 		continue
-	    else
-		# Match was found and actioned, so exit the menu
-		break
 	    fi
 	done
     fi
