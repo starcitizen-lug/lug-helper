@@ -44,33 +44,34 @@ conf_subdir="starcitizen-lug"
 
 
 # Display a message to the user.
-# Expects a numerical argument to indicate the message type, followed by
+# Expects the first argument to indicate the message type, followed by
 # a string of arguments that will be passed to zenity or echoed to the user.
 #
-# To call this function, use the following format: message [number] [string]
+# To call this function, use the following format: message [type] "[string]"
 # See the message types below for instructions on formatting the string.
 message() {
     if [ "$has_zen" -eq 1 ]; then
         # Use zenity messages if available
         case "$1" in
-	    1)
+	    "info")
 		# info message
-		# call format: message 1 "text to display"
+		# call format: message info "text to display"
 		margs=("--info" "--no-wrap" "--text=")
 		;;
-            2)
+            "warning")
 		# warning message
-		# call format: message 2 "text to display"
+		# call format: message warning "text to display"
 		margs=("--warning" "--text=")
 		;;
-            3)
+            "question")
 		# question
-		# call format: message 3 "question to ask?"
+		# call format: message question "question to ask?"
 		margs=("--question" "--text=")
 		;;
 	    *)
-		echo -e "Invalid message format.\n\nThe message function expects a numerical argument followed by string arguments.\n"
+		echo -e "\nInvalid message type passed to the message function. Aborting."
 		read -n 1 -s -p "Press any key..."
+		exit 0
 		;;
         esac
 
@@ -82,14 +83,14 @@ message() {
         case "$1" in
 	    1)
 		# info message
-		# call format: message 1 "text to display"
+		# call format: message info "text to display"
 		clear
 		echo -e "\n$2\n"
 		read -n 1 -s -p "Press any key..."
 		;;
             2)
 		# warning message
-		# call format: message 2 "text to display"
+		# call format: message warning "text to display"
 		clear
 		echo -e "\n$2\n" 
 		read -n 1 -s -p "Press any key..."
@@ -97,7 +98,7 @@ message() {
 		;;
             3)
 		# question
-		# call format: message 3 "question to ask?"
+		# call format: message question "question to ask?"
 		clear
 		echo -e "$2" 
 		while read -p "[y/n]: " yn; do
@@ -115,8 +116,9 @@ message() {
 		done
 		;;
 	    *)
-		echo -e "\nInvalid message type.\n"
+		echo -e "\nInvalid message type passed to the message function. Aborting."
 		read -n 1 -s -p "Press any key..."
+		exit 0
 		;;
         esac
     fi
@@ -147,18 +149,23 @@ menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
 	echo -e "\nScript error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+	read -n 1 -s -p "Press any key..."
 	exit 0
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
 	echo -e "\nScript error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+	read -n 1 -s -p "Press any key..."
 	exit 0
     elif [ -z "$menu_zenity_text" ]; then
 	echo -e "\nScript error: The string 'menu_zenity_text' was not set\nbefore calling the menu function. Aborting."
+	read -n 1 -s -p "Press any key..."
 	exit 0
     elif [ -z "$menu_terminal_text" ]; then
 	echo -e "\nScript error: The string 'menu_terminal_text' was not set\nbefore calling the menu function. Aborting."
+	read -n 1 -s -p "Press any key..."
 	exit 0
     elif [ -z "$menu_height" ]; then
 	echo -e "\nScript error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+	read -n 1 -s -p "Press any key..."
 	exit 0
     fi
     
@@ -219,7 +226,7 @@ menu() {
 
 	    # If no match was found, the user entered an invalid option
 	    if [ "$matched" == "false" ]; then
-		echo -e "\nInvalid selection"
+		echo -e "\nInvalid selection."
 		continue
 	    else
 		# Match was found and actioned, so exit the menu
@@ -233,7 +240,7 @@ menu() {
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
-	message 2 "Config directory not found. The helper is unable to proceed.\n\n$conf_dir"
+	message warning "Config directory not found. The helper is unable to proceed.\n\n$conf_dir"
         return 1
     fi
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -265,17 +272,17 @@ getdirs() {
 
     # If we don't have the directory paths we need yet, ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
-	message 1 "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
+	message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
 	if [ "$has_zen" -eq 1 ]; then
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
 		wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine")"
 		if [ "$?" -eq -1 ]; then
-                    message 2 "An unexpected error has occurred. The helper is unable to proceed."
+                    message warning "An unexpected error has occurred. The helper is unable to proceed."
 		    return 1
 		elif [ -z "$wine_prefix" ]; then
 		    # User clicked cancel
-		    message 2 "Operation cancelled.\nNo changes have been made to your game."
+		    message warning "Operation cancelled.\nNo changes have been made to your game."
 		    return 1
 		fi
             fi
@@ -284,10 +291,10 @@ getdirs() {
             if [ -z "$game_path" ]; then
 		while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/Star Citizen")"; do
 	            if [ "$?" -eq -1 ]; then
-			message 2 "An unexpected error has occurred. The helper is unable to proceed."
+			message warning "An unexpected error has occurred. The helper is unable to proceed."
 			return 1
                     elif [ "$(basename "$game_path")" != "Star Citizen" ]; then
-			message 2 "You must select the directory named 'Star Citizen'"
+			message warning "You must select the directory named 'Star Citizen'"
 		    else
 			# All good or cancel
 			break
@@ -296,7 +303,7 @@ getdirs() {
 		
 		if [ -z "$game_path" ]; then
 		    # User clicked cancel
-		    message 2 "Operation cancelled.\nNo changes have been made to your game."
+		    message warning "Operation cancelled.\nNo changes have been made to your game."
 		    return 1
 		fi
             fi
@@ -305,11 +312,11 @@ getdirs() {
             if [ -z "$backup_path" ]; then
 		backup_path="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
 		if [ "$?" -eq -1 ]; then
-	            message 2 "An unexpected error has occurred. The helper is unable to proceed."
+	            message warning "An unexpected error has occurred. The helper is unable to proceed."
 		    return 1
 		elif [ -z "$backup_path" ]; then
 		    # User clicked cancel
-		    message 2 "Operation cancelled.\nNo changes have been made to your game."
+		    message warning "Operation cancelled.\nNo changes have been made to your game."
 		    return 1
 		fi
             fi
@@ -371,7 +378,7 @@ getdirs() {
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 sanitize() {    
     # Prompt user to back up the current keybinds in the game
-    message 1 "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
+    message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
 
     # Get/Set directory paths
     getdirs
@@ -382,13 +389,13 @@ sanitize() {
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-	message 2 "USER directory not found. There is nothing to delete!\n\n$user_dir"
+	message warning "USER directory not found. There is nothing to delete!\n\n$user_dir"
 	return 0
     fi
 
     # Check for exported keybind files
     if [ ! -d "$mappings_dir" ] || [ -z "$(ls -A "$mappings_dir")" ]; then
-	if message 3 "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
+	if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
 	    exported=0
 	else
 	    # User said no
@@ -398,7 +405,7 @@ sanitize() {
 	exported=1
     fi
 
-    if message 3 "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
+    if message question "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
 	# Back up keybinds
 	if [ "$exported" -eq 1 ]; then
 	    echo "Backing up all saved keybinds..."
@@ -416,17 +423,17 @@ sanitize() {
 	    echo "Restoring keybinds..."
 	    mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/." "$mappings_dir/"
 	    echo -e "Done.\n"
-	    message 1 "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
+	    message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
 	fi
 
-	message 1 "Your Star Citizen USER directory has been cleaned up!"
+	message info "Your Star Citizen USER directory has been cleaned up!"
     fi
 }
 
 # Check if setting vm.max_map_count was successful
 mapcount_check() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        message 2 "As far as this helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
+        message warning "As far as this helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
     fi
 }
 
@@ -450,10 +457,10 @@ mapcount_persist() {
 mapcount_manual() {
     if [ -d "/etc/sysctl.d" ]; then
         # Newer versions of sysctl
-        message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
+        message info "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl -p'"
     else
         # Older versions of sysctl
-        message 1 "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
+        message info "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
     fi
 }
 
@@ -461,13 +468,13 @@ mapcount_manual() {
 mapcount_set() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
-    	message 1 "vm.max_map_count is already set to the optimal value.\nYou're all set!"
+    	message info "vm.max_map_count is already set to the optimal value.\nYou're all set!"
 	return 0
     fi
 
     # Otherwise, check to see if it was supposed to be set by sysctl
     if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then  
-	if message 3 "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
+	if message question "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
 	fi
 	mapcount_check
@@ -491,7 +498,7 @@ mapcount_set() {
     menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "mapcount_check")
     
     # Display an informational message to the user
-    message 1 "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
+    message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
     
     # Call the menu function
     menu
@@ -500,7 +507,7 @@ mapcount_set() {
 # Check if setting the open file descriptors limit was successful
 check_filelimit() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
-        message 2 "As far as this helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
+        message warning "As far as this helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
     fi
 }
 
@@ -510,12 +517,12 @@ set_filelimit() {
 
     # If the file limit is already set, no need to do anything
     if [ "$filelimit" -ge 524288 ]; then
-	message 1 "Your open files limit is already set to the optimal value.\nYou're all set!"
+	message info "Your open files limit is already set to the optimal value.\nYou're all set!"
         return 0
     fi
 
     # Adjust the limit
-    if message 3 "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
+    if message question "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
         if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
             echo -e "Updating /etc/systemd/system.conf..."
@@ -530,7 +537,7 @@ set_filelimit() {
             echo -e "Done.\n"
         else
             # Don't know what method to use
-            message 2 "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
+            message warning "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
 	    return 0
         fi
     fi
@@ -552,16 +559,16 @@ rm_shaders() {
 
     # Sanity check
     if [ ! -d "$shaders_dir" ]; then
-	message 2 "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
+	message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
 	return 0
     fi
 
     # Delete the shader directory
-    if message 3 "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
+    if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
 	echo "Deleting shaders..."
 	rm -r "$shaders_dir"
 	echo -e "Done.\n"
-	message 1 "Your shaders have been deleted!"
+	message info "Your shaders have been deleted!"
     fi
 }
 
@@ -578,16 +585,16 @@ rm_vidcache() {
     
     # Sanity check
     if [ ! -f "$dxvk_cache" ]; then
-	message 2 "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
+	message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
 	return 0
     fi
 
     # Delete the cache file
-    if message 3 "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
+    if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
 	echo "Deleting DXVK cache..."
 	rm "$dxvk_cache"
 	echo -e "Done.\n"
-	message 1 "Your DXVK cache has been deleted!"
+	message info "Your DXVK cache has been deleted!"
     fi
 }
 
@@ -595,10 +602,10 @@ rm_vidcache() {
 set_version() {
     if [ "$live_or_ptu" == "LIVE" ]; then
 	live_or_ptu="PTU"
-	message 1 "The helper will now target your Star Citizen PTU installation."
+	message info "The helper will now target your Star Citizen PTU installation."
     elif [ "$live_or_ptu" == "PTU" ]; then
 	live_or_ptu="LIVE"
-	message 1 "The helper will now target your Star Citizen LIVE installation."
+	message info "The helper will now target your Star Citizen LIVE installation."
     else
 	echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
 	live_or_ptu="LIVE"
