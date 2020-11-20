@@ -265,7 +265,7 @@ getdirs() {
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
-	if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "Star Citizen" ]; then
+	if [ ! -d "$game_path" ] || ([ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]); then
 	    echo -e "\nUnexpected game path found in config file, ignoring.\n"
 	    game_path=""
 	fi
@@ -301,7 +301,7 @@ getdirs() {
 	            if [ "$?" -eq -1 ]; then
 			message warning "An unexpected error has occurred. The helper is unable to proceed."
 			return 1
-                    elif [ "$(basename "$game_path")" != "Star Citizen" ]; then
+                    elif [ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]; then
 			message warning "You must select the directory named 'Star Citizen'"
 		    else
 			# All good or cancel
@@ -349,7 +349,7 @@ getdirs() {
 		    while read -rp ": " game_path; do
 			if [ ! -d "$game_path" ]; then
 			    echo -e "That directory is invalid or does not exist. Please try again.\n"
-			elif [ "$(basename "$game_path")" != "Star Citizen" ]; then
+			elif [ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]; then
 			    echo -e "You must enter the full path to the directory named 'Star Citizen'"
 			else
 			    break
