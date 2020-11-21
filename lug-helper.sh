@@ -297,12 +297,12 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-		while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/Star Citizen")"; do
+		while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen")"; do
 	            if [ "$?" -eq -1 ]; then
 			message warning "An unexpected error has occurred. The helper is unable to proceed."
 			return 1
                     elif [ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]; then
-			message warning "You must select the directory named 'Star Citizen'"
+			message warning "You must select the directory named 'StarCitizen'"
 		    else
 			# All good or cancel
 			break
@@ -318,11 +318,19 @@ getdirs() {
 
             # Get the backup directory
             if [ -z "$backup_path" ]; then
-		backup_path="$(zenity --file-selection --directory --title="Select a backup directory for your keybinds" --filename="$HOME/")"
-		if [ "$?" -eq -1 ]; then
-	            message warning "An unexpected error has occurred. The helper is unable to proceed."
-		    return 1
-		elif [ -z "$backup_path" ]; then
+		while backup_path="$(zenity --file-selection --directory --title="Select a directory to back up your keybinds into" --filename="$HOME/")"; do
+		    if [ "$?" -eq -1 ]; then
+			message warning "An unexpected error has occurred. The helper is unable to proceed."
+			return 1
+		    elif [ "$backup_path" = "$game_path" ]; then
+			message warning "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/"
+		    else
+			# All good or cancel
+			break
+		    fi
+		done
+			
+		if [ -z "$backup_path" ]; then
 		    # User clicked cancel
 		    message warning "Operation cancelled.\nNo changes have been made to your game."
 		    return 1
@@ -345,12 +353,12 @@ getdirs() {
 		# Get the game path
 		if [ -z "$game_path" ]; then
 		    echo -e "\nEnter the full path to your Star Citizen installation directory\n(case sensitive)"
-		    echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/Star Citizen/"
+		    echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/"
 		    while read -rp ": " game_path; do
 			if [ ! -d "$game_path" ]; then
 			    echo -e "That directory is invalid or does not exist. Please try again.\n"
 			elif [ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]; then
-			    echo -e "You must enter the full path to the directory named 'Star Citizen'"
+			    echo -e "You must enter the full path to the directory named 'StarCitizen'\n"
 			else
 			    break
 			fi
@@ -364,6 +372,8 @@ getdirs() {
 		    while read -rp ": " backup_path; do
 			if [ ! -d "$backup_path" ]; then
 			    echo -e "That directory is invalid or does not exist. Please try again.\n"
+			elif [ "$backup_path" = "$game_path" ]; then
+			    echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
 			else
 			    break
 			fi
