@@ -39,6 +39,12 @@ else
 fi
 
 conf_subdir="starcitizen-lug"
+
+# Set some variables needed by the getdirs() function
+# The user subdirectory name
+user_subdir_name="USER"
+# The location within the USER directory to which the game exports keybinds
+keybinds_export_path="Controls/Mappings"
 ############################################################################
 ############################################################################
 
@@ -198,7 +204,7 @@ menu() {
 	# Loop through the options array to match the chosen option
 	matched="false"
 	for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-	    if [ "$choice" == "${menu_options[i]}" ]; then
+	    if [ "$choice" = "${menu_options[i]}" ]; then
 		# Execute the corresponding action
 		"${menu_actions[i]}"
 		matched="true"
@@ -207,7 +213,7 @@ menu() {
 	done
 
 	# If no match was found, the user clicked cancel
-	if [ "$matched" == "false" ]; then
+	if [ "$matched" = "false" ]; then
 	    # Execute the last option in the actions array
 	    "${menu_actions[${#menu_actions[@]}-1]}"
 	fi
@@ -222,7 +228,7 @@ menu() {
 	    # Loop through the options array to match the chosen option
 	    matched="false"
 	    for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-		if [ "$choice" == "${menu_options[i]}" ]; then
+		if [ "$choice" = "${menu_options[i]}" ]; then
 		    # Execute the corresponding action
 		    echo -e "\n"
 		    "${menu_actions[i]}"
@@ -232,7 +238,7 @@ menu() {
 	    done
 
 	    # Check if we're done looping the menu
-	    if [ "$matched" == "true" ]; then
+	    if [ "$matched" = "true" ]; then
 	        # Match was found and actioned, so exit the menu
 		break
 	    else
@@ -389,8 +395,8 @@ getdirs() {
     fi
 
     # Set some remaining directory paths
-    user_dir="$game_path/$live_or_ptu/USER"
-    mappings_dir="$user_dir/Controls/Mappings"
+    user_dir="$game_path/$live_or_ptu/$user_subdir_name"
+    keybinds_dir="$user_dir/$keybinds_export_path"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -412,7 +418,7 @@ sanitize() {
     fi
 
     # Check for exported keybind files
-    if [ ! -d "$mappings_dir" ] || [ -z "$(ls -A "$mappings_dir")" ]; then
+    if [ ! -d "$keybinds_dir" ] || [ -z "$(ls -A "$keybinds_dir")" ]; then
 	if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
 	    exported=0
 	else
@@ -427,7 +433,7 @@ sanitize() {
 	# Back up keybinds
 	if [ "$exported" -eq 1 ]; then
 	    echo "Backing up all saved keybinds..."
-	    cp -r "$mappings_dir/." "$backup_path/keybinds/"
+	    cp -r "$keybinds_dir/." "$backup_path/keybinds/"
 	    echo -e "Done.\n"
 	fi
 	
@@ -439,7 +445,7 @@ sanitize() {
 	# Restore custom keybinds
 	if [ "$exported" -eq 1 ]; then
 	    echo "Restoring keybinds..."
-	    mkdir -p "$mappings_dir" && cp -r "$backup_path/keybinds/." "$mappings_dir/"
+	    mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
 	    echo -e "Done.\n"
 	    message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
 	fi
@@ -618,10 +624,10 @@ rm_vidcache() {
 
 # Toggle between targeting the LIVE and PTU game directories for all helper functions
 set_version() {
-    if [ "$live_or_ptu" == "LIVE" ]; then
+    if [ "$live_or_ptu" = "LIVE" ]; then
 	live_or_ptu="PTU"
 	message info "The helper will now target your Star Citizen PTU installation."
-    elif [ "$live_or_ptu" == "PTU" ]; then
+    elif [ "$live_or_ptu" = "PTU" ]; then
 	live_or_ptu="LIVE"
 	message info "The helper will now target your Star Citizen LIVE installation."
     else
