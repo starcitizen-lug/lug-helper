@@ -328,7 +328,7 @@ getdirs() {
 		    if [ "$?" -eq -1 ]; then
 			message warning "An unexpected error has occurred. The helper is unable to proceed."
 			return 1
-		    elif [ "$backup_path" = "$game_path" ]; then
+		    elif [[ $backup_path == $game_path* ]]; then
 			message warning "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/"
 		    else
 			# All good or cancel
@@ -378,7 +378,7 @@ getdirs() {
 		    while read -rp ": " backup_path; do
 			if [ ! -d "$backup_path" ]; then
 			    echo -e "That directory is invalid or does not exist. Please try again.\n"
-			elif [ "$backup_path" = "$game_path" ]; then
+			elif [[ $backup_path == $game_path* ]]; then
 			    echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
 			else
 			    break
