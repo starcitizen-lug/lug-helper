@@ -37,14 +37,14 @@ if [ -z "$XDG_CONFIG_HOME" ]; then
 else
     conf_dir="$XDG_CONFIG_HOME"
 fi
-
 conf_subdir="starcitizen-lug"
 
-# Set some variables needed by the getdirs() function
-# The user subdirectory name
+# The game's user subdirectory name
 user_subdir_name="USER"
 # The location within the USER directory to which the game exports keybinds
 keybinds_export_path="Controls/Mappings"
+
+dxvk_cache_file="StarCitizen.dxvk-cache"
 ############################################################################
 ############################################################################
 
@@ -271,7 +271,7 @@ getdirs() {
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
-	if [ ! -d "$game_path" ] || ([ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]); then
+	if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "StarCitizen" ]; then
 	    echo -e "\nUnexpected game path found in config file, ignoring.\n"
 	    game_path=""
 	fi
@@ -307,7 +307,7 @@ getdirs() {
 	            if [ "$?" -eq -1 ]; then
 			message warning "An unexpected error has occurred. The helper is unable to proceed."
 			return 1
-                    elif [ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]; then
+                    elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
 			message warning "You must select the directory named 'StarCitizen'"
 		    else
 			# All good or cancel
@@ -363,7 +363,7 @@ getdirs() {
 		    while read -rp ": " game_path; do
 			if [ ! -d "$game_path" ]; then
 			    echo -e "That directory is invalid or does not exist. Please try again.\n"
-			elif [ "$(basename "$game_path")" != "Star Citizen" ] && [ "$(basename "$game_path")" != "StarCitizen" ]; then
+			elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
 			    echo -e "You must enter the full path to the directory named 'StarCitizen'\n"
 			else
 			    break
@@ -605,7 +605,7 @@ rm_vidcache() {
 	return 0
     fi
     
-    dxvk_cache="$game_path/$live_or_ptu/StarCitizen-dxvk.cache"
+    dxvk_cache="$game_path/$live_or_ptu/$dxvk_cache_file"
     
     # Sanity check
     if [ ! -f "$dxvk_cache" ]; then
