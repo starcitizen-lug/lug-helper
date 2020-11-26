@@ -9,10 +9,12 @@ This script is designed to help you optimize your system to run Star Citizen as 
 
 It also gives you a fast and easy way to wipe your Star Citizen *USER* folder as is recommended by CIG after major version updates. It will back up your exported keybinds, delete your *USER* folder, then restore your keybind file(s).
 
+Zenity menus are used for a GUI experience with a fallback to terminal-based menus where Zenity is unavailable. The game directory paths provided by the user on first run are saved in *$XDG_CONFIG_HOME/starcitizen-lug*.
+
 ## Options:
 
 `Check vm.max_map_count for optimal performance`
-- We recommend setting this to 16777216 to give the game access to sufficient memory.
+- We recommend setting this to at least 16777216 to give the game access to sufficient memory.
 - The helper will offer to set it for you or show you the commands to do it yourself.
 
 `Check my open file descriptors limit`
@@ -31,7 +33,7 @@ It also gives you a fast and easy way to wipe your Star Citizen *USER* folder as
 - Sometimes all you need to do between major version updates is delete your shaders directory.
 
 `Delete my DXVK cache`
-- A troubleshooting step that sometimes helps fix various issues
+- A troubleshooting step that sometimes helps fix various issues and crashes.
 
 `Switch the helper between LIVE and PTU`
 - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
