@@ -471,8 +471,10 @@ mapcount_once() {
 mapcount_persist() {
     if [ -d "/etc/sysctl.d" ]; then
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl --system'
+	message info "The necessary configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
     else
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
+	message info "The necessary configuration has been appended to:\n/etc/sysctl.conf"
     fi
     mapcount_check
 }
@@ -516,7 +518,7 @@ mapcount_set() {
     manual="Show me the commands; I'll handle it myself"
     goback="Return to the main menu"
     
-    # Set the menu options
+    # Set the options to be displayed in the menu
     menu_options=("$once" "$persist" "$manual" "$goback")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "mapcount_check")
@@ -524,7 +526,7 @@ mapcount_set() {
     # Display an informational message to the user
     message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
     
-    # Call the menu function
+    # Call the menu function.  It will use the options as configured above
     menu
 }
 
@@ -549,16 +551,14 @@ filelimit_set() {
     if message question "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
         if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
-            echo -e "Updating /etc/systemd/system.conf..."
             # Append to the file
             pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
-            echo -e "Done.\n"
+	    message info "The necessary configuration has been appended to:\n/etc/systemd/system.conf"
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
-            echo -e "Updating /etc/security/limits.conf..."
             # Insert before the last line in the file
             pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
-            echo -e "Done.\n"
+	    message info "The necessary configuration has been appended to:\n/etc/security/limits.conf"
         else
             # Don't know what method to use
             message warning "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
@@ -669,11 +669,11 @@ while true; do
     version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
     quit_msg="Quit"
     
-    # Set the menu options
+    # Set the options to be displayed in the menu
     menu_options=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("mapcount_set" "filelimit_set" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
     
-    # Call the menu function
+    # Call the menu function.  It will use the options as configured above
     menu
 done
