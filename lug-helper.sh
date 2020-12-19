@@ -89,7 +89,7 @@ message() {
         esac
 
         # Display the message
-        shift 1   # drop the first numerical argument and shift the remaining up one
+        shift 1   # drop the first argument and shift the remaining up one
         zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper"
     else
         # Fall back to text-based messages when zenity is not available
@@ -158,6 +158,8 @@ message() {
 # *MUST* correspond to the indeces in "menu_options".
 # In other words, it is expected that menu_actions[1] is the correct action
 # to be executed when menu_options[1] is selected, and so on for each element.
+#
+# See MAIN at the bottom of this script for an example of generating a menu.
 menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
