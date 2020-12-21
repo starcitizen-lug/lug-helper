@@ -143,14 +143,16 @@ message() {
 # How to call this function:
 #
 # Requires two arrays to be set: "menu_options" and "menu_actions"
-# two string variables: "menu_zenity_text" and "menu_terminal_text"
+# two string variables: "menu_text_zenity" and "menu_text_terminal"
 # and one integer variable: "menu_height".
 #
-# The array "menu_options" is expected to contain the strings of each option.
-# The array "menu_actions" is expected to contain function names to be called.
-# The strings "menu_zenity_text" and "menu_terminal_text" are expected to
-# contain menu text formatted for zenity and the terminal, respectively.
-# The integer "menu_height" specifies the height of the zenity menu.
+# - The array "menu_options" should contain the strings of each option.
+# - The array "menu_actions" should contain function names to be called.
+# - The strings "menu_text_zenity" and "menu_text_terminal" should contain
+#   the menu description formatted for zenity and the terminal, respectively.
+#   This text will be displayed above the menu options.
+#   Zenity supports Pango Markup for text formatting.
+# - The integer "menu_height" specifies the height of the zenity menu.
 # 
 # The final element in each array is expected to be a quit option.
 #
@@ -170,12 +172,12 @@ menu() {
 	echo -e "\nScript error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
 	read -n 1 -s -p "Press any key..."
 	exit 0
-    elif [ -z "$menu_zenity_text" ]; then
-	echo -e "\nScript error: The string 'menu_zenity_text' was not set\nbefore calling the menu function. Aborting."
+    elif [ -z "$menu_text_zenity" ]; then
+	echo -e "\nScript error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
 	read -n 1 -s -p "Press any key..."
 	exit 0
-    elif [ -z "$menu_terminal_text" ]; then
-	echo -e "\nScript error: The string 'menu_terminal_text' was not set\nbefore calling the menu function. Aborting."
+    elif [ -z "$menu_text_terminal" ]; then
+	echo -e "\nScript error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
 	read -n 1 -s -p "Press any key..."
 	exit 0
     elif [ -z "$menu_height" ]; then
@@ -201,7 +203,7 @@ menu() {
 	done
 
 	# Display the zenity radio button menu
-	choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_zenity_text" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}")"
+	choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}")"
 
 	# Loop through the options array to match the chosen option
 	matched="false"
@@ -222,7 +224,7 @@ menu() {
     else
 	# Use a text menu if Zenity is not available
 	clear
-	echo -e "$menu_terminal_text"
+	echo -e "\n$menu_text_terminal\n"
 
 	PS3="Enter selection number: "
 	select choice in "${menu_options[@]}"
@@ -510,8 +512,8 @@ mapcount_set() {
     fi
     
     # Configure the menu
-    menu_zenity_text="<b>This helper can change vm.max_map_count for you.</b>\n\nChoose from the following options:"
-    menu_terminal_text="\nThis helper can change vm.max_map_count for you.\n\nChoose from the following options:\n"
+    menu_text_zenity="<b>This helper can change vm.max_map_count for you.</b>\n\nChoose from the following options:"
+    menu_text_terminal="This helper can change vm.max_map_count for you.\n\nChoose from the following options:"
     menu_height="200"
     
     # Configure the menu options
@@ -658,8 +660,8 @@ live_or_ptu="LIVE"
 # Loop the main menu until the user selects quit
 while true; do
     # Configure the menu
-    menu_zenity_text="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
-    menu_terminal_text="\nWelcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:\n"
+    menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
+    menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
     menu_height="315"
 
     # Configure the menu options
