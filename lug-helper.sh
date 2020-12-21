@@ -210,7 +210,7 @@ menu() {
 	for (( i=0; i<"${#menu_options[@]}"; i++ )); do
 	    if [ "$choice" = "${menu_options[i]}" ]; then
 		# Execute the corresponding action
-		"${menu_actions[i]}"
+		${menu_actions[i]}
 		matched="true"
 		break
 	    fi
@@ -235,7 +235,7 @@ menu() {
 		if [ "$choice" = "${menu_options[i]}" ]; then
 		    # Execute the corresponding action
 		    echo -e "\n"
-		    "${menu_actions[i]}"
+		    ${menu_actions[i]}
 		    matched="true"
 		    break
 		fi
