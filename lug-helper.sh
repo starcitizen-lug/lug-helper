@@ -653,9 +653,9 @@ quit() {
 }
 
 delete_runner() {
-    remove_option=$1
+    remove_option="$1"
     message question "Delete ${installed_versions[$remove_option]}?"
-    rm -rf ${installed_versions[$remove_option]}
+    rm -rf "${installed_versions[$remove_option]}"
     echo "removed ${installed_versions[$remove_option]}"
     choose_runner_to_delete
 }
@@ -700,12 +700,12 @@ choose_runner_to_delete() {
 }
 
 install_runner() {
-    option_install=$1  # grab argument passed by last menu
+    option_install="$1"  # grab argument passed by last menu
     
     # use menu selection from last menu to select version from array 
-    option=${download_options[$option_install]}
-    version=$(echo "$option" | sed 's/\.[^.]*$//') 
-    url=$(curl -s "$latest_url" | grep -E "browser_download_url.*$option" | cut -d \" -f4)
+    option="${download_options[$option_install]}"
+    version="$(echo "$option" | sed 's/\.[^.]*$//')"
+    url="$(curl -s "$latest_url" | grep -E "browser_download_url.*$option" | cut -d \" -f4)"
     message question "Installing $version"
     echo "Installing $version"
     
@@ -717,7 +717,7 @@ install_runner() {
     }
     
     # check if the installed runner is from Rawfox or snatella because rawfox has a subfolder in the archive
-    if test $latest_url = $snatella_url ; then
+    if test "$latest_url" = "$snatella_url" ; then
         dest_path="$base_path/$version"
         [ -d "$dest_path" ] || {
             mkdir "$dest_path"
@@ -751,17 +751,17 @@ install_runner() {
 }
     
 choose_runner_version() {
-    chosen_contributor=$1
+    chosen_contributor="$1"
     
     # change the download-url according to the user choice and account for different filetypes for the archives
     case $chosen_contributor in
     snatella)
-    latest_url=$snatella_url
+    latest_url="$snatella_url"
     echo "searching $snatella_url ..."
     download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tgz" | cut -d \" -f4 | cut -d / -f9))
     ;;
     rawfox)
-    latest_url=$raw_url
+    latest_url="$raw_url"
     echo "searching $raw_url ..."
     download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tar.gz" | cut -d \" -f4 | cut -d / -f9 | cut -d . -f1-3))
     ;;
@@ -775,14 +775,14 @@ choose_runner_version() {
     menu_actions=()
     
     # check if there are more versions avaliable than defined as the max
-    if ((${#download_options[@]} > $max_runners)); then
-        runner_count=$max_runners
+    if (("${#download_options[@]}" > "$max_runners")); then
+        runner_count="$max_runners"
     else
-        runner_count=${#download_options[@]}
+        runner_count="${#download_options[@]}"
     fi
     
     # iterate through the versions, check if they are installed and add them to the menu options
-    for((i=0;i<$runner_count;i++)); do
+    for((i=0;i<"$runner_count";i++)); do
         number=$(("$i" + 1))
         version=$(echo "${download_options[i]}" | sed 's/\.[^.]*$//')
         if [ -d "$base_path"/"$version" ]; then
