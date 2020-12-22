@@ -31,6 +31,8 @@ wine_conf="winedir.conf"
 game_conf="gamedir.conf"
 backup_conf="backupdir.conf"
 
+base_path="$HOME/.local/share/lutris/runners/wine" # Default location of Lutris wine runner
+
 # Use the XDG config directory if defined
 if [ -z "$XDG_CONFIG_HOME" ]; then
     conf_dir="$HOME/.config"
@@ -45,6 +47,12 @@ user_subdir_name="USER"
 keybinds_export_path="Controls/Mappings"
 
 dxvk_cache_file="StarCitizen.dxvk-cache"
+
+#URLs for downloading runners from
+raw_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
+snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
+
+
 ############################################################################
 ############################################################################
 
@@ -644,6 +652,175 @@ quit() {
     exit 0
 }
 
+delete_runner() {
+    remove_option=$1
+    message question "Delete ${installed_versions[$remove_option]}?"
+    rm -rf ${installed_versions[$remove_option]}
+    echo "removed ${installed_versions[$remove_option]}"
+    choose_runner_to_delete
+}
+
+restart_lutris() {
+  if [ "$( pgrep lutris )" != "" ]; then
+    echo "Restarting Lutris"
+    pkill -TERM lutris #restarting Lutris
+    sleep 5s
+    nohup lutris </dev/null &>/dev/null &
+  fi
+}
+
+mainmenu() {
+    #message info "Aborting - going back to Mainmenu"
+    echo "going back to menu"
+}
+ 
+choose_runner_to_delete() {
+    # Configure the menu
+    menu_text_zenity="Please select Version to delete:"
+    menu_text_terminal="Please select Version to delete:"
+    menu_height="300"
+    menu_options=()
+    menu_actions=()
+     
+    installed_versions=($(ls -d "$base_path"/*/))  # create an array with all directorys in the base_path
+    
+    # iterate through the installed versions and create the menu options for them
+    for((i=0;i<${#installed_versions[@]};i++)); do
+        inumber=$(("$i" + 1))
+        folder=$(echo "${installed_versions[i]}" | rev | cut -d/ -f2 | rev) #reverse the order, cut after the second / and reverse again to only have the runner folder instead of the whole path
+        menu_options+=("$inumber. $folder")
+        menu_actions+=("delete_runner $i")
+    done
+    menu_options+=("Back")
+    menu_actions+=("manage_runners")
+    
+    # Call the menu function.  It will use the options as configured above
+    menu
+
+}
+
+install_runner() {
+    option_install=$1  # grab argument passed by last menu
+    
+    # use menu selection from last menu to select version from array 
+    option=${download_options[$option_install]}
+    version=$(echo "$option" | sed 's/\.[^.]*$//') 
+    url=$(curl -s "$latest_url" | grep -E "browser_download_url.*$option" | cut -d \" -f4)
+    message question "Installing $version"
+    echo "Installing $version"
+    
+    # i have no idea, it's originally from cproton ;)
+    rsp="$(curl -sI "$url" | head -1)"
+    echo "$rsp" | grep -q 302 || {
+    echo "$rsp"
+    exit 1
+    }
+    
+    # check if the installed runner is from Rawfox or snatella because rawfox has a subfolder in the archive
+    if test $latest_url = $snatella_url ; then
+        dest_path="$base_path/$version"
+        [ -d "$dest_path" ] || {
+            mkdir "$dest_path"
+            echo [Info] Created "$dest_path"
+        }
+    else
+    dest_path="$base_path"
+    fi
+    
+    # download and extract the runner
+    curl -sL "$url" | tar xfzv - -C "$dest_path"
+       
+    # Configure the menu
+    menu_text_zenity="<b>This helper can manage your runners for you</b>\n\nChoose what you want to do:"
+    menu_text_terminal="This helper can manage your runners for you<\n\nChoose what you want to do:"
+    menu_height="250"
+    
+    # Configure the menu options
+    rawfox="Download another runner from RawFox"
+    snatella="Download another runner from Molotov/Snatella"
+    delete="Delete an installed runner"
+    restart="Restart Lutris and got back to Mainmenu"
+    back="Back to Mainmenu"
+    # Set the options to be displayed in the menu
+    menu_options=("$rawfox" "$snatella" "$delete" "$restart" "$back")
+    # Set the corresponding functions to be called for each of the options
+    menu_actions=("choose_runner_version rawfox" "choose_runner_version snatella" "choose_runner_to_delete" "restart_lutris" "mainmenu")
+    
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+    
+choose_runner_version() {
+    chosen_contributor=$1
+    
+    # change the download-url according to the user choice and account for different filetypes for the archives
+    case $chosen_contributor in
+    snatella)
+    latest_url=$snatella_url
+    echo "searching $snatella_url ..."
+    download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tgz" | cut -d \" -f4 | cut -d / -f9))
+    ;;
+    rawfox)
+    latest_url=$raw_url
+    echo "searching $raw_url ..."
+    download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tar.gz" | cut -d \" -f4 | cut -d / -f9 | cut -d . -f1-3))
+    ;;
+    esac
+    
+    # Configure the menu
+    menu_text_zenity="Please select Version to install:"
+    menu_text_terminal="Please select Version to install:"
+    menu_height="500"
+    menu_options=()
+    menu_actions=()
+    
+    # check if there are more versions avaliable than defined as the max
+    if ((${#download_options[@]} > $max_runners)); then
+        runner_count=$max_runners
+    else
+        runner_count=${#download_options[@]}
+    fi
+    
+    # iterate through the versions, check if they are installed and add them to the menu options
+    for((i=0;i<$runner_count;i++)); do
+        number=$(("$i" + 1))
+        version=$(echo "${download_options[i]}" | sed 's/\.[^.]*$//')
+        if [ -d "$base_path"/"$version" ]; then
+            menu_options+=("$number. $version    [installed]")
+        else
+            menu_options+=("$number. $version")
+        fi
+        menu_actions+=("install_runner $i")
+    done
+    menu_options+=("Back")
+    menu_actions+=("manage_runners")
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+    
+manage_runners() {
+    max_runners=20
+    # Configure the menu
+    menu_text_zenity="<b>This helper can manage your runners for you</b>\n\nChoose what you want to do:"
+    menu_text_terminal="This helper can manage your runners for you<\n\nChoose what you want to do:"
+    menu_height="200"
+    
+    # Configure the menu options
+    rawfox="Download a runner from RawFox"
+    snatella="Download a runner from Molotov/Snatella"
+    delete="Delete an installed runner"
+    back="Back to Mainmenu"
+    # Set the options to be displayed in the menu
+    menu_options=("$rawfox" "$snatella" "$delete" "$back")
+    # Set the corresponding functions to be called for each of the options
+    menu_actions=("choose_runner_version rawfox" "choose_runner_version snatella" "choose_runner_to_delete" "mainmenu")
+    
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+
 ############################################################################
 # MAIN
 ############################################################################
@@ -662,10 +839,11 @@ while true; do
     # Configure the menu
     menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
     menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
-    menu_height="315"
+    menu_height="335"
 
     # Configure the menu options
     mapcount_msg="Check vm.max_map_count for optimal performance"
+    download_msg="Manage Lutris-Runners"
     filelimit_msg="Check my open file descriptors limit"
     sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
     shaders_msg="Delete my shaders only"
@@ -674,9 +852,9 @@ while true; do
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$mapcount_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
+    menu_options=("$mapcount_msg" "$download_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("mapcount_set" "filelimit_set" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    menu_actions=("mapcount_set" "manage_runners" "filelimit_set" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
     
     # Call the menu function.  It will use the options as configured above
     menu
