@@ -31,8 +31,6 @@ wine_conf="winedir.conf"
 game_conf="gamedir.conf"
 backup_conf="backupdir.conf"
 
-base_path="$HOME/.local/share/lutris/runners/wine" # Default location of Lutris wine runner
-
 # Use the XDG config directory if defined
 if [ -z "$XDG_CONFIG_HOME" ]; then
     conf_dir="$HOME/.config"
@@ -48,10 +46,14 @@ keybinds_export_path="Controls/Mappings"
 
 dxvk_cache_file="StarCitizen.dxvk-cache"
 
-#URLs for downloading runners from
-raw_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
+# Lutris wine runners directory
+lutris_dir="$HOME/.local/share/lutris/runners/wine"
+# URLs for downloading Lutris runners
+rawfox_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
 
+# Set a maximum number of runners
+max_runners="20"
 
 ############################################################################
 ############################################################################
@@ -66,34 +68,34 @@ snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
 message() {
     # Sanity check
     if [ "$#" -lt 2 ]; then
-	echo -e "\nScript error: The message function expects two arguments. Aborting."
-	read -n 1 -s -p "Press any key..."
-	exit 0
+        echo -e "\nScript error: The message function expects two arguments. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     fi
     
     # Use zenity messages if available
     if [ "$has_zen" -eq 1 ]; then
         case "$1" in
-	    "info")
-		# info message
-		# call format: message info "text to display"
-		margs=("--info" "--no-wrap" "--text=")
-		;;
+            "info")
+                # info message
+                # call format: message info "text to display"
+                margs=("--info" "--no-wrap" "--text=")
+                ;;
             "warning")
-		# warning message
-		# call format: message warning "text to display"
-		margs=("--warning" "--text=")
-		;;
+                # warning message
+                # call format: message warning "text to display"
+                margs=("--warning" "--text=")
+                ;;
             "question")
-		# question
-		# call format: message question "question to ask?"
-		margs=("--question" "--text=")
-		;;
-	    *)
-		echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
-		read -n 1 -s -p "Press any key..."
-		exit 0
-		;;
+                # question
+                # call format: if message question "question to ask?"; then...
+                margs=("--question" "--text=")
+                ;;
+            *)
+                echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
+                read -n 1 -s -p "Press any key..."
+                exit 0
+                ;;
         esac
 
         # Display the message
@@ -102,45 +104,45 @@ message() {
     else
         # Fall back to text-based messages when zenity is not available
         case "$1" in
-	    "info")
-		# info message
-		# call format: message info "text to display"
-		clear
-		echo -e "\n$2\n"
-		read -n 1 -s -p "Press any key..."
-		;;
+            "info")
+                # info message
+                # call format: message info "text to display"
+                clear
+                echo -e "\n$2\n"
+                read -n 1 -s -p "Press any key..."
+                ;;
             "warning")
-		# warning message
-		# call format: message warning "text to display"
-		clear
-		echo -e "\n$2\n" 
-		read -n 1 -s -p "Press any key..."
-		return 0
-		;;
+                # warning message
+                # call format: message warning "text to display"
+                clear
+                echo -e "\n$2\n" 
+                read -n 1 -s -p "Press any key..."
+                return 0
+                ;;
             "question")
-		# question
-		# call format: message question "question to ask?"
-		clear
-		echo -e "$2" 
-		while read -p "[y/n]: " yn; do
+                # question
+                # call format: if message question "question to ask?"; then...
+                clear
+                echo -e "$2" 
+                while read -p "[y/n]: " yn; do
                     case "$yn" in
-			[Yy]*)
+                        [Yy]*)
                             return 0
                             ;;
-			[Nn]*)
+                        [Nn]*)
                             return 1
                             ;;
-			*)
+                        *)
                             echo "Please type 'y' or 'n'"
                             ;;
                     esac
-		done
-		;;
-	    *)
-		echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
-		read -n 1 -s -p "Press any key..."
-		exit 0
-		;;
+                done
+                ;;
+            *)
+                echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
+                read -n 1 -s -p "Press any key..."
+                exit 0
+                ;;
         esac
     fi
 }
@@ -173,92 +175,92 @@ message() {
 menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
-	echo -e "\nScript error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
-	read -n 1 -s -p "Press any key..."
-	exit 0
+        echo -e "\nScript error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
-	echo -e "\nScript error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
-	read -n 1 -s -p "Press any key..."
-	exit 0
+        echo -e "\nScript error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     elif [ -z "$menu_text_zenity" ]; then
-	echo -e "\nScript error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
-	read -n 1 -s -p "Press any key..."
-	exit 0
+        echo -e "\nScript error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     elif [ -z "$menu_text_terminal" ]; then
-	echo -e "\nScript error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
-	read -n 1 -s -p "Press any key..."
-	exit 0
+        echo -e "\nScript error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     elif [ -z "$menu_height" ]; then
-	echo -e "\nScript error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
-	read -n 1 -s -p "Press any key..."
-	exit 0
+        echo -e "\nScript error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     fi
     
     # Use Zenity if it is available
     if [ "$has_zen" -eq 1 ]; then
-	# Format the options array for Zenity by adding
-	# TRUE or FALSE to indicate default selections
-	# ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
-	for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
-	    if [ "$i" -eq 0 ]; then
-		# Select the first radio button by default
-		zen_options=("TRUE")
-		zen_options+=("${menu_options[i]}")
-	    else
-		zen_options+=("FALSE")
-		zen_options+=("${menu_options[i]}")
-	    fi
-	done
+        # Format the options array for Zenity by adding
+        # TRUE or FALSE to indicate default selections
+        # ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
+        for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
+            if [ "$i" -eq 0 ]; then
+                # Select the first radio button by default
+                zen_options=("TRUE")
+                zen_options+=("${menu_options[i]}")
+            else
+                zen_options+=("FALSE")
+                zen_options+=("${menu_options[i]}")
+            fi
+        done
 
-	# Display the zenity radio button menu
-	choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}")"
+        # Display the zenity radio button menu
+        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}")"
 
-	# Loop through the options array to match the chosen option
-	matched="false"
-	for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-	    if [ "$choice" = "${menu_options[i]}" ]; then
-		# Execute the corresponding action
-		${menu_actions[i]}
-		matched="true"
-		break
-	    fi
-	done
+        # Loop through the options array to match the chosen option
+        matched="false"
+        for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+            if [ "$choice" = "${menu_options[i]}" ]; then
+                # Execute the corresponding action
+                ${menu_actions[i]}
+                matched="true"
+                break
+            fi
+        done
 
-	# If no match was found, the user clicked cancel
-	if [ "$matched" = "false" ]; then
-	    # Execute the last option in the actions array
-	    "${menu_actions[${#menu_actions[@]}-1]}"
-	fi
+        # If no match was found, the user clicked cancel
+        if [ "$matched" = "false" ]; then
+            # Execute the last option in the actions array
+            "${menu_actions[${#menu_actions[@]}-1]}"
+        fi
     else
-	# Use a text menu if Zenity is not available
-	clear
-	echo -e "\n$menu_text_terminal\n"
+        # Use a text menu if Zenity is not available
+        clear
+        echo -e "\n$menu_text_terminal\n"
 
-	PS3="Enter selection number: "
-	select choice in "${menu_options[@]}"
-	do
-	    # Loop through the options array to match the chosen option
-	    matched="false"
-	    for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-		if [ "$choice" = "${menu_options[i]}" ]; then
-		    # Execute the corresponding action
-		    echo -e "\n"
-		    ${menu_actions[i]}
-		    matched="true"
-		    break
-		fi
-	    done
+        PS3="Enter selection number: "
+        select choice in "${menu_options[@]}"
+        do
+            # Loop through the options array to match the chosen option
+            matched="false"
+            for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+                if [ "$choice" = "${menu_options[i]}" ]; then
+                    # Execute the corresponding action
+                    echo -e "\n"
+                    ${menu_actions[i]}
+                    matched="true"
+                    break
+                fi
+            done
 
-	    # Check if we're done looping the menu
-	    if [ "$matched" = "true" ]; then
-	        # Match was found and actioned, so exit the menu
-		break
-	    else
-		# If no match was found, the user entered an invalid option
-		echo -e "\nInvalid selection."
-		continue
-	    fi
-	done
+            # Check if we're done looping the menu
+            if [ "$matched" = "true" ]; then
+                # Match was found and actioned, so exit the menu
+                break
+            else
+                # If no match was found, the user entered an invalid option
+                echo -e "\nInvalid selection."
+                continue
+            fi
+        done
     fi
 }
 
@@ -266,7 +268,7 @@ menu() {
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
-	message warning "Config directory not found. The helper is unable to proceed.\n\n$conf_dir"
+        message warning "Config directory not found. The helper is unable to proceed.\n\n$conf_dir"
         return 1
     fi
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -276,130 +278,130 @@ getdirs() {
     # Check if the config files already exist
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
         wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
-	if [ ! -d "$wine_prefix" ]; then
-	    echo -e "\nThe saved wine prefix does not exist, ignoring.\n"
-	    wine_prefix=""
-	fi
+        if [ ! -d "$wine_prefix" ]; then
+            echo -e "\nThe saved wine prefix does not exist, ignoring.\n"
+            wine_prefix=""
+        fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
-	if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "StarCitizen" ]; then
-	    echo -e "\nUnexpected game path found in config file, ignoring.\n"
-	    game_path=""
-	fi
+        if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "StarCitizen" ]; then
+            echo -e "\nUnexpected game path found in config file, ignoring.\n"
+            game_path=""
+        fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$backup_conf" ]; then
         backup_path="$(cat "$conf_dir/$conf_subdir/$backup_conf")"
-	if [ ! -d "$backup_path" ]; then
-	    echo -e "\nThe saved backup path does not exist, ignoring.\n"
-	    backup_path=""
-	fi
+        if [ ! -d "$backup_path" ]; then
+            echo -e "\nThe saved backup path does not exist, ignoring.\n"
+            backup_path=""
+        fi
     fi
 
     # If we don't have the directory paths we need yet, ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
-	message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
-	if [ "$has_zen" -eq 1 ]; then
+        message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
+        if [ "$has_zen" -eq 1 ]; then
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-		wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine")"
-		if [ "$?" -eq -1 ]; then
+                wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine")"
+                if [ "$?" -eq -1 ]; then
                     message warning "An unexpected error has occurred. The helper is unable to proceed."
-		    return 1
-		elif [ -z "$wine_prefix" ]; then
-		    # User clicked cancel
-		    message warning "Operation cancelled.\nNo changes have been made to your game."
-		    return 1
-		fi
+                    return 1
+                elif [ -z "$wine_prefix" ]; then
+                    # User clicked cancel
+                    message warning "Operation cancelled.\nNo changes have been made to your game."
+                    return 1
+                fi
             fi
 
             # Get the game path
             if [ -z "$game_path" ]; then
-		while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen")"; do
-	            if [ "$?" -eq -1 ]; then
-			message warning "An unexpected error has occurred. The helper is unable to proceed."
-			return 1
+                while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen")"; do
+                    if [ "$?" -eq -1 ]; then
+                        message warning "An unexpected error has occurred. The helper is unable to proceed."
+                        return 1
                     elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
-			message warning "You must select the directory named 'StarCitizen'"
-		    else
-			# All good or cancel
-			break
+                        message warning "You must select the directory named 'StarCitizen'"
+                    else
+                        # All good or cancel
+                        break
                     fi
-		done
-		
-		if [ -z "$game_path" ]; then
-		    # User clicked cancel
-		    message warning "Operation cancelled.\nNo changes have been made to your game."
-		    return 1
-		fi
+                done
+                
+                if [ -z "$game_path" ]; then
+                    # User clicked cancel
+                    message warning "Operation cancelled.\nNo changes have been made to your game."
+                    return 1
+                fi
             fi
 
             # Get the backup directory
             if [ -z "$backup_path" ]; then
-		while backup_path="$(zenity --file-selection --directory --title="Select a directory to back up your keybinds into" --filename="$HOME/")"; do
-		    if [ "$?" -eq -1 ]; then
-			message warning "An unexpected error has occurred. The helper is unable to proceed."
-			return 1
-		    elif [[ $backup_path == $game_path* ]]; then
-			message warning "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/"
-		    else
-			# All good or cancel
-			break
-		    fi
-		done
-			
-		if [ -z "$backup_path" ]; then
-		    # User clicked cancel
-		    message warning "Operation cancelled.\nNo changes have been made to your game."
-		    return 1
-		fi
+                while backup_path="$(zenity --file-selection --directory --title="Select a directory to back up your keybinds into" --filename="$HOME/")"; do
+                    if [ "$?" -eq -1 ]; then
+                        message warning "An unexpected error has occurred. The helper is unable to proceed."
+                        return 1
+                    elif [[ $backup_path == $game_path* ]]; then
+                        message warning "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/"
+                    else
+                        # All good or cancel
+                        break
+                    fi
+                done
+                        
+                if [ -z "$backup_path" ]; then
+                    # User clicked cancel
+                    message warning "Operation cancelled.\nNo changes have been made to your game."
+                    return 1
+                fi
             fi
-	else
-	    clear
+        else
+            clear
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-		echo -e "Enter the full path to your WINE prefix directory (case sensitive)"
-		echo -e "ie. /home/USER/.wine/"
-		while read -rp ": " wine_prefix; do
-		    if [ ! -d "$wine_prefix" ]; then
-			echo -e "That directory is invalid or does not exist. Please try again.\n"
-		    else
-			break
-		    fi
-		done
+                echo -e "Enter the full path to your WINE prefix directory (case sensitive)"
+                echo -e "ie. /home/USER/.wine/"
+                while read -rp ": " wine_prefix; do
+                    if [ ! -d "$wine_prefix" ]; then
+                        echo -e "That directory is invalid or does not exist. Please try again.\n"
+                    else
+                        break
+                    fi
+                done
 
-		# Get the game path
-		if [ -z "$game_path" ]; then
-		    echo -e "\nEnter the full path to your Star Citizen installation directory\n(case sensitive)"
-		    echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/"
-		    while read -rp ": " game_path; do
-			if [ ! -d "$game_path" ]; then
-			    echo -e "That directory is invalid or does not exist. Please try again.\n"
-			elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
-			    echo -e "You must enter the full path to the directory named 'StarCitizen'\n"
-			else
-			    break
-			fi
-		    done
-		fi
+                # Get the game path
+                if [ -z "$game_path" ]; then
+                    echo -e "\nEnter the full path to your Star Citizen installation directory\n(case sensitive)"
+                    echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/"
+                    while read -rp ": " game_path; do
+                        if [ ! -d "$game_path" ]; then
+                            echo -e "That directory is invalid or does not exist. Please try again.\n"
+                        elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
+                            echo -e "You must enter the full path to the directory named 'StarCitizen'\n"
+                        else
+                            break
+                        fi
+                    done
+                fi
 
-		# Get the backup directory
-		if [ -z "$backup_path" ]; then
-		    echo -e "\nEnter the full path to a backup directory for your keybinds (case sensitive)"
-		    echo -e "ie. /home/USER/backups/"
-		    while read -rp ": " backup_path; do
-			if [ ! -d "$backup_path" ]; then
-			    echo -e "That directory is invalid or does not exist. Please try again.\n"
-			elif [[ $backup_path == $game_path* ]]; then
-			    echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
-			else
-			    break
-			fi
-		    done
-		fi
-	    fi
-	fi
-	
+                # Get the backup directory
+                if [ -z "$backup_path" ]; then
+                    echo -e "\nEnter the full path to a backup directory for your keybinds (case sensitive)"
+                    echo -e "ie. /home/USER/backups/"
+                    while read -rp ": " backup_path; do
+                        if [ ! -d "$backup_path" ]; then
+                            echo -e "That directory is invalid or does not exist. Please try again.\n"
+                        elif [[ $backup_path == $game_path* ]]; then
+                            echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
+                        else
+                            break
+                        fi
+                    done
+                fi
+            fi
+        fi
+        
         # Save the paths for later use
         echo "$wine_prefix" > "$conf_dir/$conf_subdir/$wine_conf"
         echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
@@ -419,50 +421,50 @@ sanitize() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
-	# User cancelled and wants to return to the main menu, or there was an error
-	return 0
+        # User cancelled and wants to return to the main menu, or there was an error
+        return 0
     fi
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-	message warning "USER directory not found. There is nothing to delete!\n\n$user_dir"
-	return 0
+        message warning "USER directory not found. There is nothing to delete!\n\n$user_dir"
+        return 0
     fi
 
     # Check for exported keybind files
     if [ ! -d "$keybinds_dir" ] || [ -z "$(ls -A "$keybinds_dir")" ]; then
-	if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
-	    exported=0
-	else
-	    # User said no
-	    return 0
-	fi
+        if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
+            exported=0
+        else
+            # User said no
+            return 0
+        fi
     else
-	exported=1
+        exported=1
     fi
 
     if message question "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
-	# Back up keybinds
-	if [ "$exported" -eq 1 ]; then
-	    echo "Backing up all saved keybinds..."
-	    cp -r "$keybinds_dir/." "$backup_path/keybinds/"
-	    echo -e "Done.\n"
-	fi
-	
-	# Wipe the user directory
-	echo "Wiping USER directory..."
-	rm -r "$user_dir"
-	echo -e "Done.\n"
+        # Back up keybinds
+        if [ "$exported" -eq 1 ]; then
+            echo "Backing up all saved keybinds..."
+            cp -r "$keybinds_dir/." "$backup_path/keybinds/"
+            echo -e "Done.\n"
+        fi
+        
+        # Wipe the user directory
+        echo "Wiping USER directory..."
+        rm -r "$user_dir"
+        echo -e "Done.\n"
 
-	# Restore custom keybinds
-	if [ "$exported" -eq 1 ]; then
-	    echo "Restoring keybinds..."
-	    mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
-	    echo -e "Done.\n"
-	    message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
-	fi
+        # Restore custom keybinds
+        if [ "$exported" -eq 1 ]; then
+            echo "Restoring keybinds..."
+            mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
+            echo -e "Done.\n"
+            message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
+        fi
 
-	message info "Your Star Citizen USER directory has been cleaned up!"
+        message info "Your Star Citizen USER directory has been cleaned up!"
     fi
 }
 
@@ -483,10 +485,10 @@ mapcount_once() {
 mapcount_persist() {
     if [ -d "/etc/sysctl.d" ]; then
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl --system'
-	message info "The necessary configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
+        message info "The necessary configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
     else
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-	message info "The necessary configuration has been appended to:\n/etc/sysctl.conf"
+        message info "The necessary configuration has been appended to:\n/etc/sysctl.conf"
     fi
     mapcount_check
 }
@@ -506,22 +508,22 @@ mapcount_manual() {
 mapcount_set() {
     # If vm.max_map_count is already set, no need to do anything
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
-    	message info "vm.max_map_count is already set to the optimal value.\nYou're all set!"
-	return 0
+        message info "vm.max_map_count is already set to the optimal value.\nYou're all set!"
+        return 0
     fi
 
     # Otherwise, check to see if it was supposed to be set by sysctl
     if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then  
-	if message question "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
+        if message question "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
             pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-	fi
-	mapcount_check
-	return 0
+        fi
+        mapcount_check
+        return 0
     fi
     
     # Configure the menu
-    menu_text_zenity="<b>This helper can change vm.max_map_count for you.</b>\n\nChoose from the following options:"
-    menu_text_terminal="This helper can change vm.max_map_count for you.\n\nChoose from the following options:"
+    menu_text_zenity="<b>This helper can change vm.max_map_count for you</b>\n\nChoose from the following options:"
+    menu_text_terminal="This helper can change vm.max_map_count for you\n\nChoose from the following options:"
     menu_height="200"
     
     # Configure the menu options
@@ -555,7 +557,7 @@ filelimit_set() {
 
     # If the file limit is already set, no need to do anything
     if [ "$filelimit" -ge 524288 ]; then
-	message info "Your open files limit is already set to the optimal value.\nYou're all set!"
+        message info "Your open files limit is already set to the optimal value.\nYou're all set!"
         return 0
     fi
 
@@ -565,16 +567,16 @@ filelimit_set() {
             # Using systemd
             # Append to the file
             pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
-	    message info "The necessary configuration has been appended to:\n/etc/systemd/system.conf"
+            message info "The necessary configuration has been appended to:\n/etc/systemd/system.conf"
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
             # Insert before the last line in the file
             pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
-	    message info "The necessary configuration has been appended to:\n/etc/security/limits.conf"
+            message info "The necessary configuration has been appended to:\n/etc/security/limits.conf"
         else
             # Don't know what method to use
             message warning "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
-	    return 0
+            return 0
         fi
     fi
 
@@ -587,24 +589,24 @@ rm_shaders() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
-	# User cancelled and wants to return to the main menu, or error
-	return 0
+        # User cancelled and wants to return to the main menu, or error
+        return 0
     fi
 
     shaders_dir="$user_dir/Shaders"
 
     # Sanity check
     if [ ! -d "$shaders_dir" ]; then
-	message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
-	return 0
+        message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
+        return 0
     fi
 
     # Delete the shader directory
     if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-	echo "Deleting shaders..."
-	rm -r "$shaders_dir"
-	echo -e "Done.\n"
-	message info "Your shaders have been deleted!"
+        echo "Deleting shaders..."
+        rm -r "$shaders_dir"
+        echo -e "Done.\n"
+        message info "Your shaders have been deleted!"
     fi
 }
 
@@ -613,51 +615,43 @@ rm_vidcache() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
-	# User cancelled and wants to return to the main menu, or there was an error
-	return 0
+        # User cancelled and wants to return to the main menu, or there was an error
+        return 0
     fi
     
     dxvk_cache="$game_path/$live_or_ptu/$dxvk_cache_file"
     
     # Sanity check
     if [ ! -f "$dxvk_cache" ]; then
-	message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
-	return 0
+        message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
+        return 0
     fi
 
     # Delete the cache file
     if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-	echo "Deleting DXVK cache..."
-	rm "$dxvk_cache"
-	echo -e "Done.\n"
-	message info "Your DXVK cache has been deleted!"
+        echo "Deleting DXVK cache..."
+        rm "$dxvk_cache"
+        echo -e "Done.\n"
+        message info "Your DXVK cache has been deleted!"
     fi
 }
 
 # Toggle between targeting the LIVE and PTU game directories for all helper functions
 set_version() {
     if [ "$live_or_ptu" = "LIVE" ]; then
-	live_or_ptu="PTU"
-	message info "The helper will now target your Star Citizen PTU installation."
+        live_or_ptu="PTU"
+        message info "The helper will now target your Star Citizen PTU installation."
     elif [ "$live_or_ptu" = "PTU" ]; then
-	live_or_ptu="LIVE"
-	message info "The helper will now target your Star Citizen LIVE installation."
+        live_or_ptu="LIVE"
+        message info "The helper will now target your Star Citizen LIVE installation."
     else
-	echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
-	live_or_ptu="LIVE"
+        echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
+        live_or_ptu="LIVE"
     fi
 }
 
 quit() {
     exit 0
-}
-
-delete_runner() {
-    remove_option="$1"
-    message question "Delete ${installed_versions[$remove_option]}?"
-    rm -rf "${installed_versions[$remove_option]}"
-    echo "removed ${installed_versions[$remove_option]}"
-    choose_runner_to_delete
 }
 
 restart_lutris() {
@@ -673,30 +667,44 @@ mainmenu() {
     #message info "Aborting - going back to Mainmenu"
     echo "going back to menu"
 }
+
+delete_runner() {
+    remove_option="$1"
+    if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$remove_option]}"; then
+        rm -r "${installed_runners[$remove_option]}"
+        echo "Deleted ${installed_runners[$remove_option]}\n"
+    fi
+}
  
 choose_runner_to_delete() {
     # Configure the menu
-    menu_text_zenity="Please select Version to delete:"
-    menu_text_terminal="Please select Version to delete:"
+    menu_text_zenity="Please select the Lutris runner you want to delete:"
+    menu_text_terminal="Please select the Lutris runner you want to delete:"
     menu_height="300"
-    menu_options=()
-    menu_actions=()
+    goback="Return to the runner management menu"
+    unset installed_runners
+    unset menu_options
+    unset menu_actions
      
-    installed_versions=($(ls -d "$base_path"/*/))  # create an array with all directorys in the base_path
+    # Create an array containing all directories in the lutris_dir
+    for runner_dir in "$lutris_dir"/*; do
+        if [ -d "$runner_dir" ]; then
+            installed_runners+=("$runner_dir")
+        fi
+    done
     
-    # iterate through the installed versions and create the menu options for them
-    for((i=0;i<${#installed_versions[@]};i++)); do
-        inumber=$(("$i" + 1))
-        folder=$(echo "${installed_versions[i]}" | rev | cut -d/ -f2 | rev) #reverse the order, cut after the second / and reverse again to only have the runner folder instead of the whole path
-        menu_options+=("$inumber. $folder")
+    # Create menu options for the installed runners
+    for (( i=0; i<"${#installed_runners[@]}"; i++ )); do
+        menu_options+=("$(basename "${installed_runners[i]}")")
         menu_actions+=("delete_runner $i")
     done
-    menu_options+=("Back")
+    
+    # Complete the menu by adding the option to go back to the previous menu
+    menu_options+=("$goback")
     menu_actions+=("manage_runners")
     
     # Call the menu function.  It will use the options as configured above
     menu
-
 }
 
 install_runner() {
@@ -718,13 +726,13 @@ install_runner() {
     
     # check if the installed runner is from Rawfox or snatella because rawfox has a subfolder in the archive
     if test "$latest_url" = "$snatella_url" ; then
-        dest_path="$base_path/$version"
+        dest_path="$lutris_dir/$version"
         [ -d "$dest_path" ] || {
             mkdir "$dest_path"
             echo [Info] Created "$dest_path"
         }
     else
-    dest_path="$base_path"
+    dest_path="$lutris_dir"
     fi
     
     # download and extract the runner
@@ -740,9 +748,9 @@ install_runner() {
     snatella="Download another runner from Molotov/Snatella"
     delete="Delete an installed runner"
     restart="Restart Lutris and got back to Mainmenu"
-    back="Back to Mainmenu"
+    goback="Return to the main menu"
     # Set the options to be displayed in the menu
-    menu_options=("$rawfox" "$snatella" "$delete" "$restart" "$back")
+    menu_options=("$rawfox" "$snatella" "$delete" "$restart" "$goback")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("choose_runner_version rawfox" "choose_runner_version snatella" "choose_runner_to_delete" "restart_lutris" "mainmenu")
     
@@ -761,8 +769,8 @@ choose_runner_version() {
     download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tgz" | cut -d \" -f4 | cut -d / -f9))
     ;;
     rawfox)
-    latest_url="$raw_url"
-    echo "searching $raw_url ..."
+    latest_url="$rawfox_url"
+    echo "searching $rawfox_url ..."
     download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tar.gz" | cut -d \" -f4 | cut -d / -f9 | cut -d . -f1-3))
     ;;
     esac
@@ -785,7 +793,7 @@ choose_runner_version() {
     for((i=0;i<"$runner_count";i++)); do
         number=$(("$i" + 1))
         version=$(echo "${download_options[i]}" | sed 's/\.[^.]*$//')
-        if [ -d "$base_path"/"$version" ]; then
+        if [ -d "$lutris_dir"/"$version" ]; then
             menu_options+=("$number. $version    [installed]")
         else
             menu_options+=("$number. $version")
@@ -800,22 +808,21 @@ choose_runner_version() {
 
     
 manage_runners() {
-    max_runners=20
     # Configure the menu
-    menu_text_zenity="<b>This helper can manage your runners for you</b>\n\nChoose what you want to do:"
-    menu_text_terminal="This helper can manage your runners for you<\n\nChoose what you want to do:"
+    menu_text_zenity="<b>This helper can manage your Lutris runners</b>\n\nChoose from the following options:"
+    menu_text_terminal="This helper can manage your Lutris runners<\n\nChoose from the following options:"
     menu_height="200"
-    
+
     # Configure the menu options
-    rawfox="Download a runner from RawFox"
-    snatella="Download a runner from Molotov/Snatella"
+    rawfox="Install a runner from RawFox"
+    snatella="Install a runner from Molotov/Snatella"
     delete="Delete an installed runner"
-    back="Back to Mainmenu"
+    back="Return to the main menu"
     # Set the options to be displayed in the menu
     menu_options=("$rawfox" "$snatella" "$delete" "$back")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("choose_runner_version rawfox" "choose_runner_version snatella" "choose_runner_to_delete" "mainmenu")
-    
+
     # Call the menu function.  It will use the options as configured above
     menu
 }
@@ -839,22 +846,22 @@ while true; do
     # Configure the menu
     menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
     menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
-    menu_height="335"
+    menu_height="340"
 
     # Configure the menu options
-    mapcount_msg="Check vm.max_map_count for optimal performance"
-    download_msg="Manage Lutris-Runners"
-    filelimit_msg="Check my open file descriptors limit"
+    runners_msg="Manage Lutris Runners"
     sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+    mapcount_msg="Check vm.max_map_count for optimal performance"
+    filelimit_msg="Check my open file descriptors limit"
     shaders_msg="Delete my shaders only"
     vidcache_msg="Delete my DXVK cache"
     version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$mapcount_msg" "$download_msg" "$filelimit_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
+    menu_options=("$runners_msg" "$sanitize_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("mapcount_set" "manage_runners" "filelimit_set" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    menu_actions=("manage_runners" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "quit")
     
     # Call the menu function.  It will use the options as configured above
     menu
