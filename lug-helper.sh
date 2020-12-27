@@ -642,7 +642,7 @@ rm_vidcache() {
 
 # Restart lutris
 lutris_restart() {
-    if [ "$runners_modified" = "true" ]; then
+    if [ "$lutris_needs_restart" = "true" ]; then
         if message question "Lutris must be restarted to detect runner changes.\nWould you like this helper to restart it for you?"; then
             if [ "$(pgrep lutris)" ]; then
                 echo -e "\nRestarting Lutris...\n"
@@ -650,6 +650,7 @@ lutris_restart() {
             else
                 message info "Lutris does not appear to be running."
             fi
+            lutris_needs_restart="false"
         fi
     fi
 }
@@ -667,7 +668,7 @@ runner_delete() {
     if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$runner_to_delete]}"; then
         rm -r "${installed_runners[$runner_to_delete]}"
         echo -e "\nDeleted ${installed_runners[$runner_to_delete]}\n"
-        runners_modified="true"
+        lutris_needs_restart="true"
     fi
 }
 
@@ -697,7 +698,7 @@ runner_select_delete() {
     
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
-    menu_actions+=("runner_manage")
+    menu_actions+=(":") # no-op
     
     # Call the menu function.  It will use the options as configured above
     menu
@@ -729,12 +730,12 @@ runner_install() {
         # Runners without a subdirectory in the archive
         echo -e "\nDownloading $runner_url\ninto $runner_dir/$runner_name\n"
         mkdir -p "$runner_dir/$runner_name" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir/$runner_name"
-        runners_modified="true"
+        lutris_needs_restart="true"
     else
         # Runners with a subdirectory in the archive
         echo -e "\nDownloading $runner_url\ninto $runner_dir\n"
         mkdir -p "$runner_dir" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir"
-        runners_modified="true"
+        lutris_needs_restart="true"
     fi
 }
 
@@ -797,10 +798,15 @@ runner_select_install() {
 
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
-    menu_actions+=("runner_manage")
+    menu_actions+=(":") # no-op
     
     # Call the menu function.  It will use the options as configured above
     menu
+}
+
+# Called when the user is done managing runners. Causes a return to the main menu
+runner_manage_done() {
+    managing_runners="false"
 }
 
 # Manage Lutris runners
@@ -808,26 +814,34 @@ runner_manage() {
     # Check if Lutris is installed
     if [ ! -x "$(command -v lutris)" ]; then
         message info "Lutris does not appear to be installed."
-        return 1
+        return 0
     fi
+
+    # The runner management menu will loop until the user cancels
+    managing_runners="true"
+
+    while [ "$managing_runners" = "true" ]; do
+        # Configure the menu
+        menu_text_zenity="<b>This helper can manage your Lutris runners</b>\n\nChoose from the following options:"
+        menu_text_terminal="This helper can manage your Lutris runners<\n\nChoose from the following options:"
+        menu_height="200"
+
+        # Configure the menu options
+        rawfox="Install a runner from RawFox"
+        snatella="Install a runner from Molotov/Snatella"
+        delete="Delete an installed runner"
+        back="Return to the main menu"
+        # Set the options to be displayed in the menu
+        menu_options=("$rawfox" "$snatella" "$delete" "$back")
+        # Set the corresponding functions to be called for each of the options
+        menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "runner_manage_done")
+
+        # Call the menu function.  It will use the options as configured above
+        menu
+    done
     
-    # Configure the menu
-    menu_text_zenity="<b>This helper can manage your Lutris runners</b>\n\nChoose from the following options:"
-    menu_text_terminal="This helper can manage your Lutris runners<\n\nChoose from the following options:"
-    menu_height="200"
-
-    # Configure the menu options
-    rawfox="Install a runner from RawFox"
-    snatella="Install a runner from Molotov/Snatella"
-    delete="Delete an installed runner"
-    back="Return to the main menu"
-    # Set the options to be displayed in the menu
-    menu_options=("$rawfox" "$snatella" "$delete" "$back")
-    # Set the corresponding functions to be called for each of the options
-    menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "lutris_restart")
-
-    # Call the menu function.  It will use the options as configured above
-    menu
+    # Check if lutris needs to be restarted after making changes
+    lutris_restart
 }
 
 # Toggle between targeting the LIVE and PTU game directories for all helper functions
@@ -861,7 +875,7 @@ fi
 
 # Set some defaults
 live_or_ptu="LIVE"
-runners_modified="false"
+lutris_needs_restart="false"
 
 # Loop the main menu until the user selects quit
 while true; do
