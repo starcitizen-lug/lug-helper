@@ -640,24 +640,6 @@ rm_vidcache() {
     fi
 }
 
-# Toggle between targeting the LIVE and PTU game directories for all helper functions
-set_version() {
-    if [ "$live_or_ptu" = "LIVE" ]; then
-        live_or_ptu="PTU"
-        message info "The helper will now target your Star Citizen PTU installation."
-    elif [ "$live_or_ptu" = "PTU" ]; then
-        live_or_ptu="LIVE"
-        message info "The helper will now target your Star Citizen LIVE installation."
-    else
-        echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
-        live_or_ptu="LIVE"
-    fi
-}
-
-quit() {
-    exit 0
-}
-
 mainmenu() {
     #message info "Aborting - going back to Mainmenu"
     echo "going back to menu"
@@ -675,7 +657,8 @@ lutris_restart() {
     fi
 }
 
-delete_runner() {
+# Delete the selected runner
+runner_delete() {
     remove_option="$1"
     if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$remove_option]}"; then
         rm -r "${installed_runners[$remove_option]}"
@@ -685,8 +668,9 @@ delete_runner() {
     # Restart Lutris
     lutris_restart
 }
- 
-choose_runner_to_delete() {
+
+# List installed runners for deletion
+runner_select_delete() {
     # Configure the menu
     menu_text_zenity="Select the Lutris runner you want to delete:"
     menu_text_terminal="Select the Lutris runner you want to delete:"
@@ -706,18 +690,19 @@ choose_runner_to_delete() {
     # Create menu options for the installed runners
     for (( i=0; i<"${#installed_runners[@]}"; i++ )); do
         menu_options+=("$(basename "${installed_runners[i]}")")
-        menu_actions+=("delete_runner $i")
+        menu_actions+=("runner_delete $i")
     done
     
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
-    menu_actions+=("manage_runners")
+    menu_actions+=("runner_manage")
     
     # Call the menu function.  It will use the options as configured above
     menu
 }
 
-install_runner() {
+# Download and install the selected runner
+runner_install() {
     # This function expects an index number for the array runner_versions to be passed in as an argument
     if [ -z "$1" ]; then
         echo -e "\nScript error:  The install runner function expects an argument. Aborting."
@@ -751,8 +736,9 @@ install_runner() {
     # Restart Lutris
     lutris_restart
 }
-    
-choose_runner_version() {
+
+# List available runners for download
+runner_select_install() {
     # This function expects the name of the runner contributor to be passed in as an argument
     if [ -z "$1" ]; then
         echo -e "\nScript error:  The choose runner function expects an argument. Aborting."
@@ -805,19 +791,19 @@ choose_runner_version() {
         else
             menu_options+=("${runner_versions[i]}")
         fi
-        menu_actions+=("install_runner $i")
+        menu_actions+=("runner_install $i")
     done
 
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
-    menu_actions+=("manage_runners")
+    menu_actions+=("runner_manage")
     
     # Call the menu function.  It will use the options as configured above
     menu
 }
 
-    
-manage_runners() {
+# Manage Lutris runners
+runner_manage() {
     # Check if Lutris is installed
     if [ ! -x "$(command -v lutris)" ]; then
         message info "Lutris does not appear to be installed."
@@ -837,10 +823,28 @@ manage_runners() {
     # Set the options to be displayed in the menu
     menu_options=("$rawfox" "$snatella" "$delete" "$back")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("choose_runner_version rawfox" "choose_runner_version snatella" "choose_runner_to_delete" "mainmenu")
+    menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "mainmenu")
 
     # Call the menu function.  It will use the options as configured above
     menu
+}
+
+# Toggle between targeting the LIVE and PTU game directories for all helper functions
+set_version() {
+    if [ "$live_or_ptu" = "LIVE" ]; then
+        live_or_ptu="PTU"
+        message info "The helper will now target your Star Citizen PTU installation."
+    elif [ "$live_or_ptu" = "PTU" ]; then
+        live_or_ptu="LIVE"
+        message info "The helper will now target your Star Citizen LIVE installation."
+    else
+        echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
+        live_or_ptu="LIVE"
+    fi
+}
+
+quit() {
+    exit 0
 }
 
 
@@ -877,7 +881,7 @@ while true; do
     # Set the options to be displayed in the menu
     menu_options=("$runners_msg" "$sanitize_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("manage_runners" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    menu_actions=("runner_manage" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "quit")
     
     # Call the menu function.  It will use the options as configured above
     menu
