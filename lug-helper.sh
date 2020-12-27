@@ -640,19 +640,16 @@ rm_vidcache() {
     fi
 }
 
-mainmenu() {
-    #message info "Aborting - going back to Mainmenu"
-    echo "going back to menu"
-}
-
 # Restart lutris
 lutris_restart() {
-    if message question "Lutris must be restarted to refresh the downloaded runners.\nWould you like this helper to restart it for you?"; then
-        if [ "$(pgrep lutris)" ]; then
-            echo -e "\nRestarting Lutris...\n"
-            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-        else
-            message info "Lutris does not appear to be running."
+    if [ "$runners_modified" = "true" ]; then
+        if message question "Lutris must be restarted to detect runner changes.\nWould you like this helper to restart it for you?"; then
+            if [ "$(pgrep lutris)" ]; then
+                echo -e "\nRestarting Lutris...\n"
+                pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+            else
+                message info "Lutris does not appear to be running."
+            fi
         fi
     fi
 }
@@ -670,10 +667,8 @@ runner_delete() {
     if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$runner_to_delete]}"; then
         rm -r "${installed_runners[$runner_to_delete]}"
         echo -e "\nDeleted ${installed_runners[$runner_to_delete]}\n"
+        runners_modified="true"
     fi
-
-    # Restart Lutris
-    lutris_restart
 }
 
 # List installed runners for deletion
@@ -734,14 +729,13 @@ runner_install() {
         # Runners without a subdirectory in the archive
         echo -e "\nDownloading $runner_url\ninto $runner_dir/$runner_name\n"
         mkdir -p "$runner_dir/$runner_name" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir/$runner_name"
+        runners_modified="true"
     else
         # Runners with a subdirectory in the archive
         echo -e "\nDownloading $runner_url\ninto $runner_dir\n"
         mkdir -p "$runner_dir" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir"
+        runners_modified="true"
     fi
-
-    # Restart Lutris
-    lutris_restart
 }
 
 # List available runners for download
@@ -830,7 +824,7 @@ runner_manage() {
     # Set the options to be displayed in the menu
     menu_options=("$rawfox" "$snatella" "$delete" "$back")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "mainmenu")
+    menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "lutris_restart")
 
     # Call the menu function.  It will use the options as configured above
     menu
@@ -865,8 +859,9 @@ if [ -x "$(command -v zenity)" ]; then
     has_zen=1
 fi
 
-# Default to LIVE
+# Set some defaults
 live_or_ptu="LIVE"
+runners_modified="false"
 
 # Loop the main menu until the user selects quit
 while true; do
