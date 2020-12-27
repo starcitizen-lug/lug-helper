@@ -47,7 +47,11 @@ keybinds_export_path="Controls/Mappings"
 dxvk_cache_file="StarCitizen.dxvk-cache"
 
 # Lutris wine runners directory
-runner_dir="$HOME/.local/share/lutris/runners/wine"
+if [ -z "$XDG_DATA_HOME" ]; then
+    runner_dir="$HOME/.local/share/lutris/runners/wine"
+else
+    runner_dir="$XDG_DATA_HOME/lutris/runners/wine"
+fi
 # URLs for downloading Lutris runners
 rawfox_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
