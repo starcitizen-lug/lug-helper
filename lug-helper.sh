@@ -707,8 +707,8 @@ runner_delete() {
 # List installed runners for deletion
 runner_select_delete() {
     # Configure the menu
-    menu_text_zenity="Select the Lutris runner you want to delete:"
-    menu_text_terminal="Select the Lutris runner you want to delete:"
+    menu_text_zenity="Select the Lutris runner you want to remove:"
+    menu_text_terminal="Select the Lutris runner you want to remove:"
     menu_text_height="65"
     goback="Return to the runner management menu"
     unset installed_runners
@@ -879,7 +879,7 @@ runner_manage() {
         # Configure the menu options
         rawfox="Install a runner from RawFox"
         snatella="Install a runner from Molotov/Snatella"
-        delete="Delete an installed runner"
+        delete="Remove an installed runner"
         back="Return to the main menu"
         # Set the options to be displayed in the menu
         menu_options=("$rawfox" "$snatella" "$delete" "$back")
