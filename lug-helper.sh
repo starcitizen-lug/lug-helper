@@ -107,7 +107,7 @@ message() {
 
         # Display the message
         shift 1   # drop the first argument and shift the remaining up one
-        zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper"
+        zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null
     else
         # Fall back to text-based messages when zenity is not available
         case "$1" in
@@ -220,7 +220,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}")"
+        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Loop through the options array to match the chosen option
         matched="false"
@@ -311,7 +311,7 @@ getdirs() {
         if [ "$has_zen" -eq 1 ]; then
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-                wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine")"
+                wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
                     message warning "An unexpected error has occurred. The helper is unable to proceed."
                     return 1
@@ -324,7 +324,7 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-                while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen")"; do
+                while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" 2>/dev/null)"; do
                     if [ "$?" -eq -1 ]; then
                         message warning "An unexpected error has occurred. The helper is unable to proceed."
                         return 1
@@ -345,7 +345,7 @@ getdirs() {
 
             # Get the backup directory
             if [ -z "$backup_path" ]; then
-                while backup_path="$(zenity --file-selection --directory --title="Select a directory to back up your keybinds into" --filename="$HOME/")"; do
+                while backup_path="$(zenity --file-selection --directory --title="Select a directory to back up your keybinds into" --filename="$HOME/" 2>/dev/null)"; do
                     if [ "$?" -eq -1 ]; then
                         message warning "An unexpected error has occurred. The helper is unable to proceed."
                         return 1
