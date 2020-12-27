@@ -818,6 +818,12 @@ choose_runner_version() {
 
     
 manage_runners() {
+    # Check if Lutris is installed
+    if [ ! -x "$(command -v lutris)" ]; then
+        message info "Lutris does not appear to be installed."
+        return 1
+    fi
+    
     # Configure the menu
     menu_text_zenity="<b>This helper can manage your Lutris runners</b>\n\nChoose from the following options:"
     menu_text_terminal="This helper can manage your Lutris runners<\n\nChoose from the following options:"
