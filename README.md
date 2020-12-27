@@ -13,6 +13,16 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 
 ## Options:
 
+`Manage Lutris Runners`
+- Quickly install and delete Lutris wine runners
+
+`Delete my Star Citizen USER folder and preserve my keybinds`
+- The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
+- To export your keybinds from within the game, go to:
+  - *Options->Keybindings->Control Profiles->Save Control Settings*
+- To re-import your keybinds from within the game, select them from the list:
+  - *Options->Keybindings->Control Profiles*
+
 `Check vm.max_map_count for optimal performance`
 - We recommend setting this to at least 16777216 to give the game access to sufficient memory.
 - The helper will offer to set it for you or show you the commands to do it yourself.
@@ -21,13 +31,6 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 - We recommend setting the hard open files limit to at least 524288.
 - The helper will offer to set it for you and try to auto-detect the correct method to do so.
 - It is able to update either */etc/systemd/system.conf* or */etc/security/limits.conf*
-
-`Delete my Star Citizen USER folder and preserve my keybinds`
-- The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
-- To export your keybinds from within the game, go to:
-  - *Options->Keybindings->Control Profiles->Save Control Settings*
-- To re-import your keybinds from within the game, select them from the list:
-  - *Options->Keybindings->Control Profiles*
 
 `Delete my shaders only`
 - Sometimes all you need to do between major version updates is delete your shaders directory.
