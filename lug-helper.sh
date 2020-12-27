@@ -70,6 +70,17 @@ menu_option_height="25"
 ############################################################################
 
 
+# Echo a debug message to the terminal with newlines
+debug_echo() {
+    # This function expects a string argument
+    if [ -z "$1" ]; then
+        echo -e "\nScript error:  The debug_echo function expects an argument. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+    echo -e "\n$1\n"
+}
+
 # Display a message to the user.
 # Expects the first argument to indicate the message type, followed by
 # a string of arguments that will be passed to zenity or echoed to the user.
@@ -79,7 +90,7 @@ menu_option_height="25"
 message() {
     # Sanity check
     if [ "$#" -lt 2 ]; then
-        echo -e "\nScript error: The message function expects two arguments. Aborting."
+        debug_echo "Script error: The message function expects two arguments. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -103,7 +114,7 @@ message() {
                 margs=("--question" "--text=")
                 ;;
             *)
-                echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
+                debug_echo "Script Error: Invalid message type passed to the message function. Aborting."
                 read -n 1 -s -p "Press any key..."
                 exit 0
                 ;;
@@ -150,7 +161,7 @@ message() {
                 done
                 ;;
             *)
-                echo -e "\nScript Error: Invalid message type passed to the message function. Aborting."
+                debug_echo "Script Error: Invalid message type passed to the message function. Aborting."
                 read -n 1 -s -p "Press any key..."
                 exit 0
                 ;;
@@ -186,23 +197,23 @@ message() {
 menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
-        echo -e "\nScript error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+        debug_echo "Script error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
-        echo -e "\nScript error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+        debug_echo "Script error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     elif [ -z "$menu_text_zenity" ]; then
-        echo -e "\nScript error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
+        debug_echo "Script error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     elif [ -z "$menu_text_terminal" ]; then
-        echo -e "\nScript error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
+        debug_echo "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     elif [ -z "$menu_height" ]; then
-        echo -e "\nScript error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+        debug_echo "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -290,21 +301,21 @@ getdirs() {
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
         wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
         if [ ! -d "$wine_prefix" ]; then
-            echo -e "\nThe saved wine prefix does not exist, ignoring.\n"
+            debug_echo "The saved wine prefix does not exist, ignoring."
             wine_prefix=""
         fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
         if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "StarCitizen" ]; then
-            echo -e "\nUnexpected game path found in config file, ignoring.\n"
+            debug_echo "Unexpected game path found in config file, ignoring."
             game_path=""
         fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$backup_conf" ]; then
         backup_path="$(cat "$conf_dir/$conf_subdir/$backup_conf")"
         if [ ! -d "$backup_path" ]; then
-            echo -e "\nThe saved backup path does not exist, ignoring.\n"
+            debug_echo "The saved backup path does not exist, ignoring."
             backup_path=""
         fi
     fi
@@ -457,21 +468,21 @@ sanitize() {
     if message question "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
         # Back up keybinds
         if [ "$exported" -eq 1 ]; then
-            echo "Backing up all saved keybinds..."
+            debug_echo "Backing up all saved keybinds..."
             cp -r "$keybinds_dir/." "$backup_path/keybinds/"
-            echo -e "Done.\n"
+            debug_echo "Done."
         fi
         
         # Wipe the user directory
-        echo "Wiping USER directory..."
+        debug_echo "Wiping USER directory..."
         rm -r "$user_dir"
-        echo -e "Done.\n"
+        debug_echo "Done."
 
         # Restore custom keybinds
         if [ "$exported" -eq 1 ]; then
-            echo "Restoring keybinds..."
+            debug_echo "Restoring keybinds..."
             mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
-            echo -e "Done.\n"
+            debug_echo "Done."
             message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
         fi
 
@@ -626,9 +637,9 @@ rm_shaders() {
 
     # Delete the shader directory
     if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-        echo "Deleting shaders..."
+        debug_echo "Deleting shaders..."
         rm -r "$shaders_dir"
-        echo -e "Done.\n"
+        debug_echo "Done."
         message info "Your shaders have been deleted!"
     fi
 }
@@ -652,9 +663,9 @@ rm_vidcache() {
 
     # Delete the cache file
     if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-        echo "Deleting DXVK cache..."
+        debug_echo "Deleting DXVK cache..."
         rm "$dxvk_cache"
-        echo -e "Done.\n"
+        debug_echo "Done."
         message info "Your DXVK cache has been deleted!"
     fi
 }
@@ -666,7 +677,7 @@ lutris_restart() {
     if [ "$lutris_needs_restart" = "true" ]; then
         if message question "Lutris must be restarted to detect runner changes.\nWould you like this helper to restart it for you?"; then
             if [ "$(pgrep lutris)" ]; then
-                echo -e "\nRestarting Lutris...\n"
+                debug_echo "Restarting Lutris..."
                 pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
             else
                 message info "Lutris does not appear to be running."
@@ -680,7 +691,7 @@ lutris_restart() {
 runner_delete() {
     # This function expects an index number for the array installed_runners to be passed in as an argument
     if [ -z "$1" ]; then
-        echo -e "\nScript error:  The runner_delete function expects an argument. Aborting."
+        debug_echo "Script error:  The runner_delete function expects an argument. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -688,7 +699,7 @@ runner_delete() {
     runner_to_delete="$1"
     if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$runner_to_delete]}"; then
         rm -r "${installed_runners[$runner_to_delete]}"
-        echo -e "\nDeleted ${installed_runners[$runner_to_delete]}\n"
+        debug_echo "Deleted ${installed_runners[$runner_to_delete]}"
         lutris_needs_restart="true"
     fi
 }
@@ -735,7 +746,7 @@ runner_select_delete() {
 runner_install() {
     # This function expects an index number for the array runner_versions to be passed in as an argument
     if [ -z "$1" ]; then
-        echo -e "\nScript error:  The runner_install function expects an argument. Aborting."
+        debug_echo "Script error:  The runner_install function expects an argument. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -761,12 +772,12 @@ runner_install() {
     # Download and extract the runner
     if [ "$latest_url" = "$snatella_url" ]; then
         # Runners without a subdirectory in the archive
-        echo -e "\nDownloading $runner_url\ninto $runner_dir/$runner_name\n"
+        debug_echo "Downloading $runner_url\ninto $runner_dir/$runner_name"
         mkdir -p "$runner_dir/$runner_name" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir/$runner_name"
         lutris_needs_restart="true"
     else
         # Runners with a subdirectory in the archive
-        echo -e "\nDownloading $runner_url\ninto $runner_dir\n"
+        debug_echo "Downloading $runner_url\ninto $runner_dir"
         mkdir -p "$runner_dir" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir"
         lutris_needs_restart="true"
     fi
@@ -776,7 +787,7 @@ runner_install() {
 runner_select_install() {
     # This function expects the name of the runner contributor to be passed in as an argument
     if [ -z "$1" ]; then
-        echo -e "\nScript error:  The runner_select_install function expects an argument. Aborting."
+        debug_echo "Script error:  The runner_select_install function expects an argument. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -792,7 +803,7 @@ runner_select_install() {
             runner_versions=($(curl -s "$latest_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -as .tar.gz))
             ;;
         *)
-            echo -e "\nScript Error: Invalid parameter passed to the runner version function.  Aborting."
+            debug_echo "Script Error: Invalid parameter passed to the runner version function.  Aborting."
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
@@ -898,7 +909,7 @@ set_version() {
         live_or_ptu="LIVE"
         message info "The helper will now target your Star Citizen LIVE installation."
     else
-        echo -e "\nUnexpected game version provided.  Defaulting to the LIVE installation."
+        debug_echo "Unexpected game version provided.  Defaulting to the LIVE installation."
         live_or_ptu="LIVE"
     fi
 }
