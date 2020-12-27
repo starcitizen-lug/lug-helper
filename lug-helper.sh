@@ -650,8 +650,8 @@ lutris_restart() {
             else
                 message info "Lutris does not appear to be running."
             fi
-            lutris_needs_restart="false"
         fi
+        lutris_needs_restart="false"
     fi
 }
 
@@ -713,10 +713,16 @@ runner_install() {
         exit 0
     fi
     
-    # Use menu selection from last menu to select version from array 
+    # Store the selected runner name and url
     runner_name="${runner_versions[$1]}"
-    runner_url="$(curl -s "$latest_url" | grep "browser_download_url.*$runner_name" | cut -d \" -f4)"
-    
+    if [ "$latest_url" = "$snatella_url" ]; then
+        # Runners with .tgz file extension
+        runner_url="$(curl -s "$latest_url" | grep "browser_download_url.*$runner_name.tgz" | cut -d \" -f4)"
+    else
+        # Runners with .tar.gz file extension
+        runner_url="$(curl -s "$latest_url" | grep "browser_download_url.*$runner_name.tar.gz" | cut -d \" -f4)"
+    fi
+
     # Sanity check
     if [ -z "$runner_url" ]; then
         message warning "Could not find the requested runner.  The Github API may be down or rate limited."
