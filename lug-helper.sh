@@ -62,6 +62,10 @@ snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
 # Set a maximum number of runners
 max_runners=20
 
+# Pixels to add for each Zenity menu option
+# used to dynamically determine the height of menus
+menu_option_height="25"
+
 ############################################################################
 ############################################################################
 
@@ -533,7 +537,7 @@ mapcount_set() {
     # Configure the menu
     menu_text_zenity="<b>This helper can change vm.max_map_count for you</b>\n\nChoose from the following options:"
     menu_text_terminal="This helper can change vm.max_map_count for you\n\nChoose from the following options:"
-    menu_height="200"
+    menu_text_height="100"
     
     # Configure the menu options
     once="Change setting until next reboot"
@@ -545,6 +549,9 @@ mapcount_set() {
     menu_options=("$once" "$persist" "$manual" "$goback")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "mapcount_check")
+
+    # Calculate the total height the menu should be
+    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
     
     # Display an informational message to the user
     message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
@@ -691,7 +698,7 @@ runner_select_delete() {
     # Configure the menu
     menu_text_zenity="Select the Lutris runner you want to delete:"
     menu_text_terminal="Select the Lutris runner you want to delete:"
-    menu_height="300"
+    menu_text_height="65"
     goback="Return to the runner management menu"
     unset installed_runners
     unset menu_options
@@ -713,6 +720,12 @@ runner_select_delete() {
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
     menu_actions+=(":") # no-op
+
+    # Calculate the total height the menu should be
+    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+    if [ "$menu_height" -gt "400" ]; then
+        menu_height="400"
+    fi
     
     # Call the menu function.  It will use the options as configured above
     menu
@@ -794,7 +807,7 @@ runner_select_install() {
     # Configure the menu
     menu_text_zenity="Select the Lutris runner you want  to install:"
     menu_text_terminal="Select the Lutris runner you want to install:"
-    menu_height="500"
+    menu_text_height="65"
     goback="Return to the runner management menu"
     unset menu_options
     unset menu_actions
@@ -819,6 +832,12 @@ runner_select_install() {
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
     menu_actions+=(":") # no-op
+
+    # Calculate the total height the menu should be
+    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+    if [ "$menu_height" -gt "400" ]; then
+        menu_height="400"
+    fi
     
     # Call the menu function.  It will use the options as configured above
     menu
@@ -844,7 +863,7 @@ runner_manage() {
         # Configure the menu
         menu_text_zenity="<b>This helper can manage your Lutris runners</b>\n\nChoose from the following options:"
         menu_text_terminal="This helper can manage your Lutris runners<\n\nChoose from the following options:"
-        menu_height="200"
+        menu_text_height="100"
 
         # Configure the menu options
         rawfox="Install a runner from RawFox"
@@ -856,6 +875,9 @@ runner_manage() {
         # Set the corresponding functions to be called for each of the options
         menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "runner_manage_done")
 
+        # Calculate the total height the menu should be
+        menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+        
         # Call the menu function.  It will use the options as configured above
         menu
     done
@@ -905,7 +927,7 @@ while true; do
     # Configure the menu
     menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
     menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
-    menu_height="340"
+    menu_text_height="140"
 
     # Configure the menu options
     runners_msg="Manage Lutris Runners"
@@ -921,6 +943,9 @@ while true; do
     menu_options=("$runners_msg" "$sanitize_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("runner_manage" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "quit")
+
+    # Calculate the total height the menu should be
+    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
     
     # Call the menu function.  It will use the options as configured above
     menu
