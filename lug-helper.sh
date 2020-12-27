@@ -47,7 +47,7 @@ keybinds_export_path="Controls/Mappings"
 dxvk_cache_file="StarCitizen.dxvk-cache"
 
 # Lutris wine runners directory
-lutris_dir="$HOME/.local/share/lutris/runners/wine"
+runner_dir="$HOME/.local/share/lutris/runners/wine"
 # URLs for downloading Lutris runners
 rawfox_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
@@ -654,25 +654,28 @@ quit() {
     exit 0
 }
 
-restart_lutris() {
-  if [ "$( pgrep lutris )" != "" ]; then
-    echo "Restarting Lutris"
-    pkill -TERM lutris #restarting Lutris
-    sleep 5s
-    nohup lutris </dev/null &>/dev/null &
-  fi
-}
-
 mainmenu() {
     #message info "Aborting - going back to Mainmenu"
     echo "going back to menu"
+}
+
+# Restart lutris
+lutris_restart() {
+    if message question "Lutris must be restarted to refresh the downloaded runners.\nWould you like this helper to restart it for you?"; then
+        if [ "$(pgrep lutris)" ]; then
+            echo -e "\nRestarting Lutris...\n"
+            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+        else
+            message info "Lutris does not appear to be running."
+        fi
+    fi
 }
 
 delete_runner() {
     remove_option="$1"
     if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$remove_option]}"; then
         rm -r "${installed_runners[$remove_option]}"
-        echo "Deleted ${installed_runners[$remove_option]}\n"
+        echo -e "\nDeleted ${installed_runners[$remove_option]}\n"
     fi
 }
  
@@ -686,10 +689,10 @@ choose_runner_to_delete() {
     unset menu_options
     unset menu_actions
      
-    # Create an array containing all directories in the lutris_dir
-    for runner_dir in "$lutris_dir"/*; do
-        if [ -d "$runner_dir" ]; then
-            installed_runners+=("$runner_dir")
+    # Create an array containing all directories in the runner_dir
+    for runners_list in "$runner_dir"/*; do
+        if [ -d "$runners_list" ]; then
+            installed_runners+=("$runners_list")
         fi
     done
     
@@ -708,54 +711,38 @@ choose_runner_to_delete() {
 }
 
 install_runner() {
-    option_install="$1"  # grab argument passed by last menu
-    
-    # use menu selection from last menu to select version from array 
-    option="${runner_versions[$option_install]}"
-    version="$(echo "$option" | sed 's/\.[^.]*$//')"
-    url="$(curl -s "$latest_url" | grep -E "browser_download_url.*$option" | cut -d \" -f4)"
-    message question "Installing $version"
-    echo "Installing $version"
-    
-    # i have no idea, it's originally from cproton ;)
-    rsp="$(curl -sI "$url" | head -1)"
-    echo "$rsp" | grep -q 302 || {
-    echo "$rsp"
-    exit 1
-    }
-    
-    # check if the installed runner is from Rawfox or snatella because rawfox has a subfolder in the archive
-    if test "$latest_url" = "$snatella_url" ; then
-        dest_path="$lutris_dir/$version"
-        [ -d "$dest_path" ] || {
-            mkdir "$dest_path"
-            echo [Info] Created "$dest_path"
-        }
-    else
-    dest_path="$lutris_dir"
+    # This function expects an index number for the array runner_versions to be passed in as an argument
+    if [ -z "$1" ]; then
+        echo -e "\nScript error:  The install runner function expects an argument. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
     fi
     
-    # download and extract the runner
-    curl -sL "$url" | tar xfzv - -C "$dest_path"
-       
-    # Configure the menu
-    menu_text_zenity="<b>This helper can manage your runners for you</b>\n\nChoose what you want to do:"
-    menu_text_terminal="This helper can manage your runners for you<\n\nChoose what you want to do:"
-    menu_height="250"
+    # Use menu selection from last menu to select version from array 
+    runner_name="${runner_versions[$1]}"
+    runner_url="$(curl -s "$latest_url" | grep "browser_download_url.*$runner_name" | cut -d \" -f4)"
     
-    # Configure the menu options
-    rawfox="Download another runner from RawFox"
-    snatella="Download another runner from Molotov/Snatella"
-    delete="Delete an installed runner"
-    restart="Restart Lutris and got back to Mainmenu"
-    goback="Return to the main menu"
-    # Set the options to be displayed in the menu
-    menu_options=("$rawfox" "$snatella" "$delete" "$restart" "$goback")
-    # Set the corresponding functions to be called for each of the options
-    menu_actions=("choose_runner_version rawfox" "choose_runner_version snatella" "choose_runner_to_delete" "restart_lutris" "mainmenu")
+    # Sanity check
+    if [ -z "$runner_url" ]; then
+        message warning "Could not find the requested runner.  The Github API may be down or rate limited."
+        return 1
+    fi
+
+    message info "The selected runner will now be downloaded.\nThis might take a moment."
     
-    # Call the menu function.  It will use the options as configured above
-    menu
+    # Download and extract the runner
+    if [ "$latest_url" == "$snatella_url" ]; then
+        # Runners without a subdirectory in the archive
+        echo -e "\nDownloading $runner_url\ninto $runner_dir/$runner_name\n"
+        mkdir -p "$runner_dir/$runner_name" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir/$runner_name"
+    else
+        # Runners with a subdirectory in the archive
+        echo -e "\nDownloading $runner_url\ninto $runner_dir\n"
+        mkdir -p "$runner_dir" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir"
+    fi
+
+    # Restart Lutris
+    lutris_restart
 }
     
 choose_runner_version() {
@@ -806,7 +793,7 @@ choose_runner_version() {
     
     # Iterate through the versions, check if they are installed, and add them to the menu options
     for (( i=0; i<"$runner_count"; i++ )); do
-        if [ -d "$lutris_dir/${runner_versions[i]}" ]; then
+        if [ -d "$runner_dir/${runner_versions[i]}" ]; then
             menu_options+=("${runner_versions[i]}    [installed]")
         else
             menu_options+=("${runner_versions[i]}")
