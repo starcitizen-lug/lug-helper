@@ -53,7 +53,7 @@ rawfox_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
 
 # Set a maximum number of runners
-max_runners="20"
+max_runners=20
 
 ############################################################################
 ############################################################################
@@ -678,8 +678,8 @@ delete_runner() {
  
 choose_runner_to_delete() {
     # Configure the menu
-    menu_text_zenity="Please select the Lutris runner you want to delete:"
-    menu_text_terminal="Please select the Lutris runner you want to delete:"
+    menu_text_zenity="Select the Lutris runner you want to delete:"
+    menu_text_terminal="Select the Lutris runner you want to delete:"
     menu_height="300"
     goback="Return to the runner management menu"
     unset installed_runners
@@ -711,7 +711,7 @@ install_runner() {
     option_install="$1"  # grab argument passed by last menu
     
     # use menu selection from last menu to select version from array 
-    option="${download_options[$option_install]}"
+    option="${runner_versions[$option_install]}"
     version="$(echo "$option" | sed 's/\.[^.]*$//')"
     url="$(curl -s "$latest_url" | grep -E "browser_download_url.*$option" | cut -d \" -f4)"
     message question "Installing $version"
@@ -759,49 +759,60 @@ install_runner() {
 }
     
 choose_runner_version() {
-    chosen_contributor="$1"
+    runner_contributor="$1"
     
-    # change the download-url according to the user choice and account for different filetypes for the archives
-    case $chosen_contributor in
-    snatella)
-    latest_url="$snatella_url"
-    echo "searching $snatella_url ..."
-    download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tgz" | cut -d \" -f4 | cut -d / -f9))
-    ;;
-    rawfox)
-    latest_url="$rawfox_url"
-    echo "searching $rawfox_url ..."
-    download_options=($(curl -s "$latest_url" | grep -E "browser_download_url.*tar.gz" | cut -d \" -f4 | cut -d / -f9 | cut -d . -f1-3))
-    ;;
+    # set download urls
+    case "$runner_contributor" in
+        "snatella")
+            latest_url="$snatella_url"
+            runner_versions=($(curl -s "$latest_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -as .tgz))
+            ;;
+        "rawfox")
+            latest_url="$rawfox_url"
+            runner_versions=($(curl -s "$latest_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -as .tar.gz))
+            ;;
+        *)
+            echo -e "\nScript Error: Invalid parameter passed to the runner version function.  Aborting."
+            read -n 1 -s -p "Press any key..."
+            exit 0
+            ;;
     esac
-    
+
+    # Sanity check
+    if [ "${#runner_versions[@]}" -eq 0 ]; then
+        message warning "No runner versions were found.  The Github API may be down or rate limited."
+        return 1
+    fi   
+
     # Configure the menu
-    menu_text_zenity="Please select Version to install:"
-    menu_text_terminal="Please select Version to install:"
+    menu_text_zenity="Select the Lutris runner you want  to install:"
+    menu_text_terminal="Select the Lutris runner you want to install:"
     menu_height="500"
-    menu_options=()
-    menu_actions=()
-    
-    # check if there are more versions avaliable than defined as the max
-    if (("${#download_options[@]}" > "$max_runners")); then
+    goback="Return to the runner management menu"
+    unset menu_options
+    unset menu_actions
+
+    # Allow up to max_runners to be displayed in the list
+    if [ "${#runner_versions[@]}" -gt "$max_runners" ]; then
         runner_count="$max_runners"
     else
-        runner_count="${#download_options[@]}"
+        runner_count="${#runner_versions[@]}"
     fi
     
-    # iterate through the versions, check if they are installed and add them to the menu options
-    for((i=0;i<"$runner_count";i++)); do
-        number=$(("$i" + 1))
-        version=$(echo "${download_options[i]}" | sed 's/\.[^.]*$//')
-        if [ -d "$lutris_dir"/"$version" ]; then
-            menu_options+=("$number. $version    [installed]")
+    # Iterate through the versions, check if they are installed, and add them to the menu options
+    for (( i=0; i<"$runner_count"; i++ )); do
+        if [ -d "$lutris_dir/${runner_versions[i]}" ]; then
+            menu_options+=("${runner_versions[i]}    [installed]")
         else
-            menu_options+=("$number. $version")
+            menu_options+=("${runner_versions[i]}")
         fi
         menu_actions+=("install_runner $i")
     done
-    menu_options+=("Back")
+
+    # Complete the menu by adding the option to go back to the previous menu
+    menu_options+=("$goback")
     menu_actions+=("manage_runners")
+    
     # Call the menu function.  It will use the options as configured above
     menu
 }
