@@ -25,6 +25,9 @@
 # To import your keybinds from within the game, select them from the list:
 # Options->Keybindings->Control Profiles
 #
+#
+# Author: https://github.com/the-sane
+# Contributor: https://github.com/Termuellinator
 ############################################################################
 
 wine_conf="winedir.conf"
@@ -276,7 +279,7 @@ getdirs() {
         return 1
     fi
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
-        mkdir "$conf_dir/$conf_subdir"
+        mkdir -p "$conf_dir/$conf_subdir"
     fi
 
     # Check if the config files already exist
@@ -472,6 +475,8 @@ sanitize() {
     fi
 }
 
+#------------------------- begin mapcount functions --------------------------#
+
 # Check if setting vm.max_map_count was successful
 mapcount_check() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
@@ -548,6 +553,10 @@ mapcount_set() {
     menu
 }
 
+#-------------------------- end mapcount functions ---------------------------#
+
+#------------------------ begin filelimit functions --------------------------#
+
 # Check if setting the open file descriptors limit was successful
 filelimit_check() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
@@ -587,6 +596,9 @@ filelimit_set() {
     # Verify that setting the limit was successful
     filelimit_check
 }
+
+#------------------------- end filelimit functions ---------------------------#
+
 
 # Delete the shaders directory
 rm_shaders() {    
@@ -639,6 +651,8 @@ rm_vidcache() {
         message info "Your DXVK cache has been deleted!"
     fi
 }
+
+#------------------------- begin runner functions ----------------------------#
 
 # Restart lutris
 lutris_restart() {
@@ -849,6 +863,9 @@ runner_manage() {
     # Check if lutris needs to be restarted after making changes
     lutris_restart
 }
+
+#-------------------------- end runner functions -----------------------------#
+
 
 # Toggle between targeting the LIVE and PTU game directories for all helper functions
 set_version() {
