@@ -681,6 +681,9 @@ delete_runner() {
         rm -r "${installed_runners[$remove_option]}"
         echo -e "\nDeleted ${installed_runners[$remove_option]}\n"
     fi
+
+    # Restart Lutris
+    lutris_restart
 }
  
 choose_runner_to_delete() {
