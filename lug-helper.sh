@@ -725,7 +725,7 @@ runner_install() {
     message info "The selected runner will now be downloaded.\nThis might take a moment."
     
     # Download and extract the runner
-    if [ "$latest_url" == "$snatella_url" ]; then
+    if [ "$latest_url" = "$snatella_url" ]; then
         # Runners without a subdirectory in the archive
         echo -e "\nDownloading $runner_url\ninto $runner_dir/$runner_name\n"
         mkdir -p "$runner_dir/$runner_name" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir/$runner_name"
