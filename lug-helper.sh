@@ -759,10 +759,15 @@ install_runner() {
 }
     
 choose_runner_version() {
-    runner_contributor="$1"
+    # This function expects the name of the runner contributor to be passed in as an argument
+    if [ -z "$1" ]; then
+        echo -e "\nScript error:  The choose runner function expects an argument. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
     
     # set download urls
-    case "$runner_contributor" in
+    case "$1" in
         "snatella")
             latest_url="$snatella_url"
             runner_versions=($(curl -s "$latest_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -as .tgz))
