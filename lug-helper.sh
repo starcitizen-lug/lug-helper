@@ -659,10 +659,17 @@ lutris_restart() {
 
 # Delete the selected runner
 runner_delete() {
-    remove_option="$1"
-    if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$remove_option]}"; then
-        rm -r "${installed_runners[$remove_option]}"
-        echo -e "\nDeleted ${installed_runners[$remove_option]}\n"
+    # This function expects an index number for the array installed_runners to be passed in as an argument
+    if [ -z "$1" ]; then
+        echo -e "\nScript error:  The runner_delete function expects an argument. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+    
+    runner_to_delete="$1"
+    if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$runner_to_delete]}"; then
+        rm -r "${installed_runners[$runner_to_delete]}"
+        echo -e "\nDeleted ${installed_runners[$runner_to_delete]}\n"
     fi
 
     # Restart Lutris
@@ -705,7 +712,7 @@ runner_select_delete() {
 runner_install() {
     # This function expects an index number for the array runner_versions to be passed in as an argument
     if [ -z "$1" ]; then
-        echo -e "\nScript error:  The install runner function expects an argument. Aborting."
+        echo -e "\nScript error:  The runner_install function expects an argument. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -741,7 +748,7 @@ runner_install() {
 runner_select_install() {
     # This function expects the name of the runner contributor to be passed in as an argument
     if [ -z "$1" ]; then
-        echo -e "\nScript error:  The choose runner function expects an argument. Aborting."
+        echo -e "\nScript error:  The runner_select_install function expects an argument. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
