@@ -562,7 +562,7 @@ mapcount_set() {
     menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "mapcount_check")
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
     
     # Display an informational message to the user
     message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
@@ -733,7 +733,7 @@ runner_select_delete() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
     if [ "$menu_height" -gt "400" ]; then
         menu_height="400"
     fi
@@ -845,7 +845,7 @@ runner_select_install() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
     if [ "$menu_height" -gt "400" ]; then
         menu_height="400"
     fi
@@ -887,7 +887,7 @@ runner_manage() {
         menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "runner_manage_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+        menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
         
         # Call the menu function.  It will use the options as configured above
         menu
@@ -956,7 +956,7 @@ while true; do
     menu_actions=("runner_manage" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "quit")
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_text_height" + "$menu_option_height" * "${#menu_options[@]}"))"
+    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
     
     # Call the menu function.  It will use the options as configured above
     menu
