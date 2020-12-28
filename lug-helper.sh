@@ -26,6 +26,7 @@
 # Options->Keybindings->Control Profiles
 #
 #
+# made with <3
 # Author: https://github.com/the-sane
 # Contributor: https://github.com/Termuellinator
 ############################################################################
