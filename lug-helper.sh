@@ -683,17 +683,13 @@ rm_vidcache() {
 
 # Restart lutris
 lutris_restart() {
-    if [ "$lutris_needs_restart" = "true" ]; then
+    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
         if message question "Lutris must be restarted to detect runner changes.\nWould you like this helper to restart it for you?"; then
-            if [ "$(pgrep lutris)" ]; then
-                debug_echo continue "Restarting Lutris..."
-                pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-            else
-                message info "Lutris does not appear to be running."
-            fi
+            debug_echo continue "Restarting Lutris..."
+            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
         fi
-        lutris_needs_restart="false"
     fi
+    lutris_needs_restart="false"
 }
 
 # Delete the selected runner
