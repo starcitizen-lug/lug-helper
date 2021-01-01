@@ -329,7 +329,8 @@ getdirs() {
         fi
     fi
 
-    # If we don't have the directory paths we need yet, ask the user to provide them
+    # If we don't have the directory paths we need yet,
+    # ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
         message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
         if [ "$has_zen" -eq 1 ]; then
@@ -452,7 +453,8 @@ sanitize() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu, or there was an error
+        # User cancelled and wants to return to the main menu
+        # or there was an error
         return 0
     fi
 
@@ -658,7 +660,8 @@ rm_vidcache() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu, or there was an error
+        # User cancelled and wants to return to the main menu
+        # or there was an error
         return 0
     fi
     
@@ -694,7 +697,8 @@ lutris_restart() {
 
 # Delete the selected runner
 runner_delete() {
-    # This function expects an index number for the array installed_runners to be passed in as an argument
+    # This function expects an index number for the array
+    # installed_runners to be passed in as an argument
     if [ -z "$1" ]; then
         debug_echo exit "Script error:  The runner_delete function expects an argument. Aborting."
     fi
@@ -746,10 +750,11 @@ runner_select_delete() {
 }
 
 # Download and install the selected runner
-# Note: The variables contributor_url, runner_versions, runner_name, and runner_url_type
+# Note: The variables runner_versions, contributor_url, and runner_url_type
 # are expected to be set before calling this function
 runner_install() {
-    # This function expects an index number for the array runner_versions to be passed in as an argument
+    # This function expects an index number for the array
+    # runner_versions to be passed in as an argument
     if [ -z "$1" ]; then
         debug_echo exit "Script error:  The runner_install function expects a numerical argument. Aborting."
     fi
@@ -822,7 +827,8 @@ runner_install() {
 
 # List available runners for download
 runner_select_install() {
-    # This function expects an element number for the array runner_sources to be passed in as an argument
+    # This function expects an element number for the array
+    # runner_sources to be passed in as an argument
     if [ -z "$1" ]; then
         debug_echo exit "Script error:  The runner_select_install function expects a numerical argument. Aborting."
     fi
@@ -861,7 +867,8 @@ runner_select_install() {
     unset menu_options
     unset menu_actions
     
-    # Iterate through the versions, check if they are installed, and add them to the menu options
+    # Iterate through the versions, check if they are installed,
+    # and add them to the menu options
     for (( i=0; i<"$max_runners" && i<"${#runner_versions[@]}"; i++ )); do
         # Get the runner name minus the file extension
         case "${runner_versions[i]}" in
@@ -899,7 +906,8 @@ runner_select_install() {
     menu
 }
 
-# Called when the user is done managing runners. Causes a return to the main menu
+# Called when the user is done managing runners
+# Causes a return to the main menu
 runner_manage_done() {
     managing_runners="false"
 }
@@ -927,8 +935,8 @@ runner_manage() {
         unset menu_options
         unset menu_actions
 
-        # Loop through the runner_sources array and create a menu item for each one
-        # Even numbered elements will contain the runner name
+        # Loop through the runner_sources array and create a menu item
+        # for each one. Even numbered elements will contain the runner name
         for (( i=0; i<"${#runner_sources[@]}"; i=i+2 )); do
             # Set the options to be displayed in the menu
             menu_options+=("Install a runner from ${runner_sources[i]}")
@@ -936,7 +944,8 @@ runner_manage() {
             menu_actions+=("runner_select_install $i")
         done
         
-        # Complete the menu by adding options to remove a runner or to go back to the previous menu
+        # Complete the menu by adding options to remove a runner
+        # or go back to the previous menu
         menu_options+=("$delete" "$back")
         menu_actions+=("runner_select_delete" "runner_manage_done")
 
@@ -954,7 +963,7 @@ runner_manage() {
 #-------------------------- end runner functions -----------------------------#
 
 
-# Toggle between targeting the LIVE and PTU game directories for all helper functions
+# Toggle between the LIVE and PTU game directories for all helper functions
 set_version() {
     if [ "$live_or_ptu" = "LIVE" ]; then
         live_or_ptu="PTU"
