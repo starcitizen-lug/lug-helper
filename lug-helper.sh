@@ -35,13 +35,21 @@ wine_conf="winedir.conf"
 game_conf="gamedir.conf"
 backup_conf="backupdir.conf"
 
-# Use the XDG config directory if defined
+# Use XDG base directories if defined
 if [ -z "$XDG_CONFIG_HOME" ]; then
     conf_dir="$HOME/.config"
 else
     conf_dir="$XDG_CONFIG_HOME"
 fi
+if [ -z "$XDG_DATA_HOME" ]; then
+    data_dir="$HOME/.local/share"
+else
+    data_dir="$XDG_DATA_HOME"
+fi
+
+# .config subdirectory
 conf_subdir="starcitizen-lug"
+
 tmp_dir="/tmp"
 
 # The game's user subdirectory name
@@ -52,11 +60,7 @@ keybinds_export_path="Controls/Mappings"
 dxvk_cache_file="StarCitizen.dxvk-cache"
 
 # Lutris wine runners directory
-if [ -z "$XDG_DATA_HOME" ]; then
-    runner_dir="$HOME/.local/share/lutris/runners/wine"
-else
-    runner_dir="$XDG_DATA_HOME/lutris/runners/wine"
-fi
+runners_dir="$data_dir/lutris/runners/wine"
 # URLs for downloading Lutris runners
 # Elements in this array must be added in quoted pairs of: "description" "url"
 # The first string in the pair is  expected to contain the runner description
@@ -332,11 +336,12 @@ getdirs() {
     # If we don't have the directory paths we need yet,
     # ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
-        message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for later use in:\n$conf_dir/$conf_subdir/"
+        message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for future use in:\n$conf_dir/$conf_subdir/"
         if [ "$has_zen" -eq 1 ]; then
+            # Using Zenity file selection menus
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-                wine_prefix="$(zenity --file-selection --directory --title="Select your WINE prefix directory" --filename="$HOME/.wine" 2>/dev/null)"
+                wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen WINE prefix directory" --filename="$HOME/.wine" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
                     message warning "An unexpected error has occurred. The helper is unable to proceed."
                     return 1
@@ -349,22 +354,27 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-                while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" 2>/dev/null)"; do
-                    if [ "$?" -eq -1 ]; then
-                        message warning "An unexpected error has occurred. The helper is unable to proceed."
+                if [ -d "$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" ] && 
+                       message question "Is this your Star Citizen game directory?\n\n$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"; then
+                    game_path="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
+                else
+                    while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" 2>/dev/null)"; do
+                        if [ "$?" -eq -1 ]; then
+                            message warning "An unexpected error has occurred. The helper is unable to proceed."
+                            return 1
+                        elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
+                            message warning "You must select the directory named 'StarCitizen'"
+                        else
+                            # All good or cancel
+                            break
+                        fi
+                    done
+                    
+                    if [ -z "$game_path" ]; then
+                        # User clicked cancel
+                        message warning "Operation cancelled.\nNo changes have been made to your game."
                         return 1
-                    elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
-                        message warning "You must select the directory named 'StarCitizen'"
-                    else
-                        # All good or cancel
-                        break
                     fi
-                done
-                
-                if [ -z "$game_path" ]; then
-                    # User clicked cancel
-                    message warning "Operation cancelled.\nNo changes have been made to your game."
-                    return 1
                 fi
             fi
 
@@ -389,10 +399,11 @@ getdirs() {
                 fi
             fi
         else
+            # No Zenity, use terminal-based menus
             clear
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-                echo -e "Enter the full path to your WINE prefix directory (case sensitive)"
+                echo -e "Enter the full path to your Star Citizen WINE prefix directory (case sensitive)"
                 echo -e "ie. /home/USER/.wine/"
                 while read -rp ": " wine_prefix; do
                     if [ ! -d "$wine_prefix" ]; then
@@ -401,9 +412,14 @@ getdirs() {
                         break
                     fi
                 done
+            fi
 
-                # Get the game path
-                if [ -z "$game_path" ]; then
+            # Get the game path
+            if [ -z "$game_path" ]; then
+                if [ -d "$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" ] && 
+                       message question "Is this your Star Citizen game directory?\n\n$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"; then
+                    game_path="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
+                else
                     echo -e "\nEnter the full path to your Star Citizen installation directory\n(case sensitive)"
                     echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/"
                     while read -rp ": " game_path; do
@@ -416,21 +432,21 @@ getdirs() {
                         fi
                     done
                 fi
+            fi
 
-                # Get the backup directory
-                if [ -z "$backup_path" ]; then
-                    echo -e "\nEnter the full path to a backup directory for your keybinds (case sensitive)"
-                    echo -e "ie. /home/USER/backups/"
-                    while read -rp ": " backup_path; do
-                        if [ ! -d "$backup_path" ]; then
-                            echo -e "That directory is invalid or does not exist. Please try again.\n"
-                        elif [[ $backup_path == $game_path* ]]; then
-                            echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
-                        else
-                            break
-                        fi
-                    done
-                fi
+            # Get the backup directory
+            if [ -z "$backup_path" ]; then
+                echo -e "\nEnter the full path to a backup directory for your keybinds (case sensitive)"
+                echo -e "ie. /home/USER/backups/"
+                while read -rp ": " backup_path; do
+                    if [ ! -d "$backup_path" ]; then
+                        echo -e "That directory is invalid or does not exist. Please try again.\n"
+                    elif [[ $backup_path == $game_path* ]]; then
+                        echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
+                    else
+                        break
+                    fi
+                done
             fi
         fi
         
@@ -722,8 +738,8 @@ runner_select_delete() {
     unset menu_options
     unset menu_actions
      
-    # Create an array containing all directories in the runner_dir
-    for runners_list in "$runner_dir"/*; do
+    # Create an array containing all directories in the runners_dir
+    for runners_list in "$runners_dir"/*; do
         if [ -d "$runners_list" ]; then
             installed_runners+=("$runners_list")
         fi
@@ -808,14 +824,14 @@ runner_install() {
     case "$first_filepath" in
         # If the files in the archive begin with ./ there is no subdirectory
         ./*)
-            debug_echo continue "Installing runner into $runner_dir/$runner_name..."
-            mkdir -p "$runner_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runner_dir/$runner_name"
+            debug_echo continue "Installing runner into $runners_dir/$runner_name..."
+            mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
             lutris_needs_restart="true"
             ;;
         *)
             # Runners with a subdirectory in the archive
-            debug_echo continue "Installing runner into $runner_dir..."
-            mkdir -p "$runner_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runner_dir"
+            debug_echo continue "Installing runner into $runners_dir..."
+            mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir"
             lutris_needs_restart="true"
             ;;
     esac
@@ -884,7 +900,7 @@ runner_select_install() {
         esac
 
         # Add the runner names to the menu
-        if [ -d "$runner_dir/$runner_name" ]; then
+        if [ -d "$runners_dir/$runner_name" ]; then
             menu_options+=("$runner_name    [installed]")
         else
             menu_options+=("$runner_name")
@@ -919,7 +935,11 @@ runner_manage() {
         message info "Lutris does not appear to be installed."
         return 0
     fi
-
+    if [ ! -d "$runners_dir" ]; then
+        message info "Lutris runners directory not found.  Unable to continue.\n\n$runners_dir"
+        return 0
+    fi
+    
     # The runner management menu will loop until the user cancels
     managing_runners="true"
 
