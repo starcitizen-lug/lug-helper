@@ -963,6 +963,17 @@ runner_manage() {
 #-------------------------- end runner functions -----------------------------#
 
 
+# Get a random Penguin's Star Citizen referral code
+referral_randomizer() {
+    # Populate the referral codes array
+    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2")
+    # Pick a random array element. Scale a floating point number for
+    # a more random distribution than simply calling RANDOM
+    random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
+
+    message info "Your random Penguin's referral code is:\n$random_code\n\nThank you!"
+}
+
 # Toggle between the LIVE and PTU game directories for all helper functions
 set_version() {
     if [ "$live_or_ptu" = "LIVE" ]; then
@@ -1010,13 +1021,14 @@ while true; do
     filelimit_msg="Check my open file descriptors limit"
     shaders_msg="Delete my shaders only"
     vidcache_msg="Delete my DXVK cache"
+    randomizer_msg="Get a random Penguin's Star Citizen referral code"
     version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$runners_msg" "$sanitize_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$quit_msg")
+    menu_options=("$runners_msg" "$sanitize_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$randomizer_msg" "$version_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("runner_manage" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "quit")
+    menu_actions=("runner_manage" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "referral_randomizer" "set_version" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
