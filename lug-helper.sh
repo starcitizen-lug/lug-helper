@@ -42,6 +42,7 @@ else
     conf_dir="$XDG_CONFIG_HOME"
 fi
 conf_subdir="starcitizen-lug"
+tmp_dir="/tmp"
 
 # The game's user subdirectory name
 user_subdir_name="USER"
@@ -57,10 +58,15 @@ else
     runner_dir="$XDG_DATA_HOME/lutris/runners/wine"
 fi
 # URLs for downloading Lutris runners
-rawfox_url="https://api.github.com/repos/rawfoxDE/raw-wine/releases"
-snatella_url="https://api.github.com/repos/snatella/wine-runner-sc/releases"
-
-# Set a maximum number of runners
+# Elements in this array must be added in quoted pairs of: "description" "url"
+# The first string in the pair is  expected to contain the runner description
+# The second is expected to contain the github api releases url
+# ie. "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
+runner_sources=(
+    "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
+    "Molotov/Snatella" "https://api.github.com/repos/snatella/wine-runner-sc/releases"
+)
+# Set a maximum number of runner versions to display from each url
 max_runners=20
 
 # Pixels to add for each Zenity menu option
@@ -744,99 +750,157 @@ runner_select_delete() {
 }
 
 # Download and install the selected runner
+# Note: The variables contributor_url, runner_versions, runner_name, and runner_url_type
+# are expected to be set before calling this function
 runner_install() {
     # This function expects an index number for the array runner_versions to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_echo "Script error:  The runner_install function expects an argument. Aborting."
+        debug_echo "Script error:  The runner_install function expects a numerical argument. Aborting."
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
-    
-    # Store the selected runner name and url
-    runner_name="${runner_versions[$1]}"
-    if [ "$latest_url" = "$snatella_url" ]; then
-        # Runners with .tgz file extension
-        runner_url="$(curl -s "$latest_url" | grep "browser_download_url.*$runner_name.tgz" | cut -d \" -f4)"
-    else
-        # Runners with .tar.gz file extension
-        runner_url="$(curl -s "$latest_url" | grep "browser_download_url.*$runner_name.tar.gz" | cut -d \" -f4)"
-    fi
 
-    # Sanity check
-    if [ -z "$runner_url" ]; then
-        message warning "Could not find the requested runner.  The Github API may be down or rate limited."
-        return 1
-    fi
+    # Get the runner filename including file extension
+    runner_file="${runner_versions[$1]}"
 
-    message info "The selected runner will now be downloaded.\nThis might take a moment."
-    
-    # Download and extract the runner
-    if [ "$latest_url" = "$snatella_url" ]; then
-        # Runners without a subdirectory in the archive
-        debug_echo "Downloading $runner_url\ninto $runner_dir/$runner_name"
-        mkdir -p "$runner_dir/$runner_name" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir/$runner_name"
-        lutris_needs_restart="true"
-    else
-        # Runners with a subdirectory in the archive
-        debug_echo "Downloading $runner_url\ninto $runner_dir"
-        mkdir -p "$runner_dir" && curl -L "$runner_url" | tar -xzf - -C "$runner_dir"
-        lutris_needs_restart="true"
-    fi
-}
-
-# List available runners for download
-runner_select_install() {
-    # This function expects the name of the runner contributor to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_echo "Script error:  The runner_select_install function expects an argument. Aborting."
-        read -n 1 -s -p "Press any key..."
-        exit 0
-    fi
-    
-    # set download urls
-    case "$1" in
-        "snatella")
-            latest_url="$snatella_url"
-            runner_versions=($(curl -s "$latest_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -as .tgz))
+    # Get the selected runner name minus the file extension
+    case "$runner_file" in
+        *.tar.gz)
+            runner_name="$(basename "$runner_file" .tar.gz)"
             ;;
-        "rawfox")
-            latest_url="$rawfox_url"
-            runner_versions=($(curl -s "$latest_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -as .tar.gz))
+        *.tgz)
+            runner_name="$(basename "$runner_file" .tgz)"
             ;;
         *)
-            debug_echo "Script Error: Invalid parameter passed to the runner version function.  Aborting."
+            debug_echo "Unknown archive filetype in runner_install function. Aborting."
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
     esac
 
+    # Get the selected runner url
+    if [ "$runner_url_type" = "github" ]; then
+        runner_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$runner_file" | cut -d \" -f4)"
+    else
+        debug_echo "Script error:  Unknown api/url format in runner_sources array. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    # Sanity check
+    if [ -z "$runner_dl_url" ]; then
+        message warning "Could not find the requested runner.  The source API may be down or rate limited."
+        return 1
+    fi
+
+    message info "The selected runner will now be downloaded.\nThis might take a moment."
+
+    # Download the runner to the tmp directory
+    debug_echo "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
+    (cd "$tmp_dir" && curl -LO "$runner_dl_url")
+
+    # Sanity check
+    if [ ! -f "$tmp_dir/$runner_file" ]; then
+        debug_echo "Script error:  The requested runner file was not downloaded. Aborting"
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi  
+    
+    # Get the path of the first item listed in the archive
+    # This should either be a subdirectory or the path ./
+    # depending on how the archive was created
+    first_filepath="$(stdbuf -oL tar -tzf "$tmp_dir/$runner_file" | head -n 1)"
+    
+    # Download and extract the runner
+    case "$first_filepath" in
+        # If the files in the archive begin with ./ there is no subdirectory
+        ./*)
+            debug_echo "Installing runner into $runner_dir/$runner_name..."
+            mkdir -p "$runner_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runner_dir/$runner_name"
+            lutris_needs_restart="true"
+            ;;
+        *)
+            # Runners with a subdirectory in the archive
+            debug_echo "Installing runner into $runner_dir..."
+            mkdir -p "$runner_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runner_dir"
+            lutris_needs_restart="true"
+            ;;
+    esac
+
+    # Cleanup tmp download
+    debug_echo "Removing $tmp_dir/$runner_file..."
+    rm "$tmp_dir/$runner_file"
+}
+
+# List available runners for download
+runner_select_install() {
+    # This function expects an element number for the array runner_sources to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_echo "Script error:  The runner_select_install function expects a numerical argument. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    # Store the url from the selected contributor
+    contributor_url="${runner_sources[$1+1]}"
+
+    # Check the provided contributor url to make sure we know how to handle it
+    case "$contributor_url" in
+        https://api.github.com*)
+            runner_url_type="github"
+            ;;
+        *)
+            debug_echo "Script error:  Unknown api/url format in runner_sources array. Aborting."
+            read -n 1 -s -p "Press any key..."
+            exit 0
+            ;;
+    esac
+
+    # Fetch a list of runner versions from the selected contributor
+    if [ "$runner_url_type" = "github" ]; then
+        runner_versions=($(curl -s "$contributor_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -a))
+    else
+        debug_echo "Script error:  Unknown api/url format in runner_sources array. Aborting."
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
     # Sanity check
     if [ "${#runner_versions[@]}" -eq 0 ]; then
-        message warning "No runner versions were found.  The Github API may be down or rate limited."
+        message warning "No runner versions were found.  The source API may be down or rate limited."
         return 1
-    fi   
+    fi
 
     # Configure the menu
-    menu_text_zenity="Select the Lutris runner you want  to install:"
+    menu_text_zenity="Select the Lutris runner you want to install:"
     menu_text_terminal="Select the Lutris runner you want to install:"
     menu_text_height="65"
     goback="Return to the runner management menu"
     unset menu_options
     unset menu_actions
-
-    # Allow up to max_runners to be displayed in the list
-    if [ "${#runner_versions[@]}" -gt "$max_runners" ]; then
-        runner_count="$max_runners"
-    else
-        runner_count="${#runner_versions[@]}"
-    fi
     
     # Iterate through the versions, check if they are installed, and add them to the menu options
-    for (( i=0; i<"$runner_count"; i++ )); do
-        if [ -d "$runner_dir/${runner_versions[i]}" ]; then
-            menu_options+=("${runner_versions[i]}    [installed]")
+    for (( i=0; i<"$max_runners" && i<"${#runner_versions[@]}"; i++ )); do
+        # Get the runner name minus the file extension
+        case "${runner_versions[i]}" in
+            *.tar.gz)
+                runner_name="$(basename "${runner_versions[i]}" .tar.gz)"
+                ;;
+            *.tgz)
+                runner_name="$(basename "${runner_versions[i]}" .tgz)"
+                ;;
+            *)
+                debug_echo "Unknown archive filetype in runner_select_install function. Aborting."
+                read -n 1 -s -p "Press any key..."
+                exit 0
+                ;;
+        esac
+
+        # Add the runner names to the menu
+        if [ -d "$runner_dir/$runner_name" ]; then
+            menu_options+=("$runner_name    [installed]")
         else
-            menu_options+=("${runner_versions[i]}")
+            menu_options+=("$runner_name")
         fi
         menu_actions+=("runner_install $i")
     done
@@ -878,14 +942,23 @@ runner_manage() {
         menu_text_height="100"
 
         # Configure the menu options
-        rawfox="Install a runner from RawFox"
-        snatella="Install a runner from Molotov/Snatella"
         delete="Remove an installed runner"
         back="Return to the main menu"
-        # Set the options to be displayed in the menu
-        menu_options=("$rawfox" "$snatella" "$delete" "$back")
-        # Set the corresponding functions to be called for each of the options
-        menu_actions=("runner_select_install rawfox" "runner_select_install snatella" "runner_select_delete" "runner_manage_done")
+        unset menu_options
+        unset menu_actions
+
+        # Loop through the runner_sources array and create a menu item for each one
+        # Even numbered elements will contain the runner name
+        for (( i=0; i<"${#runner_sources[@]}"; i=i+2 )); do
+            # Set the options to be displayed in the menu
+            menu_options+=("Install a runner from ${runner_sources[i]}")
+            # Set the corresponding functions to be called for each of the options
+            menu_actions+=("runner_select_install $i")
+        done
+        
+        # Complete the menu by adding options to remove a runner or to go back to the previous menu
+        menu_options+=("$delete" "$back")
+        menu_actions+=("runner_select_delete" "runner_manage_done")
 
         # Calculate the total height the menu should be
         menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
