@@ -986,7 +986,7 @@ runner_manage() {
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
     # Populate the referral codes array
-    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2")
+    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T")
     # Pick a random array element. Scale a floating point number for
     # a more random distribution than simply calling RANDOM
     random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
