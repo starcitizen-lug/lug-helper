@@ -363,7 +363,7 @@ getdirs() {
                             message warning "An unexpected error has occurred. The helper is unable to proceed."
                             return 1
                         elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
-                            message warning "You must select the directory named 'StarCitizen'"
+                            message warning "You must select the Star Citizen base game directory.\n\nFor Example:  prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
                         else
                             # All good or cancel
                             break
