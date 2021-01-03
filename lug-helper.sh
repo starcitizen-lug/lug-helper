@@ -14,8 +14,9 @@
 # and helps you change them as needed to prevent game crashes.
 #
 #
-# It also gives you a fast and easy way to wipe your Star Citizen
-# USER folder as is recommended by CIG after major version updates.
+# It also gives you a fast and easy way to manage Lutris runners
+# and wipe your Star Citizen USER folder as is recommended by CIG
+# after major version updates.
 # It will back up your exported keybinds, delete your USER folder,
 # then restore your keybind file(s).
 #
@@ -63,7 +64,7 @@ dxvk_cache_file="StarCitizen.dxvk-cache"
 runners_dir="$data_dir/lutris/runners/wine"
 # URLs for downloading Lutris runners
 # Elements in this array must be added in quoted pairs of: "description" "url"
-# The first string in the pair is  expected to contain the runner description
+# The first string in the pair is expected to contain the runner description
 # The second is expected to contain the github api releases url
 # ie. "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 runner_sources=(
@@ -779,6 +780,8 @@ runner_install() {
     runner_file="${runner_versions[$1]}"
 
     # Get the selected runner name minus the file extension
+    # To add new file extensions, handle them here and in
+    # the runner_select_install function below
     case "$runner_file" in
         *.tar.gz)
             runner_name="$(basename "$runner_file" .tar.gz)"
@@ -792,6 +795,8 @@ runner_install() {
     esac
 
     # Get the selected runner url
+    # To add new sources, handle them here and in the
+    # runner_select_install function below
     if [ "$runner_url_type" = "github" ]; then
         runner_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$runner_file" | cut -d \" -f4)"
     else
@@ -853,6 +858,8 @@ runner_select_install() {
     contributor_url="${runner_sources[$1+1]}"
 
     # Check the provided contributor url to make sure we know how to handle it
+    # To add new sources, add them here and handle in the if statement
+    # just below and the runner_install function above
     case "$contributor_url" in
         https://api.github.com*)
             runner_url_type="github"
@@ -863,6 +870,8 @@ runner_select_install() {
     esac
 
     # Fetch a list of runner versions from the selected contributor
+    # To add new sources, handle them here, in the if statement
+    # just above, and the runner_install function above
     if [ "$runner_url_type" = "github" ]; then
         runner_versions=($(curl -s "$contributor_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -a))
     else
@@ -885,6 +894,8 @@ runner_select_install() {
     
     # Iterate through the versions, check if they are installed,
     # and add them to the menu options
+    # To add new file extensions, handle them here and in
+    # the runner_install function above
     for (( i=0; i<"$max_runners" && i<"${#runner_versions[@]}"; i++ )); do
         # Get the runner name minus the file extension
         case "${runner_versions[i]}" in
