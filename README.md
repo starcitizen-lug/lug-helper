@@ -1,4 +1,4 @@
-# lug-helper
+# LUG-Helper
 **Star Citizen's Linux Users Group Helper Script**
 
 https://robertsspaceindustries.com/orgs/LUG
