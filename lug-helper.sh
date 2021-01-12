@@ -854,8 +854,7 @@ runner_install() {
             debug_echo continue "Installing runner into $runners_dir/$runner_name..."
             if [ "$has_zen" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir/$runner_name" && \
-                tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
+                mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
             else
                 mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
@@ -867,8 +866,7 @@ runner_install() {
             debug_echo continue "Installing runner into $runners_dir..."
             if [ "$has_zen" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir" && \
-                tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir" | \
+                mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
             else
                 mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir"
