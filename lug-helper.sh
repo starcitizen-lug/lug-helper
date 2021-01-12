@@ -847,7 +847,7 @@ runner_install() {
     # depending on how the archive was created
     first_filepath="$(stdbuf -oL tar -tzf "$tmp_dir/$runner_file" | head -n 1)"
     
-    # Download and extract the runner
+    # Extract the runner
     case "$first_filepath" in
         # If the files in the archive begin with ./ there is no subdirectory
         ./*)
