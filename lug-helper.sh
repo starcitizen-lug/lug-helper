@@ -815,11 +815,27 @@ runner_install() {
         return 1
     fi
 
-    message info "The selected runner will now be downloaded.\nThis might take a moment."
-
     # Download the runner to the tmp directory
     debug_echo continue "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
-    (cd "$tmp_dir" && curl -LO "$runner_dl_url")
+    if [ "$has_zen" -eq 1 ]; then
+        # Format the curl progress bar for zenity
+        cd "$tmp_dir" && curl -#LO "$runner_dl_url" 2>&1 | \
+        stdbuf -oL tr '\r' '\n' | stdbuf -oL grep -ve "100" | stdbuf -oL grep -o "[0-9]*\.[0-9]" | \
+        (
+            trap 'killall curl' ERR
+            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading Runner.  This might take a moment.\n" 2>/dev/null
+        )
+         
+        if [ "$?" -eq 1 ]; then
+            # User clicked cancel
+            debug_echo continue "Download aborted. Removing $tmp_dir/$runner_file..."
+            rm "$tmp_dir/$runner_file"
+            return 1
+        fi
+    else
+        # Standard curl progress bar
+        (cd "$tmp_dir" && curl -LO "$runner_dl_url")
+    fi
 
     # Sanity check
     if [ ! -f "$tmp_dir/$runner_file" ]; then
@@ -836,13 +852,27 @@ runner_install() {
         # If the files in the archive begin with ./ there is no subdirectory
         ./*)
             debug_echo continue "Installing runner into $runners_dir/$runner_name..."
-            mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
+            if [ "$has_zen" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "$runners_dir/$runner_name" && \
+                tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
+            else
+                mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
+            fi
             lutris_needs_restart="true"
             ;;
         *)
             # Runners with a subdirectory in the archive
             debug_echo continue "Installing runner into $runners_dir..."
-            mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir"
+            if [ "$has_zen" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "$runners_dir" && \
+                tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
+            else
+                mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir"
+            fi
             lutris_needs_restart="true"
             ;;
     esac
@@ -1003,7 +1033,7 @@ runner_manage() {
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
     # Populate the referral codes array
-    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T")
+    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T" "STAR-FG6Y-N4Q4" "STAR-VLD6-VZRG" "STAR-T9KF-LV77")
     # Pick a random array element. Scale a floating point number for
     # a more random distribution than simply calling RANDOM
     random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
