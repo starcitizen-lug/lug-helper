@@ -38,5 +38,8 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 `Delete my DXVK cache`
 - A troubleshooting step that sometimes helps fix various issues and crashes.
 
+`Get a random Penguin's Star Citizen referral code
+- Displays a random referral code for a member of the Star Citizen Linux Users Group
+
 `Switch the helper between LIVE and PTU`
 - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
