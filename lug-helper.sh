@@ -819,19 +819,23 @@ runner_install() {
     debug_echo continue "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
     if [ "$has_zen" -eq 1 ]; then
         # Format the curl progress bar for zenity
-        cd "$tmp_dir" && curl -#LO "$runner_dl_url" 2>&1 | \
-        stdbuf -oL tr '\r' '\n' | stdbuf -oL grep -ve "100" | stdbuf -oL grep -o "[0-9]*\.[0-9]" | \
+        mkfifo "$tmp_dir/lugpipe"
+        cd "$tmp_dir" && curl -#LO "$runner_dl_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
+        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
         (
-            trap 'killall curl' ERR
+            trap 'kill "$curlpid"' ERR
             zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading Runner.  This might take a moment.\n" 2>/dev/null
         )
-         
+
         if [ "$?" -eq 1 ]; then
             # User clicked cancel
             debug_echo continue "Download aborted. Removing $tmp_dir/$runner_file..."
             rm "$tmp_dir/$runner_file"
+            rm "$tmp_dir/lugpipe"
             return 1
         fi
+        rm "$tmp_dir/lugpipe"
     else
         # Standard curl progress bar
         (cd "$tmp_dir" && curl -LO "$runner_dl_url")
@@ -1031,7 +1035,7 @@ runner_manage() {
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
     # Populate the referral codes array
-    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T" "STAR-FG6Y-N4Q4" "STAR-VLD6-VZRG" "STAR-T9KF-LV77" "STAR-4XHB-R7RF" "STAR-9NVF-MRN7" "STAR-3Q4W-9TC3" "STAR-3SBK-7QTT")
+    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T" "STAR-FG6Y-N4Q4" "STAR-VLD6-VZRG" "STAR-T9KF-LV77" "STAR-4XHB-R7RF" "STAR-9NVF-MRN7" "STAR-3Q4W-9TC3" "STAR-3SBK-7QTT" "STAR-XFBT-9TTK" "STAR-F3H9-YPHN" "STAR-BYK6-RCCL" "STAR-XCKH-W6T7")
     # Pick a random array element. Scale a floating point number for
     # a more random distribution than simply calling RANDOM
     random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
