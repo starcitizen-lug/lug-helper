@@ -1040,7 +1040,7 @@ referral_randomizer() {
     # a more random distribution than simply calling RANDOM
     random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
 
-    message info "Your random Penguin's referral code is:\n$random_code\n\nThank you!"
+    message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
 }
 
 # Toggle between the LIVE and PTU game directories for all helper functions
