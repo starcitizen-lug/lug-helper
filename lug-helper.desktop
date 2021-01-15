@@ -1,0 +1,19 @@
+[Desktop Entry]
+Comment[de_DE]=
+Comment=
+Exec=/usr/bin/lug-helper
+GenericName[de_DE]=
+GenericName=
+Icon=/usr/share/pixmaps/LUG-Logo.png
+MimeType=
+Name[de_DE]=LUG-Helper
+Name=LUG-Helper
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=
