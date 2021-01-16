@@ -366,7 +366,7 @@ getdirs() {
             # Using Zenity file selection menus
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-                wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen WINE prefix directory" --filename="$HOME/.wine" 2>/dev/null)"
+                wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen WINE prefix directory" --filename="$HOME/Games/star-citizen" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
                     message warning "An unexpected error has occurred. The helper is unable to proceed."
                     return 1
@@ -429,7 +429,7 @@ getdirs() {
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
                 printf "Enter the full path to your Star Citizen WINE prefix directory (case sensitive)\n"
-                printf "ie. /home/USER/.wine/\n"
+                printf "ie. /home/USER/Games/star-citizen\n"
                 while read -rp ": " wine_prefix; do
                     if [ ! -d "$wine_prefix" ]; then
                         printf "That directory is invalid or does not exist. Please try again.\n\n"
@@ -446,7 +446,7 @@ getdirs() {
                     game_path="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
                 else
                     printf "\nEnter the full path to your Star Citizen installation directory (case sensitive)\n"
-                    printf "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/\n"
+                    printf "ie. /home/USER/Games/star-citizen/drive_c/Program Files/Roberts Space Industries/StarCitizen\n"
                     while read -rp ": " game_path; do
                         if [ ! -d "$game_path" ]; then
                             printf "That directory is invalid or does not exist. Please try again.\n\n"
@@ -462,7 +462,7 @@ getdirs() {
             # Get the backup directory
             if [ -z "$backup_path" ]; then
                 printf "\nEnter the full path to a backup directory for your keybinds (case sensitive)\n"
-                printf "ie. /home/USER/backups/\n"
+                printf "ie. /home/USER/backups\n"
                 while read -rp ": " backup_path; do
                     if [ ! -d "$backup_path" ]; then
                         printf "That directory is invalid or does not exist. Please try again.\n\n"
