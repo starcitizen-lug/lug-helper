@@ -36,6 +36,7 @@
 # made with <3
 # Author: https://github.com/the-sane
 # Contributor: https://github.com/Termuellinator
+# Contributor: https://github.com/pstn
 ############################################################################
 
 # Check for dependencies
