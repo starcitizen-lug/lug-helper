@@ -5,9 +5,7 @@ https://robertsspaceindustries.com/orgs/LUG
 
 *Greetings, fellow Penguin!*
 
-This script is designed to help you optimize your system to run Star Citizen as smoothly as possible. It presents options to check your system for optimal settings and helps you change them as needed to prevent game crashes.
-
-Additionally, it gives you an easy way to manage your Lutris WINE runners.  It can also wipe your Star Citizen *USER* folder as is recommended by CIG after major version updates. It will back up your exported keybinds, delete your *USER* folder, then restore your keybind file(s).
+This script is designed to help you manage and optimize Star Citizen on Linux.
 
 Zenity menus are used for a GUI experience with a fallback to terminal-based menus where Zenity is unavailable. The game directory paths provided by the user on first run are saved in *$XDG_CONFIG_HOME/starcitizen-lug*.
 
