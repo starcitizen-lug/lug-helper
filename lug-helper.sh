@@ -41,7 +41,7 @@
 
 # Check for dependencies
 if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ]; then
-    echo -e "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)" 1>&2
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n" 1>&2
     exit 1
 fi
 
@@ -103,7 +103,7 @@ menu_option_height="25"
 debug_echo() {
     # This function expects two string arguments
     if [ "$#" -lt 2 ]; then
-        echo -e "\nScript error:  The debug_echo function expects two arguments. Aborting."
+        printf "\nScript error:  The debug_echo function expects two arguments. Aborting.\n"
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -111,16 +111,16 @@ debug_echo() {
     # Echo the provided string and, optionally, exit the script
     case "$1" in
         "continue")
-            echo -e "\n$2\n"
+            printf "\n$2\n"
             ;;
         "exit")
             # Write an error to stderr and exit
-            echo -e "lug-helper.sh: $2" 1>&2
+            printf "lug-helper.sh: $2\n" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 1
             ;;
         *)
-            echo -e "lug-helper.sh: Unknown argument provided to debug_echo function. Aborting." 1>&2
+            printf "lug-helper.sh: Unknown argument provided to debug_echo function. Aborting.\n" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
@@ -172,14 +172,14 @@ message() {
                 # info message
                 # call format: message info "text to display"
                 clear
-                echo -e "\n$2\n"
+                printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
                 clear
-                echo -e "\n$2\n" 
+                printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
                 return 0
                 ;;
@@ -187,7 +187,7 @@ message() {
                 # question
                 # call format: if message question "question to ask?"; then...
                 clear
-                echo -e "$2" 
+                printf "$2\n"
                 while read -p "[y/n]: " yn; do
                     case "$yn" in
                         [Yy]*)
@@ -197,7 +197,7 @@ message() {
                             return 1
                             ;;
                         *)
-                            echo "Please type 'y' or 'n'"
+                            printf "Please type 'y' or 'n'\n"
                             ;;
                     esac
                 done
@@ -286,7 +286,7 @@ menu() {
     else
         # Use a text menu if Zenity is not available
         clear
-        echo -e "\n$menu_text_terminal\n"
+        printf "\n$menu_text_terminal\n\n"
 
         PS3="Enter selection number: "
         select choice in "${menu_options[@]}"
@@ -296,7 +296,7 @@ menu() {
             for (( i=0; i<"${#menu_options[@]}"; i++ )); do
                 if [ "$choice" = "${menu_options[i]}" ]; then
                     # Execute the corresponding action
-                    echo -e "\n"
+                    printf "\n\n"
                     ${menu_actions[i]}
                     matched="true"
                     break
@@ -309,7 +309,7 @@ menu() {
                 break
             else
                 # If no match was found, the user entered an invalid option
-                echo -e "\nInvalid selection."
+                printf "\nInvalid selection.\n"
                 continue
             fi
         done
@@ -420,11 +420,11 @@ getdirs() {
             clear
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-                echo -e "Enter the full path to your Star Citizen WINE prefix directory (case sensitive)"
-                echo -e "ie. /home/USER/.wine/"
+                printf "Enter the full path to your Star Citizen WINE prefix directory (case sensitive)\n"
+                printf "ie. /home/USER/.wine/\n"
                 while read -rp ": " wine_prefix; do
                     if [ ! -d "$wine_prefix" ]; then
-                        echo -e "That directory is invalid or does not exist. Please try again.\n"
+                        printf "That directory is invalid or does not exist. Please try again.\n\n"
                     else
                         break
                     fi
@@ -437,13 +437,13 @@ getdirs() {
                        message question "Is this your Star Citizen game directory?\n\n$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"; then
                     game_path="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
                 else
-                    echo -e "\nEnter the full path to your Star Citizen installation directory\n(case sensitive)"
-                    echo -e "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/"
+                    printf "\nEnter the full path to your Star Citizen installation directory (case sensitive)\n"
+                    printf "ie. /home/USER/.wine/drive_c/Program Files/Roberts Space Industries/StarCitizen/\n"
                     while read -rp ": " game_path; do
                         if [ ! -d "$game_path" ]; then
-                            echo -e "That directory is invalid or does not exist. Please try again.\n"
+                            printf "That directory is invalid or does not exist. Please try again.\n\n"
                         elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
-                            echo -e "You must enter the full path to the directory named 'StarCitizen'\n"
+                            printf "You must enter the full path to the directory named 'StarCitizen'\n\n"
                         else
                             break
                         fi
@@ -453,13 +453,13 @@ getdirs() {
 
             # Get the backup directory
             if [ -z "$backup_path" ]; then
-                echo -e "\nEnter the full path to a backup directory for your keybinds (case sensitive)"
-                echo -e "ie. /home/USER/backups/"
+                printf "\nEnter the full path to a backup directory for your keybinds (case sensitive)\n"
+                printf "ie. /home/USER/backups/\n"
                 while read -rp ": " backup_path; do
                     if [ ! -d "$backup_path" ]; then
-                        echo -e "That directory is invalid or does not exist. Please try again.\n"
+                        printf "That directory is invalid or does not exist. Please try again.\n\n"
                     elif [[ $backup_path == $game_path* ]]; then
-                        echo -e "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n"
+                        printf "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n\n"
                     else
                         break
                     fi
