@@ -679,7 +679,7 @@ rm_shaders() {
         return 0
     fi
 
-    shaders_dir="$user_dir/Shaders"
+    shaders_dir="$user_dir/shaders"
 
     # Sanity check
     if [ ! -d "$shaders_dir" ]; then
