@@ -689,7 +689,7 @@ rm_shaders() {
 
     # Delete the shader directory
     if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-        debug_echo continue "Deleting shaders..."
+        debug_echo continue "Deleting $shaders_dir..."
         rm -r "$shaders_dir"
         debug_echo continue "Done."
         message info "Your shaders have been deleted!"
@@ -716,7 +716,7 @@ rm_vidcache() {
 
     # Delete the cache file
     if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-        debug_echo continue "Deleting DXVK cache..."
+        debug_echo continue "Deleting $dxvk_cache..."
         rm "$dxvk_cache"
         debug_echo continue "Done."
         message info "Your DXVK cache has been deleted!"
