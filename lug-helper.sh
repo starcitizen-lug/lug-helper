@@ -355,18 +355,11 @@ getdirs() {
             game_path=""
         fi
     fi
-    if [ -f "$conf_dir/$conf_subdir/$backup_conf" ]; then
-        backup_path="$(cat "$conf_dir/$conf_subdir/$backup_conf")"
-        if [ ! -d "$backup_path" ]; then
-            debug_echo continue "The saved backup path does not exist, ignoring."
-            backup_path=""
-        fi
-    fi
 
     # If we don't have the directory paths we need yet,
     # ask the user to provide them
-    if [ -z "$wine_prefix" ] || [ -z "$game_path" ] || [ -z "$backup_path" ]; then
-        message info "You will now be asked to provide some directories needed by the helper.\n\nThey will be saved for future use in:\n$conf_dir/$conf_subdir/"
+    if [ -z "$wine_prefix" ] || [ -z "$game_path" ]; then
+        message info "At the next screen, please select your Star Citizen WINE prefix.\n\nIt will be saved for future use in:\n$conf_dir/$conf_subdir/"
         if [ "$has_zen" -eq 1 ]; then
             # Using Zenity file selection menus
             # Get the wine prefix directory
@@ -407,27 +400,6 @@ getdirs() {
                     fi
                 fi
             fi
-
-            # Get the backup directory
-            if [ -z "$backup_path" ]; then
-                while backup_path="$(zenity --file-selection --directory --title="Select a directory to back up your keybinds into" --filename="$HOME/" 2>/dev/null)"; do
-                    if [ "$?" -eq -1 ]; then
-                        message warning "An unexpected error has occurred. The helper is unable to proceed."
-                        return 1
-                    elif [[ $backup_path == $game_path* ]]; then
-                        message warning "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/"
-                    else
-                        # All good or cancel
-                        break
-                    fi
-                done
-                        
-                if [ -z "$backup_path" ]; then
-                    # User clicked cancel
-                    message warning "Operation cancelled.\nNo changes have been made to your game."
-                    return 1
-                fi
-            fi
         else
             # No Zenity, use terminal-based menus
             clear
@@ -463,32 +435,17 @@ getdirs() {
                     done
                 fi
             fi
-
-            # Get the backup directory
-            if [ -z "$backup_path" ]; then
-                printf "\nEnter the full path to a backup directory for your keybinds (case sensitive)\n"
-                printf "ie. /home/USER/backups\n"
-                while read -rp ": " backup_path; do
-                    if [ ! -d "$backup_path" ]; then
-                        printf "That directory is invalid or does not exist. Please try again.\n\n"
-                    elif [[ $backup_path == $game_path* ]]; then
-                        printf "Please select a backup location outside your Star Citizen directory.\nie. /home/USER/backups/\n\n"
-                    else
-                        break
-                    fi
-                done
-            fi
         fi
         
         # Save the paths for later use
         echo "$wine_prefix" > "$conf_dir/$conf_subdir/$wine_conf"
         echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
-        echo "$backup_path" > "$conf_dir/$conf_subdir/$backup_conf"
     fi
 
     # Set some remaining directory paths
     user_dir="$game_path/$live_or_ptu/$user_subdir_name"
     keybinds_dir="$user_dir/$keybinds_export_path"
+    backup_path="$conf_dir/$conf_subdir"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -525,8 +482,8 @@ sanitize() {
     if message question "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
         # Back up keybinds
         if [ "$exported" -eq 1 ]; then
-            debug_echo continue "Backing up all saved keybinds..."
-            cp -r "$keybinds_dir/." "$backup_path/keybinds/"
+            debug_echo continue "Backing up keybinds to $backup_path/keybinds..."
+            mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
             debug_echo continue "Done."
         fi
         
