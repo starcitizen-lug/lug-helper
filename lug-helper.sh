@@ -484,19 +484,16 @@ sanitize() {
         if [ "$exported" -eq 1 ]; then
             debug_echo continue "Backing up keybinds to $backup_path/keybinds..."
             mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
-            debug_echo continue "Done."
         fi
         
         # Wipe the user directory
         debug_echo continue "Wiping USER directory..."
         rm -r "$user_dir"
-        debug_echo continue "Done."
 
         # Restore custom keybinds
         if [ "$exported" -eq 1 ]; then
             debug_echo continue "Restoring keybinds..."
             mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
-            debug_echo continue "Done."
             message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
         fi
 
@@ -653,7 +650,6 @@ rm_shaders() {
     if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
         debug_echo continue "Deleting $shaders_dir..."
         rm -r "$shaders_dir"
-        debug_echo continue "Done."
         message info "Your shaders have been deleted!"
     fi
 }
@@ -680,7 +676,6 @@ rm_vidcache() {
     if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
         debug_echo continue "Deleting $dxvk_cache..."
         rm "$dxvk_cache"
-        debug_echo continue "Done."
         message info "Your DXVK cache has been deleted!"
     fi
 }
