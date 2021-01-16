@@ -41,7 +41,9 @@
 
 # Check for dependencies
 if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ]; then
+    # Print to stderr and also try warning the user through notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n" --icon=dialog-warning
     exit 1
 fi
 
