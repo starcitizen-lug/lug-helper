@@ -4,23 +4,27 @@
 # Star Citizen's Linux Users Group Helper Script
 ############################################################################
 #
-# Greetings, fellow Penguin!
+# Greetings, Space Penguin!
 #
 #
 # This script is designed to help you manage and optimize
 # Star Citizen on Linux.
 #
-# - It presents options to check your system for optimal settings
-# and helps you change them as needed to prevent game crashes.
+# Features:
 #
-# - It gives you an easy way to manage your Lutris wine runners.
+# - Check your system for optimal settings and
+#   change them as needed to prevent crashes.
 #
-# - It can quickly wipe your Star Citizen USER folder as is recommended
+# - Easily install and remove Lutris wine Runners.
+#
+# - Qickly wipe your Star Citizen USER folder as is recommended
 #   by CIG after major version updates.
 #   It will back up your exported keybinds, delete your USER folder,
 #   then restore your keybind file(s).
 #
-# - It supports both the LIVE and PTU environments
+# - Get a random participating LUG member's Star Citizen referral code.
+#
+# - Supports both the LIVE and PTU environments.
 #
 # - Zenity menus are used for a GUI experience with a fallback to
 #   terminal-based menus where Zenity is unavailable.
@@ -37,6 +41,7 @@
 # Author: https://github.com/the-sane
 # Contributor: https://github.com/Termuellinator
 # Contributor: https://github.com/pstn
+# v1.4
 ############################################################################
 
 # Check for dependencies
