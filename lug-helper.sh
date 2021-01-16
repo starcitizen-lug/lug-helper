@@ -38,6 +38,12 @@
 # Contributor: https://github.com/Termuellinator
 ############################################################################
 
+# Check for dependencies
+if [ ! -x "$(command -v mktemp2)" ] || [ ! -x "$(command -v basename)" ]; then
+    echo -e "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)"
+    exit 1
+fi
+
 wine_conf="winedir.conf"
 game_conf="gamedir.conf"
 backup_conf="backupdir.conf"
@@ -57,7 +63,9 @@ fi
 # .config subdirectory
 conf_subdir="starcitizen-lug"
 
-tmp_dir="$(mktemp -d --suffix=".lughelper" || echo "/tmp")"
+# Temporary directory
+tmp_dir="$(mktemp -d --suffix=".lughelper")"
+trap 'rm -r "$tmp_dir"' EXIT
 
 # The game's user subdirectory name
 user_subdir_name="USER"
