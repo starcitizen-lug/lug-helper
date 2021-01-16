@@ -57,7 +57,7 @@ fi
 # .config subdirectory
 conf_subdir="starcitizen-lug"
 
-tmp_dir="$(mktemp -d)"
+tmp_dir="$(mktemp -d --suffix=".lughelper" || echo "/tmp")"
 
 # The game's user subdirectory name
 user_subdir_name="USER"
