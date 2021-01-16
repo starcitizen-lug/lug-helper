@@ -41,7 +41,7 @@
 
 # Check for dependencies
 if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ]; then
-    echo -e "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)"
+    echo -e "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)" 1>&2
     exit 1
 fi
 
@@ -114,12 +114,13 @@ debug_echo() {
             echo -e "\n$2\n"
             ;;
         "exit")
-            echo -e "\n$2"
+            # Write an error to stderr and exit
+            echo -e "lug-helper.sh: $2" 1>&2
             read -n 1 -s -p "Press any key..."
-            exit 0
+            exit 1
             ;;
         *)
-            echo -e "\nScript error:  Unknown argument provided to debug_echo function. Aborting."
+            echo -e "lug-helper.sh: Unknown argument provided to debug_echo function. Aborting." 1>&2
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
