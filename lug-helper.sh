@@ -40,7 +40,7 @@
 ############################################################################
 
 # Check for dependencies
-if [ ! -x "$(command -v mktemp2)" ] || [ ! -x "$(command -v basename)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ]; then
     echo -e "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)"
     exit 1
 fi
