@@ -358,7 +358,7 @@ getdirs() {
     # If we don't have the directory paths we need yet,
     # ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ]; then
-        message info "At the next screen, please select your Star Citizen WINE prefix.\n\nIt will be saved for future use in:\n$conf_dir/$conf_subdir/"
+        message info "At the next screen, please select your Star Citizen WINE prefix.\nIt will be remembered for future use."
         if [ "$has_zen" -eq 1 ]; then
             # Using Zenity file selection menus
             # Get the wine prefix directory
