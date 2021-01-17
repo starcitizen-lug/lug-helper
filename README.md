@@ -44,6 +44,9 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 
 ## Installation:
 
+From Source:
 1. Download it!
 2. Run it!
-3. If you want, copy *lug-logo.png* to */usr/share/pixmaps/*
+3. If you want, move *lug-logo.png* to */usr/share/pixmaps/*
+
+Arch Linux: https://aur.archlinux.org/packages/lug-helper/
