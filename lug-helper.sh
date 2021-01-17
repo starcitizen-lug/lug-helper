@@ -157,17 +157,17 @@ message() {
             "info")
                 # info message
                 # call format: message info "text to display"
-                margs=("--info" "--no-wrap" "--text=")
+                margs=("--info" "--window-icon=lug-logo.png" "--no-wrap" "--text=")
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                margs=("--warning" "--text=")
+                margs=("--warning" "--window-icon=lug-logo.png" "--text=")
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                margs=("--question" "--text=")
+                margs=("--question" "--window-icon=lug-logo.png" "--text=")
                 ;;
             *)
                 debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
@@ -277,7 +277,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --window-icon=lug-logo.png --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Loop through the options array to match the chosen option
         matched="false"
