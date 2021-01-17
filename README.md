@@ -41,3 +41,9 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 
 `Switch the helper between LIVE and PTU`
 - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
+
+## Installation:
+
+1. Download it!
+2. Run it!
+3. If you want, copy *lug-logo.png* to */usr/share/pixmaps/*
