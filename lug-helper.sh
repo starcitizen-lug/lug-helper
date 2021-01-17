@@ -1066,7 +1066,7 @@ while true; do
     shaders_msg="Delete my shaders only"
     vidcache_msg="Delete my DXVK cache"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
-    version_msg="Switch the helper between LIVE and PTU (default is LIVE)"
+    version_msg="Switch the helper between LIVE and PTU  (Currently: $live_or_ptu)"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
