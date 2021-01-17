@@ -109,8 +109,10 @@ menu_option_height="25"
 # Otherwise, default to the logo in the same directory
 if [ -f "/usr/share/pixmaps/lug-logo.png" ]; then
     lug_logo="/usr/share/pixmaps/lug-logo.png"
-else
+elif [ -f "lug-logo.png" ]; then
     lug_logo="lug-logo.png"
+else
+    lug_logo="info"
 fi
 
 ############################################################################
