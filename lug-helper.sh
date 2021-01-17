@@ -112,10 +112,10 @@ menu_option_height="25"
 # Echo a formatted debug message to the terminal and optionally exit
 # Accepts either "continue" or "exit" as the first argument
 # followed by the string to be echoed
-debug_echo() {
+debug_print() {
     # This function expects two string arguments
     if [ "$#" -lt 2 ]; then
-        printf "\nScript error:  The debug_echo function expects two arguments. Aborting.\n"
+        printf "\nScript error:  The debug_print function expects two arguments. Aborting.\n"
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -132,7 +132,7 @@ debug_echo() {
             exit 1
             ;;
         *)
-            printf "lug-helper.sh: Unknown argument provided to debug_echo function. Aborting.\n" 1>&2
+            printf "lug-helper.sh: Unknown argument provided to debug_print function. Aborting.\n" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
@@ -148,7 +148,7 @@ debug_echo() {
 message() {
     # Sanity check
     if [ "$#" -lt 2 ]; then
-        debug_echo exit "Script error: The message function expects two arguments. Aborting."
+        debug_print exit "Script error: The message function expects two arguments. Aborting."
     fi
     
     # Use zenity messages if available
@@ -170,7 +170,7 @@ message() {
                 margs=("--question" "--text=")
                 ;;
             *)
-                debug_echo exit "Script Error: Invalid message type passed to the message function. Aborting."
+                debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
                 ;;
         esac
 
@@ -215,7 +215,7 @@ message() {
                 done
                 ;;
             *)
-                debug_echo exit "Script Error: Invalid message type passed to the message function. Aborting."
+                debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
                 ;;
         esac
     fi
@@ -249,15 +249,15 @@ message() {
 menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
-        debug_echo exit "Script error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
-        debug_echo exit "Script error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
     elif [ -z "$menu_text_zenity" ]; then
-        debug_echo exit "Script error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
     elif [ -z "$menu_text_terminal" ]; then
-        debug_echo exit "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
     elif [ -z "$menu_height" ]; then
-        debug_echo exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
     fi
     
     # Use Zenity if it is available
@@ -343,14 +343,14 @@ getdirs() {
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
         wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
         if [ ! -d "$wine_prefix" ]; then
-            debug_echo continue "The saved wine prefix does not exist, ignoring."
+            debug_print continue "The saved wine prefix does not exist, ignoring."
             wine_prefix=""
         fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
         if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "StarCitizen" ]; then
-            debug_echo continue "Unexpected game path found in config file, ignoring."
+            debug_print continue "Unexpected game path found in config file, ignoring."
             game_path=""
         fi
     fi
@@ -481,17 +481,17 @@ sanitize() {
     if message question "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
         # Back up keybinds
         if [ "$exported" -eq 1 ]; then
-            debug_echo continue "Backing up keybinds to $backup_path/keybinds..."
+            debug_print continue "Backing up keybinds to $backup_path/keybinds..."
             mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
         fi
         
         # Wipe the user directory
-        debug_echo continue "Wiping $user_dir..."
+        debug_print continue "Wiping $user_dir..."
         rm -r "$user_dir"
 
         # Restore custom keybinds
         if [ "$exported" -eq 1 ]; then
-            debug_echo continue "Restoring keybinds..."
+            debug_print continue "Restoring keybinds..."
             mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
             message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
         fi
@@ -647,7 +647,7 @@ rm_shaders() {
 
     # Delete the shader directory
     if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-        debug_echo continue "Deleting $shaders_dir..."
+        debug_print continue "Deleting $shaders_dir..."
         rm -r "$shaders_dir"
         message info "Your shaders have been deleted!"
     fi
@@ -673,7 +673,7 @@ rm_vidcache() {
 
     # Delete the cache file
     if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-        debug_echo continue "Deleting $dxvk_cache..."
+        debug_print continue "Deleting $dxvk_cache..."
         rm "$dxvk_cache"
         message info "Your DXVK cache has been deleted!"
     fi
@@ -685,7 +685,7 @@ rm_vidcache() {
 lutris_restart() {
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
         if message question "Lutris must be restarted to detect runner changes.\nWould you like this helper to restart it for you?"; then
-            debug_echo continue "Restarting Lutris..."
+            debug_print continue "Restarting Lutris..."
             pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
         fi
     fi
@@ -697,13 +697,13 @@ runner_delete() {
     # This function expects an index number for the array
     # installed_runners to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_echo exit "Script error:  The runner_delete function expects an argument. Aborting."
+        debug_print exit "Script error:  The runner_delete function expects an argument. Aborting."
     fi
     
     runner_to_delete="$1"
     if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$runner_to_delete]}"; then
         rm -r "${installed_runners[$runner_to_delete]}"
-        debug_echo continue "Deleted ${installed_runners[$runner_to_delete]}"
+        debug_print continue "Deleted ${installed_runners[$runner_to_delete]}"
         lutris_needs_restart="true"
     fi
 }
@@ -753,7 +753,7 @@ runner_install() {
     # This function expects an index number for the array
     # runner_versions to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_echo exit "Script error:  The runner_install function expects a numerical argument. Aborting."
+        debug_print exit "Script error:  The runner_install function expects a numerical argument. Aborting."
     fi
 
     # Get the runner filename including file extension
@@ -770,7 +770,7 @@ runner_install() {
             runner_name="$(basename "$runner_file" .tgz)"
             ;;
         *)
-            debug_echo exit "Unknown archive filetype in runner_install function. Aborting."
+            debug_print exit "Unknown archive filetype in runner_install function. Aborting."
             ;;
     esac
 
@@ -780,7 +780,7 @@ runner_install() {
     if [ "$runner_url_type" = "github" ]; then
         runner_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$runner_file" | cut -d \" -f4)"
     else
-        debug_echo exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
+        debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
     fi
 
     # Sanity check
@@ -790,7 +790,7 @@ runner_install() {
     fi
 
     # Download the runner to the tmp directory
-    debug_echo continue "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
+    debug_print continue "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
     if [ "$has_zen" -eq 1 ]; then
         # Format the curl progress bar for zenity
         mkfifo "$tmp_dir/lugpipe"
@@ -804,7 +804,7 @@ runner_install() {
 
         if [ "$?" -eq 1 ]; then
             # User clicked cancel
-            debug_echo continue "Download aborted. Removing $tmp_dir/$runner_file..."
+            debug_print continue "Download aborted. Removing $tmp_dir/$runner_file..."
             rm "$tmp_dir/$runner_file"
             rm "$tmp_dir/lugpipe"
             return 1
@@ -817,7 +817,7 @@ runner_install() {
 
     # Sanity check
     if [ ! -f "$tmp_dir/$runner_file" ]; then
-        debug_echo exit "Script error:  The requested runner file was not downloaded. Aborting"
+        debug_print exit "Script error:  The requested runner file was not downloaded. Aborting"
     fi  
     
     # Get the path of the first item listed in the archive
@@ -829,7 +829,7 @@ runner_install() {
     case "$first_filepath" in
         # If the files in the archive begin with ./ there is no subdirectory
         ./*)
-            debug_echo continue "Installing runner into $runners_dir/$runner_name..."
+            debug_print continue "Installing runner into $runners_dir/$runner_name..."
             if [ "$has_zen" -eq 1 ]; then
                 # Use Zenity progress bar
                 mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
@@ -841,7 +841,7 @@ runner_install() {
             ;;
         *)
             # Runners with a subdirectory in the archive
-            debug_echo continue "Installing runner into $runners_dir..."
+            debug_print continue "Installing runner into $runners_dir..."
             if [ "$has_zen" -eq 1 ]; then
                 # Use Zenity progress bar
                 mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir" | \
@@ -854,7 +854,7 @@ runner_install() {
     esac
 
     # Cleanup tmp download
-    debug_echo continue "Removing $tmp_dir/$runner_file..."
+    debug_print continue "Removing $tmp_dir/$runner_file..."
     rm "$tmp_dir/$runner_file"
 }
 
@@ -863,7 +863,7 @@ runner_select_install() {
     # This function expects an element number for the array
     # runner_sources to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_echo exit "Script error:  The runner_select_install function expects a numerical argument. Aborting."
+        debug_print exit "Script error:  The runner_select_install function expects a numerical argument. Aborting."
     fi
 
     # Store the url from the selected contributor
@@ -877,7 +877,7 @@ runner_select_install() {
             runner_url_type="github"
             ;;
         *)
-            debug_echo exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
+            debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
             ;;
     esac
 
@@ -887,7 +887,7 @@ runner_select_install() {
     if [ "$runner_url_type" = "github" ]; then
         runner_versions=($(curl -s "$contributor_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -a))
     else
-        debug_echo exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
+        debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
     fi
 
     # Sanity check
@@ -918,7 +918,7 @@ runner_select_install() {
                 runner_name="$(basename "${runner_versions[i]}" .tgz)"
                 ;;
             *)
-                debug_echo exit "Unknown archive filetype in runner_select_install function. Aborting."
+                debug_print exit "Unknown archive filetype in runner_select_install function. Aborting."
                 ;;
         esac
 
@@ -1026,7 +1026,7 @@ set_version() {
         live_or_ptu="LIVE"
         message info "The helper will now target your Star Citizen LIVE installation."
     else
-        debug_echo continue "Unexpected game version provided.  Defaulting to the LIVE installation."
+        debug_print continue "Unexpected game version provided.  Defaulting to the LIVE installation."
         live_or_ptu="LIVE"
     fi
 }
