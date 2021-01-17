@@ -332,7 +332,7 @@ menu() {
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
-        message warning "Config directory not found. The helper is unable to proceed.\n\n$conf_dir"
+        message warning "Config directory not found. The Helper is unable to proceed.\n\n$conf_dir"
         return 1
     fi
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -365,7 +365,7 @@ getdirs() {
             if [ -z "$wine_prefix" ]; then
                 wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen WINE prefix directory" --filename="$HOME/Games/star-citizen" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
-                    message warning "An unexpected error has occurred. The helper is unable to proceed."
+                    message warning "An unexpected error has occurred. The Helper is unable to proceed."
                     return 1
                 elif [ -z "$wine_prefix" ]; then
                     # User clicked cancel
@@ -382,7 +382,7 @@ getdirs() {
                 else
                     while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" 2>/dev/null)"; do
                         if [ "$?" -eq -1 ]; then
-                            message warning "An unexpected error has occurred. The helper is unable to proceed."
+                            message warning "An unexpected error has occurred. The Helper is unable to proceed."
                             return 1
                         elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
                             message warning "You must select the Star Citizen base game directory.\n\nFor Example:  prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
@@ -478,7 +478,7 @@ sanitize() {
         exported=1
     fi
 
-    if message question "This helper will delete the following directory:\n\n$user_dir\n\nDo you want to proceed?"; then
+    if message question "The following directory will be deleted:\n\n$user_dir\n\nDo you want to proceed?"; then
         # Back up keybinds
         if [ "$exported" -eq 1 ]; then
             debug_print continue "Backing up keybinds to $backup_path/keybinds..."
@@ -505,7 +505,7 @@ sanitize() {
 # Check if setting vm.max_map_count was successful
 mapcount_check() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        message warning "As far as this helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
+        message warning "As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
     fi
 }
 
@@ -556,8 +556,8 @@ mapcount_set() {
     fi
     
     # Configure the menu
-    menu_text_zenity="<b>This helper can change vm.max_map_count for you</b>\n\nChoose from the following options:"
-    menu_text_terminal="This helper can change vm.max_map_count for you\n\nChoose from the following options:"
+    menu_text_zenity="<b>This Helper can change vm.max_map_count for you</b>\n\nChoose from the following options:"
+    menu_text_terminal="This Helper can change vm.max_map_count for you\n\nChoose from the following options:"
     menu_text_height="100"
     
     # Configure the menu options
@@ -575,7 +575,7 @@ mapcount_set() {
     menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
     
     # Display an informational message to the user
-    message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
+    message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this Helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
     
     # Call the menu function.  It will use the options as configured above
     menu
@@ -588,7 +588,7 @@ mapcount_set() {
 # Check if setting the open file descriptors limit was successful
 filelimit_check() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
-        message warning "As far as this helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
+        message warning "As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
     fi
 }
 
@@ -603,7 +603,7 @@ filelimit_set() {
     fi
 
     # Adjust the limit
-    if message question "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this helper to change it for you?"; then
+    if message question "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this Helper to change it for you?"; then
         if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
             # Append to the file
@@ -616,7 +616,7 @@ filelimit_set() {
             message info "The necessary configuration has been appended to:\n/etc/security/limits.conf"
         else
             # Don't know what method to use
-            message warning "This helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
+            message warning "This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
             return 0
         fi
     fi
@@ -646,7 +646,7 @@ rm_shaders() {
     fi
 
     # Delete the shader directory
-    if message question "This helper will delete the following directory:\n\n$shaders_dir\n\nDo you want to proceed?"; then
+    if message question "The following directory will be deleted:\n\n$shaders_dir\n\nDo you want to proceed?"; then
         debug_print continue "Deleting $shaders_dir..."
         rm -r "$shaders_dir"
         message info "Your shaders have been deleted!"
@@ -672,7 +672,7 @@ rm_vidcache() {
     fi
 
     # Delete the cache file
-    if message question "This helper will delete the following file:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
+    if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
         debug_print continue "Deleting $dxvk_cache..."
         rm "$dxvk_cache"
         message info "Your DXVK cache has been deleted!"
@@ -684,7 +684,7 @@ rm_vidcache() {
 # Restart lutris
 lutris_restart() {
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
-        if message question "Lutris must be restarted to detect runner changes.\nWould you like this helper to restart it for you?"; then
+        if message question "Lutris must be restarted to detect runner changes.\nWould you like this Helper to restart it for you?"; then
             debug_print continue "Restarting Lutris..."
             pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
         fi
@@ -968,8 +968,8 @@ runner_manage() {
 
     while [ "$managing_runners" = "true" ]; do
         # Configure the menu
-        menu_text_zenity="<b>This helper can manage your Lutris runners</b>\n\nChoose from the following options:"
-        menu_text_terminal="This helper can manage your Lutris runners<\n\nChoose from the following options:"
+        menu_text_zenity="<b>This Helper can manage your Lutris runners</b>\n\nChoose from the following options:"
+        menu_text_terminal="This Helper can manage your Lutris runners<\n\nChoose from the following options:"
         menu_text_height="100"
 
         # Configure the menu options
@@ -1017,14 +1017,14 @@ referral_randomizer() {
     message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
 }
 
-# Toggle between the LIVE and PTU game directories for all helper functions
+# Toggle between the LIVE and PTU game directories for all Helper functions
 set_version() {
     if [ "$live_or_ptu" = "LIVE" ]; then
         live_or_ptu="PTU"
-        message info "The helper will now target your Star Citizen PTU installation."
+        message info "The Helper will now target your Star Citizen PTU installation."
     elif [ "$live_or_ptu" = "PTU" ]; then
         live_or_ptu="LIVE"
-        message info "The helper will now target your Star Citizen LIVE installation."
+        message info "The Helper will now target your Star Citizen LIVE installation."
     else
         debug_print continue "Unexpected game version provided.  Defaulting to the LIVE installation."
         live_or_ptu="LIVE"
@@ -1063,14 +1063,14 @@ lutris_needs_restart="false"
 # Loop the main menu until the user selects quit
 while true; do
     # Configure the menu
-    menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
-    menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
+    menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis Helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
+    menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis Helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
     menu_text_height="140"
 
     # Configure the menu options
     runners_msg="Manage Lutris Runners"
     sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
-    version_msg="Switch the helper between LIVE and PTU  (Currently: $live_or_ptu)"
+    version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
     mapcount_msg="Check vm.max_map_count for optimal performance"
     filelimit_msg="Check my open file descriptors limit"
     shaders_msg="Delete my shaders only"
