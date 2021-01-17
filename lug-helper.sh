@@ -1070,19 +1070,19 @@ while true; do
     # Configure the menu options
     runners_msg="Manage Lutris Runners"
     sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+    version_msg="Switch the helper between LIVE and PTU  (Currently: $live_or_ptu)"
     mapcount_msg="Check vm.max_map_count for optimal performance"
     filelimit_msg="Check my open file descriptors limit"
     shaders_msg="Delete my shaders only"
     vidcache_msg="Delete my DXVK cache"
-    version_msg="Switch the helper between LIVE and PTU  (Currently: $live_or_ptu)"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     reset_msg="Reset Helper"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$runners_msg" "$sanitize_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$randomizer_msg" "$reset_msg" "$quit_msg")
+    menu_options=("$runners_msg" "$sanitize_msg" "$version_msg" "$mapcount_msg" "$filelimit_msg" "$shaders_msg" "$vidcache_msg" "$randomizer_msg" "$reset_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("runner_manage" "sanitize" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "set_version" "referral_randomizer" "reset_helper" "quit")
+    menu_actions=("runner_manage" "sanitize" "set_version" "mapcount_set" "filelimit_set" "rm_shaders" "rm_vidcache" "referral_randomizer" "reset_helper" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
