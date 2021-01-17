@@ -487,7 +487,7 @@ sanitize() {
         fi
         
         # Wipe the user directory
-        debug_echo continue "Wiping USER directory..."
+        debug_echo continue "Wiping $user_dir..."
         rm -r "$user_dir"
 
         # Restore custom keybinds
