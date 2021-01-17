@@ -105,6 +105,14 @@ max_runners=20
 # used to dynamically determine the height of menus
 menu_option_height="25"
 
+# Use logo installed by a packaged version of this script if available
+# Otherwise, default to the logo in the same directory
+if [ -f "/usr/share/pixmaps/lug-logo.png" ]; then
+    lug_logo="/usr/share/pixmaps/lug-logo.png"
+else
+    lug_logo="lug-logo.png"
+fi
+
 ############################################################################
 ############################################################################
 
@@ -157,17 +165,17 @@ message() {
             "info")
                 # info message
                 # call format: message info "text to display"
-                margs=("--info" "--window-icon=lug-logo.png" "--no-wrap" "--text=")
+                margs=("--info" "--window-icon=$lug_logo" "--no-wrap" "--text=")
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                margs=("--warning" "--window-icon=lug-logo.png" "--text=")
+                margs=("--warning" "--window-icon=$lug_logo" "--text=")
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                margs=("--question" "--window-icon=lug-logo.png" "--text=")
+                margs=("--question" "--window-icon=$lug_logo" "--text=")
                 ;;
             *)
                 debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
@@ -277,7 +285,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --window-icon=lug-logo.png --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --window-icon=$lug_logo --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Loop through the options array to match the chosen option
         matched="false"
