@@ -41,7 +41,6 @@
 # Author: https://github.com/the-sane
 # Contributor: https://github.com/Termuellinator
 # Contributor: https://github.com/pstn
-# v1.4
 ############################################################################
 
 # Check for dependencies
