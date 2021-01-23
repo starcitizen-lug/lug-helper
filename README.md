@@ -50,3 +50,8 @@ From Source:
 3. If you want, move *lug-logo.png* to */usr/share/pixmaps/*
 
 Arch Linux: https://aur.archlinux.org/packages/lug-helper/
+
+## Contributors:
+- https://github.com/Termuellinator
+- https://github.com/pstn
+- Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
