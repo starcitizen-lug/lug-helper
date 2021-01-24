@@ -12,7 +12,7 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 ## Options:
 
 `Preflight Check`
-- Run a series of system optimization checks and offer to fix any issues.
+- Runs a series of system optimization checks and offers to fix any issues.
   - Checks that vm.max_map_count is set to at least 16777216 to give the game access to sufficient memory.
   - Checks that the hard open file descriptors limit is set to at least 524288.
 
