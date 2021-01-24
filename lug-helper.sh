@@ -1221,7 +1221,7 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     runners_msg="Manage Lutris Runners"
-    maintenance_msg="Maintenance and Troubleshooting Options"
+    maintenance_msg="User Folder Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
     
