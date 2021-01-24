@@ -515,7 +515,7 @@ sanitize() {
 #------------------------- begin mapcount functions --------------------------#
 
 # Check if setting vm.max_map_count was successful
-mapcount_check() {
+mapcount_confirm() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
         message warning "As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
     fi
@@ -524,11 +524,11 @@ mapcount_check() {
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
     pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-    mapcount_check
+    mapcount_confirm
 }
 
-# Sets vm.max_map_count to persist between reboots
-mapcount_persist() {
+# Set vm.max_map_count
+mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl --system'
         message info "The necessary configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
@@ -536,61 +536,36 @@ mapcount_persist() {
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
         message info "The necessary configuration has been appended to:\n/etc/sysctl.conf"
     fi
-    mapcount_check
+    mapcount_confirm
 }
 
-# Displays instructions for the user to manually set vm.max_map_count
-mapcount_manual() {
-    if [ -d "/etc/sysctl.d" ]; then
-        # Newer versions of sysctl
-        message info "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.d/20-max_map_count.conf &amp;&amp; sysctl --system'"
-    else
-        # Older versions of sysctl
-        message info "To change the setting (a kernel parameter) until next boot, run:\n\nsudo sh -c 'sysctl -w vm.max_map_count=16777216'\n\n\nTo persist the setting between reboots, run:\n\nsudo sh -c 'echo \"vm.max_map_count = 16777216\" >> /etc/sysctl.conf &amp;&amp; sysctl -p'"
-    fi
-}
-
-# Check vm.max_map_count for the correct setting and let the user fix it
-mapcount_set() {
-    # If vm.max_map_count is already set, no need to do anything
+# Check vm.max_map_count for the correct setting
+mapcount_check() {
+    # Add to the results and actions arrays
     if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
-        message info "vm.max_map_count is already set to the optimal value.\nYou're all set!"
-        return 0
-    fi
+        # All good
+        preflight_pass+=("vm.max_map_count is set to at least 16777216.")
+    elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
+        # Was it supposed to have been set by sysctl?
+        preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
+        preflight_actions+=("mapcount_once")
 
-    # Otherwise, check to see if it was supposed to be set by sysctl
-    if grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
-        if message question "It looks like you've already configured vm.max_map_count\nand saved the setting to persist across reboots.\nHowever, for some reason the persistence part did not work.\n\nFor now, would you like to enable the setting again until the next reboot?"; then
-            pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
+        # Add info for manually changing the setting
+        preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
+    else
+        # The setting should be changed
+        preflight_fail+=("vm.max_map_count should be set to at least 16777216\nto give the game access to more than 8GB of memory\nand avoid crashes in areas with lots of geometry.")
+        preflight_actions+=("mapcount_set")
+
+        # Add info for manually changing the setting
+        if [ -d "/etc/sysctl.d" ]; then
+            # Newer versions of sysctl
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/20-max_map_count.conf' and reload with 'sudo sysctl --system':\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
+        else
+            # Older versions of sysctl
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.conf' and reload with 'sudo sysctl -p':\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
         fi
-        mapcount_check
-        return 0
     fi
-    
-    # Configure the menu
-    menu_text_zenity="<b>This Helper can change vm.max_map_count for you</b>\n\nChoose from the following options:"
-    menu_text_terminal="This Helper can change vm.max_map_count for you\n\nChoose from the following options:"
-    menu_text_height="100"
-    
-    # Configure the menu options
-    once="Change setting until next reboot"
-    persist="Change setting and persist after reboot"
-    manual="Show me the commands; I'll handle it myself"
-    goback="Return to the main menu"
-    
-    # Set the options to be displayed in the menu
-    menu_options=("$once" "$persist" "$manual" "$goback")
-    # Set the corresponding functions to be called for each of the options
-    menu_actions=("mapcount_once" "mapcount_persist" "mapcount_manual" "mapcount_check")
-
-    # Calculate the total height the menu should be
-    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
-    
-    # Display an informational message to the user
-    message info "Running Star Citizen requires changing a system setting\nto give the game access to more than 8GB of memory.\n\nvm.max_map_count must be increased to at least 16777216\nto avoid crashes in areas with lots of geometry.\n\n\nAs far as this Helper can detect, the setting\nhas not been changed on your system.\n\nYou will now be given the option to change it."
-    
-    # Call the menu function.  It will use the options as configured above
-    menu
 }
 
 #-------------------------- end mapcount functions ---------------------------#
@@ -598,43 +573,59 @@ mapcount_set() {
 #------------------------ begin filelimit functions --------------------------#
 
 # Check if setting the open file descriptors limit was successful
-filelimit_check() {
+filelimit_confirm() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
         message warning "As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
     fi
 }
 
-# Check the open file descriptors limit and let the user fix it if needed
+# Set the open file descriptors limit
 filelimit_set() {
-    filelimit="$(ulimit -Hn)"
-
-    # If the file limit is already set, no need to do anything
-    if [ "$filelimit" -ge 524288 ]; then
-        message info "Your open files limit is already set to the optimal value.\nYou're all set!"
+    if [ -f "/etc/systemd/system.conf" ]; then
+        # Using systemd
+        # Append to the file
+        pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
+        message info "Your open files limit configuration has been appended to:\n/etc/systemd/system.conf"
+    elif [ -f "/etc/security/limits.conf" ]; then
+        # Using limits.conf
+        # Insert before the last line in the file
+        pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
+        message info "Your open files limit configuration has been appended to:\n/etc/security/limits.conf"
+    else
+        # Don't know what method to use
+        message warning "This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
         return 0
     fi
 
-    # Adjust the limit
-    if message question "We recommend setting the hard open\nfile descriptors limit to at least 524288.\n\nThe current value on your system appears to be $filelimit.\n\nWould you like this Helper to change it for you?"; then
+    # Verify that setting the limit was successful
+    filelimit_confirm
+}
+
+# Check the open file descriptors limit
+filelimit_check() {
+    filelimit="$(ulimit -Hn)"
+
+    # Add to the results and actions arrays
+    if [ "$filelimit" -ge 524288 ]; then
+        # All good
+        preflight_pass+=("Hard open file descriptors limit is set to at least 524288.")
+    else
+        # The file limit should be changed
+        preflight_fail+=("Your hard open file descriptors limit should be set\nto at least 524288.")
+        preflight_actions+=("filelimit_set")
+
+        # Add info for manually changing the settings
         if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
-            # Append to the file
-            pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
-            message info "The necessary configuration has been appended to:\n/etc/systemd/system.conf"
+            preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/systemd/system.conf':\n    DefaultLimitNOFILE=524288")
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
-            # Insert before the last line in the file
-            pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
-            message info "The necessary configuration has been appended to:\n/etc/security/limits.conf"
+            preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/security/limits.conf':\n    * hard nofile 524288")
         else
             # Don't know what method to use
-            message warning "This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
-            return 0
+            preflight_manual+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
         fi
     fi
-
-    # Verify that setting the limit was successful
-    filelimit_check
 }
 
 #------------------------- end filelimit functions ---------------------------#
@@ -1017,6 +1008,62 @@ runner_manage() {
 
 #-------------------------- end runner functions -----------------------------#
 
+# Check that the system is optimized for Star Citizen
+preflight_check() {
+    unset preflight_pass
+    unset preflight_fail
+    unset preflight_actions
+    unset preflight_manual
+    
+    # Call the optimization functions to perform the checks
+    mapcount_check
+    filelimit_check
+
+    # Populate info strings with the results and add formatting
+    if [ "${#preflight_pass[@]}" -gt 0 ]; then
+        preflight_pass_string="Passed Checks:"
+        for (( i=0; i<"${#preflight_pass[@]}"; i++ )); do
+            preflight_pass_string="$preflight_pass_string\n- ${preflight_pass[i]//\\n/\\n    }"
+        done
+        # Add extra newlines if there are also failures to report
+        if [ "${#preflight_fail[@]}" -gt 0 ]; then
+            preflight_pass_string="$preflight_pass_string\n\n"
+        fi
+    fi
+    if [ "${#preflight_fail[@]}" -gt 0 ]; then
+        preflight_fail_string="Failed Checks:"
+        for (( i=0; i<"${#preflight_fail[@]}"; i++ )); do
+            if [ "$i" -gt 0 ]; then
+                # Add extra newlines between sections but not for the first item
+                preflight_fail_string="$preflight_fail_string\n"
+            fi
+            preflight_fail_string="$preflight_fail_string\n- ${preflight_fail[i]//\\n/\\n    }"
+        done
+    fi
+    unset preflight_manual_string
+    for (( i=0; i<"${#preflight_manual[@]}"; i++ )); do
+        if [ "$i" -gt 0 ]; then
+            # Add extra newlines between sections but not for the first item
+            preflight_manual_string="$preflight_manual_string\n\n"
+        fi
+        preflight_manual_string="$preflight_manual_string${preflight_manual[i]}"
+    done
+
+    # Display the results of the preflight check
+    if [ -z "$preflight_fail_string" ]; then
+        message info "Preflight Check Complete\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
+    else
+        if message question "$preflight_pass_string$preflight_fail_string\n\nWould you like this Helper to fix the issues for you?"; then
+            # Call functions to fix any issues found
+            for (( i=0; i<"${#preflight_actions[@]}"; i++ )); do
+                ${preflight_actions[i]}
+            done
+        else
+            # Show the user the manual configuration options
+            message info "$preflight_manual_string"
+        fi
+    fi
+}
 
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
@@ -1080,21 +1127,20 @@ while true; do
     menu_text_height="140"
 
     # Configure the menu options
+    preflight_msg="Preflight Check (System Optimization)"
     runners_msg="Manage Lutris Runners"
     sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
     shaders_msg="Delete my shaders folder only (Do this after each game update)"
     vidcache_msg="Delete my DXVK cache"
     version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
-    mapcount_msg="Check vm.max_map_count for optimal performance"
-    filelimit_msg="Check my open file descriptors limit"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     reset_msg="Reset Helper"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$runners_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$mapcount_msg" "$filelimit_msg" "$randomizer_msg" "$reset_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$runners_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$randomizer_msg" "$reset_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("runner_manage" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "mapcount_set" "filelimit_set" "referral_randomizer" "reset_helper" "quit")
+    menu_actions=("preflight_check" "runner_manage" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "referral_randomizer" "reset_helper" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
