@@ -988,9 +988,9 @@ runner_manage() {
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
         # Configure the menu
-        menu_text_zenity="<b><big>Manage Your Lutris Runners</big></b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Manage Your Lutris Runners<\n\nYou may choose from the following options:"
-        menu_text_height="100"
+        menu_text_zenity="<b><big>Manage Your Lutris Runners</big>\n\nThe runners listed below are wine builds created for Star Citizen</b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Manage Your Lutris Runners\n\nThe runners listed below are wine builds created for Star Citizen\nYou may choose from the following options:"
+        menu_text_height="140"
 
         # Configure the menu options
         delete="Remove an installed runner"
