@@ -289,7 +289,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="400" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --window-icon=$lug_logo --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --window-icon=$lug_logo --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Loop through the options array to match the chosen option
         matched="false"
@@ -338,6 +338,12 @@ menu() {
             fi
         done
     fi
+}
+
+# Called when the user clicks cancel on a looping menu
+# Causes a return to the main menu
+menu_loop_done() {
+    looping_menu="false"
 }
 
 # Get paths to the user's wine prefix, game directory, and a backup directory
@@ -966,12 +972,6 @@ runner_select_install() {
     menu
 }
 
-# Called when the user is done managing runners
-# Causes a return to the main menu
-runner_manage_done() {
-    managing_runners="false"
-}
-
 # Manage Lutris runners
 runner_manage() {
     # Check if Lutris is installed
@@ -985,12 +985,11 @@ runner_manage() {
     fi
     
     # The runner management menu will loop until the user cancels
-    managing_runners="true"
-
-    while [ "$managing_runners" = "true" ]; do
+    looping_menu="true"
+    while [ "$looping_menu" = "true" ]; do
         # Configure the menu
-        menu_text_zenity="<b>This Helper can manage your Lutris runners</b>\n\nChoose from the following options:"
-        menu_text_terminal="This Helper can manage your Lutris runners<\n\nChoose from the following options:"
+        menu_text_zenity="<b><big>Manage Your Lutris Runners</big></b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Manage Your Lutris Runners<\n\nYou may choose from the following options:"
         menu_text_height="100"
 
         # Configure the menu options
@@ -1011,7 +1010,7 @@ runner_manage() {
         # Complete the menu by adding options to remove a runner
         # or go back to the previous menu
         menu_options+=("$delete" "$back")
-        menu_actions+=("runner_select_delete" "runner_manage_done")
+        menu_actions+=("runner_select_delete" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
@@ -1127,6 +1126,37 @@ preflight_check() {
     fi
 }
 
+# Show maintenance/troubleshooting options
+maintenance_menu() {
+    # Loop the menu until the user selects quit
+    looping_menu="true"
+    while [ "$looping_menu" = "true" ]; do
+        # Configure the menu
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big></b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nYou may choose from the following options:"
+        menu_text_height="100"
+
+        # Configure the menu options
+        version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
+        sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+        shaders_msg="Delete my shaders folder only (Do this after each game update)"
+        vidcache_msg="Delete my DXVK cache"
+        reset_msg="Reset Helper configs"
+        quit_msg="Return to the main menu"
+        
+        # Set the options to be displayed in the menu
+        menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$reset_msg" "$quit_msg")
+        # Set the corresponding functions to be called for each of the options
+        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_vidcache" "reset_helper" "menu_loop_done")
+
+        # Calculate the total height the menu should be
+        menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
+        
+        # Call the menu function.  It will use the options as configured above
+        menu
+    done
+}
+
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
     # Populate the referral codes array
@@ -1191,18 +1221,14 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     runners_msg="Manage Lutris Runners"
-    sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
-    shaders_msg="Delete my shaders folder only (Do this after each game update)"
-    vidcache_msg="Delete my DXVK cache"
-    version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
+    maintenance_msg="Maintenance and Troubleshooting Options"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
-    reset_msg="Reset Helper Configs"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$runners_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$version_msg" "$randomizer_msg" "$reset_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$runners_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "runner_manage" "sanitize" "rm_shaders" "rm_vidcache" "set_version" "referral_randomizer" "reset_helper" "quit")
+    menu_actions=("preflight_check" "runner_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
