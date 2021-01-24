@@ -548,6 +548,7 @@ mapcount_check() {
     elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
         # Was it supposed to have been set by sysctl?
         preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
+        # Add the function that will be called to change the configuration
         preflight_actions+=("mapcount_once")
 
         # Add info for manually changing the setting
@@ -555,6 +556,7 @@ mapcount_check() {
     else
         # The setting should be changed
         preflight_fail+=("vm.max_map_count should be set to at least 16777216\nto give the game access to more than 8GB of memory\nand avoid crashes in areas with lots of geometry.")
+        # Add the function that will be called to change the configuration
         preflight_actions+=("mapcount_set")
 
         # Add info for manually changing the setting
@@ -612,6 +614,7 @@ filelimit_check() {
     else
         # The file limit should be changed
         preflight_fail+=("Your hard open file descriptors limit should be set\nto at least 524288.")
+        # Add the function that will be called to change the configuration
         preflight_actions+=("filelimit_set")
 
         # Add info for manually changing the settings
@@ -1010,6 +1013,7 @@ runner_manage() {
 
 # Check that the system is optimized for Star Citizen
 preflight_check() {
+    # Initialize variables
     unset preflight_pass
     unset preflight_fail
     unset preflight_actions
