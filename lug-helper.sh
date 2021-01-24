@@ -1080,7 +1080,12 @@ preflight_check() {
 
             # Execute the actions set by the functions
             if [ ! -z "$preflight_actions_string" ]; then
-                pkexec sh -c "$preflight_actions_string"
+                # Use pollkit's pkexec for gui with a fallback to sudo
+                if [ -x "$(command -v pkexec)" ]; then
+                    pkexec sh -c "$preflight_actions_string"
+                else
+                    sudo sh -c "$preflight_actions_string"
+                fi
             fi
 
             # Call any followup functions
