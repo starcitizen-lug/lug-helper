@@ -517,26 +517,31 @@ sanitize() {
 # Check if setting vm.max_map_count was successful
 mapcount_confirm() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        message warning "As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\n\nYou will most likely experience crashes."
+        preflight_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
     fi
 }
 
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
-    pkexec sh -c 'sysctl -w vm.max_map_count=16777216'
-    mapcount_confirm
+    preflight_actions+=('sysctl -w vm.max_map_count=16777216')
+    preflight_results+=("vm.max_map_count was changed until the next boot.")
+    preflight_followup+=("mapcount_confirm")
 }
 
 # Set vm.max_map_count
 mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
-        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl --system'
-        message info "The vm.max_map_count configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
+        # Newer versions of sysctl
+        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" >> /etc/sysctl.d/20-max_map_count.conf && sysctl --system')
+        preflight_results+=("The vm.max_map_count configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf")
     else
-        pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-        message info "The vm.max_map_count configuration has been appended to:\n/etc/sysctl.conf"
+        # Older versions of sysctl
+        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
+        preflight_results+=("The vm.max_map_count configuration has been appended to:\n/etc/sysctl.conf")
     fi
-    mapcount_confirm
+    
+    # Verify that the setting took effect
+    preflight_followup+=("mapcount_confirm")
 }
 
 # Check vm.max_map_count for the correct setting
@@ -549,7 +554,7 @@ mapcount_check() {
         # Was it supposed to have been set by sysctl?
         preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
         # Add the function that will be called to change the configuration
-        preflight_actions+=("mapcount_once")
+        preflight_action_funcs+=("mapcount_once")
 
         # Add info for manually changing the setting
         preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
@@ -557,7 +562,7 @@ mapcount_check() {
         # The setting should be changed
         preflight_fail+=("vm.max_map_count should be set to at least 16777216\nto give the game access to more than 8GB of memory\nand avoid crashes in areas with lots of geometry.")
         # Add the function that will be called to change the configuration
-        preflight_actions+=("mapcount_set")
+        preflight_action_funcs+=("mapcount_set")
 
         # Add info for manually changing the setting
         if [ -d "/etc/sysctl.d" ]; then
@@ -577,7 +582,7 @@ mapcount_check() {
 # Check if setting the open file descriptors limit was successful
 filelimit_confirm() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
-        message warning "As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.\n\nWe recommend manually configuring this limit to at least 524288."
+        preflight_results+=("WARNING: As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.")
     fi
 }
 
@@ -586,21 +591,20 @@ filelimit_set() {
     if [ -f "/etc/systemd/system.conf" ]; then
         # Using systemd
         # Append to the file
-        pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
-        message info "The open files limit configuration has been appended to:\n/etc/systemd/system.conf"
+        preflight_actions+=('printf "\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" >> /etc/systemd/system.conf && systemctl daemon-reexec')
+        preflight_results+=("The open files limit configuration has been appended to:\n/etc/systemd/system.conf")
     elif [ -f "/etc/security/limits.conf" ]; then
         # Using limits.conf
         # Insert before the last line in the file
-        pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
-        message info "The open files limit configuration has been appended to:\n/etc/security/limits.conf"
+        preflight_actions+=('sed -i "\$i#Added by LUG-Helper:" /etc/security/limits.conf; sed -i "\$i* hard nofile 524288" /etc/security/limits.conf')
+        preflight_results+=("The open files limit configuration has been appended to:\n/etc/security/limits.conf")
     else
         # Don't know what method to use
-        message warning "This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
-        return 0
+        preflight_results+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
     fi
 
     # Verify that setting the limit was successful
-    filelimit_confirm
+    preflight_followup+=("filelimit_confirm")
 }
 
 # Check the open file descriptors limit
@@ -615,7 +619,7 @@ filelimit_check() {
         # The file limit should be changed
         preflight_fail+=("Your hard open file descriptors limit should be set\nto at least 524288.")
         # Add the function that will be called to change the configuration
-        preflight_actions+=("filelimit_set")
+        preflight_action_funcs+=("filelimit_set")
 
         # Add info for manually changing the settings
         if [ -f "/etc/systemd/system.conf" ]; then
@@ -1016,8 +1020,11 @@ preflight_check() {
     # Initialize variables
     unset preflight_pass
     unset preflight_fail
+    unset preflight_action_funcs
     unset preflight_actions
+    unset preflight_results
     unset preflight_manual
+    unset preflight_followup
     
     # Call the optimization functions to perform the checks
     mapcount_check
@@ -1037,20 +1044,19 @@ preflight_check() {
     if [ "${#preflight_fail[@]}" -gt 0 ]; then
         preflight_fail_string="Failed Checks:"
         for (( i=0; i<"${#preflight_fail[@]}"; i++ )); do
-            if [ "$i" -gt 0 ]; then
-                # Add extra newlines between sections but not for the first item
-                preflight_fail_string="$preflight_fail_string\n"
+            if [ "$i" -eq 0 ]; then
+                preflight_fail_string="$preflight_fail_string\n- ${preflight_fail[i]//\\n/\\n    }"
+            else
+                preflight_fail_string="$preflight_fail_string\n\n- ${preflight_fail[i]//\\n/\\n    }"
             fi
-            preflight_fail_string="$preflight_fail_string\n- ${preflight_fail[i]//\\n/\\n    }"
         done
     fi
-    unset preflight_manual_string
     for (( i=0; i<"${#preflight_manual[@]}"; i++ )); do
-        if [ "$i" -gt 0 ]; then
-            # Add extra newlines between sections but not for the first item
-            preflight_manual_string="$preflight_manual_string\n\n"
+        if [ "$i" -eq 0 ]; then
+            preflight_manual_string="${preflight_manual[i]}"
+        else
+            preflight_manual_string="$preflight_manual_string\n\n${preflight_manual[i]}"
         fi
-        preflight_manual_string="$preflight_manual_string${preflight_manual[i]}"
     done
 
     # Display the results of the preflight check
@@ -1058,10 +1064,40 @@ preflight_check() {
         message info "Preflight Check Complete\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
         if message question "$preflight_pass_string$preflight_fail_string\n\nWould you like this Helper to fix the issues for you?"; then
-            # Call functions to fix any issues found
-            for (( i=0; i<"${#preflight_actions[@]}"; i++ )); do
-                ${preflight_actions[i]}
+            # Call functions to build fixes for any issues found
+            for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
+                ${preflight_action_funcs[i]}
             done
+            # Populate a string of actions to be executed
+            for (( i=0; i<"${#preflight_actions[@]}"; i++ )); do
+                if [ "$i" -eq 0 ]; then
+                    preflight_actions_string="${preflight_actions[i]}"
+                else
+                    preflight_actions_string="$preflight_actions_string; ${preflight_actions[i]}"
+                fi
+            done
+
+            # Execute the actions set by the functions
+            if [ ! -z "$preflight_actions_string" ]; then
+                pkexec sh -c "$preflight_actions_string"
+            fi
+
+            # Call any followup functions
+            for (( i=0; i<"${#preflight_followup[@]}"; i++ )); do
+                ${preflight_followup[i]}
+            done
+
+            # Populate the results string
+            for (( i=0; i<"${#preflight_results[@]}"; i++ )); do
+                if [ "$i" -eq 0 ]; then
+                    preflight_results_string="${preflight_results[i]}"
+                else
+                    preflight_results_string="$preflight_results_string\n\n${preflight_results[i]}"
+                fi
+            done
+
+            # Display the results
+            message info "$preflight_results_string"
         else
             # Show the user the manual configuration options
             message info "$preflight_manual_string"
