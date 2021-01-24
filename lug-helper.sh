@@ -531,10 +531,10 @@ mapcount_once() {
 mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.d/20-max_map_count.conf && sysctl --system'
-        message info "The necessary configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
+        message info "The vm.max_map_count configuration has been appended to:\n/etc/sysctl.d/20-max_map_count.conf"
     else
         pkexec sh -c 'echo "vm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p'
-        message info "The necessary configuration has been appended to:\n/etc/sysctl.conf"
+        message info "The vm.max_map_count configuration has been appended to:\n/etc/sysctl.conf"
     fi
     mapcount_confirm
 }
@@ -585,12 +585,12 @@ filelimit_set() {
         # Using systemd
         # Append to the file
         pkexec sh -c 'echo "DefaultLimitNOFILE=524288" >> /etc/systemd/system.conf && systemctl daemon-reexec'
-        message info "Your open files limit configuration has been appended to:\n/etc/systemd/system.conf"
+        message info "The open files limit configuration has been appended to:\n/etc/systemd/system.conf"
     elif [ -f "/etc/security/limits.conf" ]; then
         # Using limits.conf
         # Insert before the last line in the file
         pkexec sh -c 'sed -i "\$i* hard nofile 524288" /etc/security/limits.conf'
-        message info "Your open files limit configuration has been appended to:\n/etc/security/limits.conf"
+        message info "The open files limit configuration has been appended to:\n/etc/security/limits.conf"
     else
         # Don't know what method to use
         message warning "This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288."
