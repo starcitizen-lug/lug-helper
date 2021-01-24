@@ -1138,7 +1138,7 @@ while true; do
     vidcache_msg="Delete my DXVK cache"
     version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
-    reset_msg="Reset Helper"
+    reset_msg="Reset Helper Configs"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
