@@ -639,6 +639,16 @@ filelimit_check() {
 #------------------------- end filelimit functions ---------------------------#
 
 
+# Check total system memory
+memory_check() {
+    memtotal="$(awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
+    if awk 'BEGIN {exit !("$memtotal" < 15)}'; then
+        preflight_pass+=("Your system has $memtotal GB of memory.")  
+    else
+        preflight_fail+=("Your system has $memtotal GB of memory.\nWe recommend at least 16 GB to avoid crashes.")
+    fi
+}
+
 # Delete the shaders directory
 rm_shaders() {
     # Get/Set directory paths
@@ -1028,6 +1038,7 @@ preflight_check() {
     unset preflight_followup
     
     # Call the optimization functions to perform the checks
+    memory_check
     mapcount_check
     filelimit_check
 
@@ -1064,7 +1075,9 @@ preflight_check() {
     if [ -z "$preflight_fail_string" ]; then
         message info "Preflight Check Complete\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
-        if message question "$preflight_pass_string$preflight_fail_string\n\nWould you like configuration issues to be fixed for you?"; then
+        if [ -z "$preflight_action_funcs" ]; then
+            message warning "$preflight_pass_string$preflight_fail_string"
+        elif message question "$preflight_pass_string$preflight_fail_string\n\nWould you like configuration issues to be fixed for you?"; then
             # Call functions to build fixes for any issues found
             for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
                 ${preflight_action_funcs[i]}
@@ -1105,8 +1118,11 @@ preflight_check() {
             # Display the results
             message info "$preflight_results_string"
         else
-            # Show the user the manual configuration options
-            message info "$preflight_manual_string"
+            # User declined to automatically fix configuration issues
+            # Show manual configuration options
+            if [ ! -z "$preflight_manual_string" ]; then
+                message info "$preflight_manual_string"
+            fi
         fi
     fi
 }
