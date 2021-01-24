@@ -1064,7 +1064,7 @@ preflight_check() {
     if [ -z "$preflight_fail_string" ]; then
         message info "Preflight Check Complete\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
-        if message question "$preflight_pass_string$preflight_fail_string\n\nWould you like this Helper to fix the issues for you?"; then
+        if message question "$preflight_pass_string$preflight_fail_string\n\nWould you like configuration issues to be fixed for you?"; then
             # Call functions to build fixes for any issues found
             for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
                 ${preflight_action_funcs[i]}
