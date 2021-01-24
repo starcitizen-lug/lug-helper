@@ -20,24 +20,24 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 - Quickly install and delete Lutris wine runners
 
 `Maintenance and Troubleshooting Options`
-> `Switch the helper between LIVE and PTU`
-> - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
-> 
-> `Delete my Star Citizen USER folder and preserve my keybinds`
-> - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
-> - To export your keybinds from within the game, go to:
->   - *Options->Keybindings->Control Profiles->Save Control Settings*
-> - To re-import your keybinds from within the game, select them from the list:
->   - *Options->Keybindings->Control Profiles*
-> 
-> `Delete my shaders only`
-> - Sometimes all you need to do between major version updates is delete your shaders directory.
-> 
-> `Delete my DXVK cache`
-> - A troubleshooting step that sometimes helps fix various issues and crashes.
-> 
-> `Reset Helper configs`
-> - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
+- `Switch the helper between LIVE and PTU`
+  - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
+
+- `Delete my Star Citizen USER folder and preserve my keybinds`
+  - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
+  - To export your keybinds from within the game, go to:
+    - *Options->Keybindings->Control Profiles->Save Control Settings*
+  - To re-import your keybinds from within the game, select them from the list:
+    - *Options->Keybindings->Control Profiles*
+
+- `Delete my shaders only`
+  - Sometimes all you need to do between major version updates is delete your shaders directory.
+
+- `Delete my DXVK cache`
+  - A troubleshooting step that sometimes helps fix various issues and crashes.
+
+- `Reset Helper configs`
+  - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
 
 `Get a random Penguin's Star Citizen referral code`
 - Display a referral code for a random member of the Star Citizen Linux Users Group.
