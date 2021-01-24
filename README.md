@@ -11,6 +11,11 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 
 ## Options:
 
+`Preflight Check`
+- Run a series of system optimization checks and offer to fix any issues.
+  - Checks that vm.max_map_count is set to at least 16777216 to give the game access to sufficient memory.
+  - Checks that the hard open file descriptors limit is set to at least 524288.
+
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
@@ -20,15 +25,6 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
   - *Options->Keybindings->Control Profiles->Save Control Settings*
 - To re-import your keybinds from within the game, select them from the list:
   - *Options->Keybindings->Control Profiles*
-
-`Check vm.max_map_count for optimal performance`
-- We recommend setting this to at least 16777216 to give the game access to sufficient memory.
-- The helper will offer to set it for you or show you the commands to do it yourself.
-
-`Check my open file descriptors limit`
-- We recommend setting the hard open files limit to at least 524288.
-- The helper will offer to set it for you and try to auto-detect the correct method to do so.
-- It is able to update either */etc/systemd/system.conf* or */etc/security/limits.conf*
 
 `Delete my shaders only`
 - Sometimes all you need to do between major version updates is delete your shaders directory.
