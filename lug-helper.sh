@@ -896,7 +896,7 @@ runner_select_install() {
     # To add new sources, handle them here, in the if statement
     # just above, and the runner_install function above
     if [ "$runner_url_type" = "github" ]; then
-        runner_versions=($(curl -s "$contributor_url" | grep "browser_download_url" | awk '{print $2}' | xargs basename -a))
+        runner_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | xargs basename -a))
     else
         debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
     fi
