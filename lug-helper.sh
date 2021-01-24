@@ -546,8 +546,9 @@ mapcount_set() {
 
 # Check vm.max_map_count for the correct setting
 mapcount_check() {
+    mapcount="$(cat /proc/sys/vm/max_map_count)"
     # Add to the results and actions arrays
-    if [ "$(cat /proc/sys/vm/max_map_count)" -ge 16777216 ]; then
+    if [ "$mapcount" -ge 16777216 ]; then
         # All good
         preflight_pass+=("vm.max_map_count is set to at least 16777216.")
     elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
@@ -560,7 +561,7 @@ mapcount_check() {
         preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
     else
         # The setting should be changed
-        preflight_fail+=("vm.max_map_count should be set to at least 16777216\nto give the game access to more than 8GB of memory\nand avoid crashes in areas with lots of geometry.")
+        preflight_fail+=("vm.max_map_count is $mapcount\nand should be set to at least 16777216\nto give the game access to sufficient memory.")
         # Add the function that will be called to change the configuration
         preflight_action_funcs+=("mapcount_set")
 
@@ -617,7 +618,7 @@ filelimit_check() {
         preflight_pass+=("Hard open file descriptors limit is set to at least 524288.")
     else
         # The file limit should be changed
-        preflight_fail+=("Your hard open file descriptors limit should be set\nto at least 524288.")
+        preflight_fail+=("Your hard open file descriptors limit is $filelimit\nand should be set to at least 524288\nto increase the maximum number of open files.")
         # Add the function that will be called to change the configuration
         preflight_action_funcs+=("filelimit_set")
 
