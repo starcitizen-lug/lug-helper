@@ -19,7 +19,7 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
-`Maintenance and Troubleshooting Options`
+`User Folder Maintenance and Troubleshooting`
 - `Switch the helper between LIVE and PTU`
   - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
 
