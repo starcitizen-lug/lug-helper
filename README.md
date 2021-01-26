@@ -13,7 +13,8 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
 
 `Preflight Check`
 - Runs a series of system optimization checks and offers to fix any issues.
-  - Checks that vm.max_map_count is set to at least 16777216 to give the game access to sufficient memory.
+  - Checks that vm.max_map_count is set to at least 16777216.
+    - This sets the maxmimum number of "memory map areas" a process can have. While most applications need less than a thousand maps, Star Citizen requires access to more.
   - Checks that the hard open file descriptors limit is set to at least 524288.
 
 `Manage Lutris Runners`
