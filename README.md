@@ -16,6 +16,7 @@ Zenity menus are used for a GUI experience with a fallback to terminal-based men
   - Checks that vm.max_map_count is set to at least 16777216.
     - This sets the maxmimum number of "memory map areas" a process can have. While most applications need less than a thousand maps, Star Citizen requires access to more.
   - Checks that the hard open file descriptors limit is set to at least 524288.
+    - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
 
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
