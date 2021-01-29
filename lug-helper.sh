@@ -48,8 +48,7 @@
 # Nobody expects the spanish inquisition.
 while [ $# -gt 0 ]
 do
-    opt="${1}"
-    case "${opt}" in
+    case "$1" in
         --help|-h|-? )
             printf "\n$0: There are currently no command line arguments, this is actually a GUI script.\nRun this command again without any arguments.\n\n"
             exit 0
