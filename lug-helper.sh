@@ -64,16 +64,8 @@ game_conf="gamedir.conf"
 backup_conf="backupdir.conf"
 
 # Use XDG base directories if defined
-if [ -z "$XDG_CONFIG_HOME" ]; then
-    conf_dir="$HOME/.config"
-else
-    conf_dir="$XDG_CONFIG_HOME"
-fi
-if [ -z "$XDG_DATA_HOME" ]; then
-    data_dir="$HOME/.local/share"
-else
-    data_dir="$XDG_DATA_HOME"
-fi
+conf_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
 
 # .config subdirectory
 conf_subdir="starcitizen-lug"
