@@ -41,6 +41,8 @@
 # Author: https://github.com/the-sane
 # Contributor: https://github.com/Termuellinator
 # Contributor: https://github.com/pstn
+# Contributor: https://github.com/gort818
+# Contributor: https://github.com/victort
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 ############################################################################
