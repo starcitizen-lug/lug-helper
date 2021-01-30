@@ -45,20 +45,6 @@
 # https://github.com/richardtatum/sc-runner-updater
 ############################################################################
 
-# Nobody expects the spanish inquisition.
-while [ $# -gt 0 ]
-do
-    case "$1" in
-        --help|-h|-? )
-            printf "\n$0: There are currently no command line arguments, this is actually a GUI script.\nRun this command again without any arguments.\n\n"
-            exit 0
-        ;;
-        * )
-        ;;
-    esac
-    shift;
-done
-
 # Check for dependencies
 if [ ! -x "$(command -v curl)" ]; then
 # Print to stderr and also try warning the user through notify-send
@@ -1216,6 +1202,60 @@ fi
 # Set some defaults
 live_or_ptu="LIVE"
 lutris_needs_restart="false"
+
+# If invoked with command line arguments, process them and exit
+if [ "$#" -gt 0 ]; then
+    while [ "$#" -gt 0 ]
+    do
+        # Victor_Tramp expects the spanish inquisition.
+        case "$1" in
+            --help|-h|-?)
+                printf "Star Citizen Linux Users Group Helper Script
+
+Usage: lug-helper <options>
+
+  --preflight-check     Run system optimization checks
+  --manage-runners      Install or remove Lutris runners
+  --sanitize            Delete Star Citizen USER folder, preserving keybinds
+  --delete-shaders      Delete Star Citizen shaders directory
+  --delete-dxvk-cache   Delete Star Citizen dxvk cache file
+  --get-referral        Get a random LUG member's Star Citizen referral code
+  --reset-helper        Delete saved lug-helper configs
+"
+                exit 0
+                ;;
+            --preflight-check)
+                preflight_check
+                ;;
+            --manage-runners)
+                runner_manage
+                ;;
+            --sanitize)
+                sanitize
+                ;;
+            --delete-shaders)
+                rm_shaders
+                ;;
+            --delete-dxvk-cache)
+                rm_vidcache
+                ;;
+            --get-referral)
+                referral_randomizer
+                ;;
+            --reset-helper)
+                reset_helper
+                ;;
+            *)
+                printf "$0: Invalid option '$1'\n"
+                exit 0
+                ;;
+        esac
+        # Shift forward to the next argument and loop again
+        shift
+    done
+
+    exit 0
+fi
 
 # Loop the main menu until the user selects quit
 while true; do
