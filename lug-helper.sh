@@ -63,7 +63,6 @@ fi
 
 wine_conf="winedir.conf"
 game_conf="gamedir.conf"
-backup_conf="backupdir.conf"
 
 # Use XDG base directories if defined
 conf_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
