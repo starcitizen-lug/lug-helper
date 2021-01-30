@@ -58,4 +58,6 @@ Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 ## Contributors:
 - https://github.com/Termuellinator
 - https://github.com/pstn
+- https://github.com/gort818
+- https://github.com/victort
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
