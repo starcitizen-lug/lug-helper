@@ -758,7 +758,7 @@ runner_select_delete() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
     if [ "$menu_height" -gt "400" ]; then
         menu_height="400"
     fi
@@ -957,7 +957,7 @@ runner_select_install() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
     if [ "$menu_height" -gt "400" ]; then
         menu_height="400"
     fi
@@ -1007,7 +1007,7 @@ runner_manage() {
         menu_actions+=("runner_select_delete" "menu_loop_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
         
         # Call the menu function.  It will use the options as configured above
         menu
@@ -1144,7 +1144,7 @@ maintenance_menu() {
         menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
         
         # Call the menu function.  It will use the options as configured above
         menu
@@ -1279,7 +1279,7 @@ while true; do
     menu_actions=("preflight_check" "runner_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
-    menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
     
     # Call the menu function.  It will use the options as configured above
     menu
