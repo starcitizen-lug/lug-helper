@@ -673,7 +673,7 @@ rm_shaders() {
 }
 
 # Delete DXVK cache
-rm_vidcache() {
+rm_dxvkcache() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
@@ -1139,7 +1139,7 @@ maintenance_menu() {
         # Set the options to be displayed in the menu
         menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_vidcache" "reset_helper" "menu_loop_done")
+        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(("$menu_option_height" * "${#menu_options[@]}" + "$menu_text_height"))"
@@ -1237,7 +1237,7 @@ Usage: lug-helper <options>
                 rm_shaders
                 ;;
             --delete-dxvk-cache)
-                rm_vidcache
+                rm_dxvkcache
                 ;;
             --get-referral)
                 referral_randomizer
