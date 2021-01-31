@@ -1210,45 +1210,70 @@ if [ "$#" -gt 0 ]; then
     do
         # Victor_Tramp expects the spanish inquisition.
         case "$1" in
-            --help|-h)
+            --help | -h )
                 printf "Star Citizen Linux Users Group Helper Script
-
 Usage: lug-helper <options>
-
- -p,  --preflight-check     Run system optimization checks
- -m,  --manage-runners      Install or remove Lutris runners
- -s,  --sanitize            Delete Star Citizen USER folder, preserving keybinds
- -d,  --delete-shaders      Delete Star Citizen shaders directory
- -c,  --delete-dxvk-cache   Delete Star Citizen dxvk cache file
- -g,  --get-referral        Get a random LUG member's Star Citizen referral code
- -r,  --reset-helper        Delete saved lug-helper configs
+  -p, --preflight-check     Run system optimization checks
+  -m, --manage-runners      Install or remove Lutris runners
+  -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
+  -s, --delete-shaders      Delete Star Citizen shaders directory
+  -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
+  -t, --target=[live|ptu]   Target LIVE or PTU (default live)
+  -g, --use-gui=[yes|no]    Use Zenity GUI (default yes)
+  -r, --get-referral        Get a random LUG member's Star Citizen referral code
+  -x, --reset-helper        Delete saved lug-helper configs
 "
                 exit 0
                 ;;
-            --preflight-check | -p)
-                preflight_check
+            --preflight-check | -p )
+                cargs+=("preflight_check")
                 ;;
-            --manage-runners | -m)
-                runner_manage
+            --manage-runners | -m )
+                cargs+=("runner_manage")
                 ;;
-            --sanitize | -s)
-                sanitize
+            --delete-user-folder | -u )
+                cargs+=("sanitize")
                 ;;
-            --delete-shaders | -d)
-                rm_shaders
+            --delete-shaders | -s )
+                cargs+=("rm_shaders")
                 ;;
-            --delete-dxvk-cache | -c)
-                rm_dxvkcache
+            --delete-dxvk-cache | -c )
+                cargs+=("rm_dxvkcache")
                 ;;
-            --get-referral | -g)
-                referral_randomizer
+            --target=* | -t=* )
+                live_or_ptu="$(echo "$1" | cut -d'=' -f2)"
+                if [ "$live_or_ptu" = "live" ] || [ "$live_or_ptu" = "LIVE" ]; then
+                    live_or_ptu="LIVE"
+                elif [ "$live_or_ptu" = "ptu" ] || [ "$live_or_ptu" = "PTU" ]; then
+                    live_or_ptu="PTU"
+                else
+                    printf "$0: Invalid option '$1'\n"
+                    exit 0
+                fi
                 ;;
-            --reset-helper | -r)
-                reset_helper
+            --use-gui=* | -g=* )
+                # If zenity is unavailable, it has already been set to 0
+                # and this setting has no effect
+                if [ -x "$(command -v zenity)" ]; then
+                    has_zen="$(echo "$1" | cut -d'=' -f2)"
+                    if [ "$has_zen" = "yes" ] || [ "$has_zen" = "YES" ]; then
+                        has_zen=1
+                    elif [ "$has_zen" = "no" ] || [ "$has_zen" = "NO" ]; then
+                        has_zen=0
+                    else
+                        printf "$0: Invalid option '$1'\n"
+                        exit 0
+                    fi
+                fi
                 ;;
-            *)
+            --get-referral | -r )
+                cargs+=("referral_randomizer")
+                ;;
+            --reset-helper | -x )
+                cargs+=("reset_helper")
+                ;;
+            * )
                 printf "$0: Invalid option '$1'\n"
-                printf  "For more information try \x1B[32m--help\n"
                 exit 0
                 ;;
         esac
@@ -1256,7 +1281,14 @@ Usage: lug-helper <options>
         shift
     done
 
-    exit 0
+    # Call the requested functions and exit
+    if [ "${#cargs[@]}" -gt 0 ]; then
+        for (( i=0; i<"${#cargs[@]}"; i++ )); do
+            ${cargs[i]}
+        done
+
+        exit 0
+    fi
 fi
 
 # Loop the main menu until the user selects quit
