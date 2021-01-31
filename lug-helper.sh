@@ -1256,9 +1256,9 @@ Usage: lug-helper <options>
                 # and this setting has no effect
                 if [ -x "$(command -v zenity)" ]; then
                     use_zenity="$(echo "$1" | cut -d'=' -f2)"
-                    if [ "$use_zenity" = "yes" ] || [ "$use_zenity" = "YES" ]; then
+                    if [ "$use_zenity" = "yes" ] || [ "$use_zenity" = "YES" ] || [ "$use_zenity" = "1" ]; then
                         use_zenity=1
-                    elif [ "$use_zenity" = "no" ] || [ "$use_zenity" = "NO" ]; then
+                    elif [ "$use_zenity" = "no" ] || [ "$use_zenity" = "NO" ] || [ "$use_zenity" = "0" ]; then
                         use_zenity=0
                     else
                         printf "$0: Invalid option '$1'\n"
@@ -1286,7 +1286,6 @@ Usage: lug-helper <options>
         for (( i=0; i<"${#cargs[@]}"; i++ )); do
             ${cargs[i]}
         done
-
         exit 0
     fi
 fi
