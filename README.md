@@ -1,9 +1,9 @@
 # LUG-Helper
-**Star Citizen's Linux Users Group Helper Script**
+**Star Citizen's Linux Users Group Helper Script**  
 https://robertsspaceindustries.com/orgs/LUG
 
 ### *Greetings, fellow Penguin!*
-*This script is designed to help you manage and optimize Star Citizen on Linux.*
+_**This script is designed to help you manage and optimize Star Citizen on Linux.**_
 
 Zenity menus are used for a GUI experience with a fallback to terminal-based menus where Zenity is unavailable.  
 Command line arguments are available for quickly launching functions from the terminal.  
