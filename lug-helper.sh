@@ -157,7 +157,7 @@ message() {
     fi
     
     # Use zenity messages if available
-    if [ "$has_zen" -eq 1 ]; then
+    if [ "$use_zenity" -eq 1 ]; then
         case "$1" in
             "info")
                 # info message
@@ -266,7 +266,7 @@ menu() {
     fi
     
     # Use Zenity if it is available
-    if [ "$has_zen" -eq 1 ]; then
+    if [ "$use_zenity" -eq 1 ]; then
         # Format the options array for Zenity by adding
         # TRUE or FALSE to indicate default selections
         # ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
@@ -370,7 +370,7 @@ getdirs() {
     # ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ]; then
         message info "At the next screen, please select your Star Citizen WINE prefix.\nIt will be remembered for future use."
-        if [ "$has_zen" -eq 1 ]; then
+        if [ "$use_zenity" -eq 1 ]; then
             # Using Zenity file selection menus
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
@@ -811,7 +811,7 @@ runner_install() {
 
     # Download the runner to the tmp directory
     debug_print continue "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
-    if [ "$has_zen" -eq 1 ]; then
+    if [ "$use_zenity" -eq 1 ]; then
         # Format the curl progress bar for zenity
         mkfifo "$tmp_dir/lugpipe"
         cd "$tmp_dir" && curl -#LO "$runner_dl_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
@@ -850,7 +850,7 @@ runner_install() {
         # If the files in the archive begin with ./ there is no subdirectory
         ./*)
             debug_print continue "Installing runner into $runners_dir/$runner_name..."
-            if [ "$has_zen" -eq 1 ]; then
+            if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
                 mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
@@ -862,7 +862,7 @@ runner_install() {
         *)
             # Runners with a subdirectory in the archive
             debug_print continue "Installing runner into $runners_dir..."
-            if [ "$has_zen" -eq 1 ]; then
+            if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
                 mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
@@ -1195,9 +1195,9 @@ quit() {
 ############################################################################
 
 # Check if Zenity is available
-has_zen=0
+use_zenity=0
 if [ -x "$(command -v zenity)" ]; then
-    has_zen=1
+    use_zenity=1
 fi
 
 # Set some defaults
@@ -1255,11 +1255,11 @@ Usage: lug-helper <options>
                 # If zenity is unavailable, it has already been set to 0
                 # and this setting has no effect
                 if [ -x "$(command -v zenity)" ]; then
-                    has_zen="$(echo "$1" | cut -d'=' -f2)"
-                    if [ "$has_zen" = "yes" ] || [ "$has_zen" = "YES" ]; then
-                        has_zen=1
-                    elif [ "$has_zen" = "no" ] || [ "$has_zen" = "NO" ]; then
-                        has_zen=0
+                    use_zenity="$(echo "$1" | cut -d'=' -f2)"
+                    if [ "$use_zenity" = "yes" ] || [ "$use_zenity" = "YES" ]; then
+                        use_zenity=1
+                    elif [ "$use_zenity" = "no" ] || [ "$use_zenity" = "NO" ]; then
+                        use_zenity=0
                     else
                         printf "$0: Invalid option '$1'\n"
                         exit 0
