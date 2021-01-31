@@ -9,6 +9,7 @@ This script is designed to help you manage and optimize Star Citizen on Linux.
 
 Zenity menus are used for a GUI experience with a fallback to terminal-based menus where Zenity is unavailable.  
 Command line arguments are available for quickly launching functions from the terminal.  
+
 Configuration is saved in *$XDG_CONFIG_HOME/starcitizen-lug/*.  
 Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
