@@ -1210,44 +1210,45 @@ if [ "$#" -gt 0 ]; then
     do
         # Victor_Tramp expects the spanish inquisition.
         case "$1" in
-            --help|-h|-?)
+            --help|-h)
                 printf "Star Citizen Linux Users Group Helper Script
 
 Usage: lug-helper <options>
 
-  --preflight-check     Run system optimization checks
-  --manage-runners      Install or remove Lutris runners
-  --sanitize            Delete Star Citizen USER folder, preserving keybinds
-  --delete-shaders      Delete Star Citizen shaders directory
-  --delete-dxvk-cache   Delete Star Citizen dxvk cache file
-  --get-referral        Get a random LUG member's Star Citizen referral code
-  --reset-helper        Delete saved lug-helper configs
+ -p,  --preflight-check     Run system optimization checks
+ -m,  --manage-runners      Install or remove Lutris runners
+ -s,  --sanitize            Delete Star Citizen USER folder, preserving keybinds
+ -d,  --delete-shaders      Delete Star Citizen shaders directory
+ -c,  --delete-dxvk-cache   Delete Star Citizen dxvk cache file
+ -g,  --get-referral        Get a random LUG member's Star Citizen referral code
+ -r,  --reset-helper        Delete saved lug-helper configs
 "
                 exit 0
                 ;;
-            --preflight-check)
+            --preflight-check | -p)
                 preflight_check
                 ;;
-            --manage-runners)
+            --manage-runners | -m)
                 runner_manage
                 ;;
-            --sanitize)
+            --sanitize | -s)
                 sanitize
                 ;;
-            --delete-shaders)
+            --delete-shaders | -d)
                 rm_shaders
                 ;;
-            --delete-dxvk-cache)
+            --delete-dxvk-cache | -c)
                 rm_dxvkcache
                 ;;
-            --get-referral)
+            --get-referral | -g)
                 referral_randomizer
                 ;;
-            --reset-helper)
+            --reset-helper | -r)
                 reset_helper
                 ;;
             *)
                 printf "$0: Invalid option '$1'\n"
+                printf  "For more information try \x1B[32m--help\n"
                 exit 0
                 ;;
         esac
