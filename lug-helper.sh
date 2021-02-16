@@ -648,6 +648,15 @@ memory_check() {
     fi
 }
 
+# Check CPU for the required AVX extension
+avx_check() {
+    if grep -q "avx" /proc/cpuinfo; then
+        preflight_pass+=("Your CPU supports the necessary AVX instruction set.")  
+    else
+        preflight_fail+=("Your CPU does not appear to support the necessary AVX instruction set.\nThis requirement was added to Star Citizen in version 3.11")
+    fi
+}
+
 # Delete the shaders directory
 rm_shaders() {
     # Get/Set directory paths
@@ -1031,6 +1040,7 @@ preflight_check() {
     
     # Call the optimization functions to perform the checks
     memory_check
+    avx_check
     mapcount_check
     filelimit_check
 
