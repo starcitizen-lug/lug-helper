@@ -511,6 +511,7 @@ sanitize() {
     fi
 }
 
+#--------------------- begin preflight check functions -----------------------#
 #------------------------- begin mapcount functions --------------------------#
 
 # Check if setting vm.max_map_count was successful
@@ -656,6 +657,8 @@ avx_check() {
         preflight_fail+=("Your CPU does not appear to support the necessary AVX instruction set.\nThis requirement was added to Star Citizen in version 3.11")
     fi
 }
+
+#------------------------- end preflight check functions ---------------------#
 
 # Delete the shaders directory
 rm_shaders() {
