@@ -638,7 +638,6 @@ filelimit_check() {
 
 #------------------------- end filelimit functions ---------------------------#
 
-
 # Check total system memory
 memory_check() {
     memtotal="$(awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
