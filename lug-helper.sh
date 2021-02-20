@@ -650,7 +650,7 @@ memory_check() {
 
 # Check CPU for the required AVX extension
 avx_check() {
-    if grep -q "avxa" /proc/cpuinfo; then
+    if grep -q "avx" /proc/cpuinfo; then
         preflight_pass+=("Your CPU supports the necessary AVX instruction set.")  
     else
         preflight_fail+=("Your CPU does not appear to support AVX instructions.\nThis requirement was added to Star Citizen in version 3.11")
