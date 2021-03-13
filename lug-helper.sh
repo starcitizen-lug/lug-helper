@@ -75,23 +75,20 @@ conf_subdir="starcitizen-lug"
 tmp_dir="$(mktemp -d --suffix=".lughelper")"
 trap 'rm -r "$tmp_dir"' EXIT
 
-######## Game Directories #################################################
+######## Game Directories ##################################################
 
 # The game's base directory name
 sc_base_dir="StarCitizen"
 # The default install location within a WINE prefix:
 install_path="drive_c/Program Files/Roberts Space Industries/$sc_base_dir"
-# The game's user subdirectory name (within the LIVE or PTU directories)
-user_subdir_name="USER"
-# The location within the USER directory to which the game exports keybinds
-# ie. USER/Controls/Mappings
-keybinds_export_path="Controls/Mappings"
 
-dxvk_cache_file="StarCitizen.dxvk-cache"
+# The names of the live/ptu directories
+live_dir="LIVE"
+ptu_dir="PTU"
 
 # Remaining directory paths are set at the end of the getdirs() function
 
-###########################################################################
+############################################################################
 
 # Lutris wine runners directory
 runners_dir="$data_dir/lutris/runners/wine"
@@ -463,12 +460,19 @@ getdirs() {
         echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
     fi
 
-    # Set remaining directory paths
-    user_dir="$game_path/$live_or_ptu/$user_subdir_name"
-    keybinds_dir="$user_dir/$keybinds_export_path"
-    backup_path="$conf_dir/$conf_subdir"
+    ######## Set remaining directory paths #####################################
+    # $live_or_ptu is set in the set_version() function
+    ############################################################################
+    # The game's user directory
+    user_dir="$game_path/$live_or_ptu/USER"
+    # The location within the USER directory to which the game exports keybinds
+    keybinds_dir="$user_dir/Controls/Mappings"
+    # Shaders directory
     shaders_dir="$user_dir/shaders"
-    dxvk_cache="$game_path/$live_or_ptu/$dxvk_cache_file"
+    # dxvk cache file
+    dxvk_cache="$game_path/$live_or_ptu/StarCitizen.dxvk-cache"
+    # Where to store backed up keybinds
+    backup_path="$conf_dir/$conf_subdir"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -1184,15 +1188,15 @@ referral_randomizer() {
 
 # Toggle between the LIVE and PTU game directories for all Helper functions
 set_version() {
-    if [ "$live_or_ptu" = "LIVE" ]; then
-        live_or_ptu="PTU"
+    if [ "$live_or_ptu" = "$live_dir" ]; then
+        live_or_ptu="$ptu_dir"
         message info "The Helper will now target your Star Citizen PTU installation."
-    elif [ "$live_or_ptu" = "PTU" ]; then
-        live_or_ptu="LIVE"
+    elif [ "$live_or_ptu" = "$ptu_dir" ]; then
+        live_or_ptu="$live_dir"
         message info "The Helper will now target your Star Citizen LIVE installation."
     else
         debug_print continue "Unexpected game version provided.  Defaulting to the LIVE installation."
-        live_or_ptu="LIVE"
+        live_or_ptu="$live_dir"
     fi
 }
 
@@ -1222,7 +1226,7 @@ if [ -x "$(command -v zenity)" ]; then
 fi
 
 # Set some defaults
-live_or_ptu="LIVE"
+live_or_ptu="$live_dir"
 lutris_needs_restart="false"
 
 # If invoked with command line arguments, process them and exit
@@ -1264,9 +1268,9 @@ Usage: lug-helper <options>
             --target=* | -t=* )
                 live_or_ptu="$(echo "$1" | cut -d'=' -f2)"
                 if [ "$live_or_ptu" = "live" ] || [ "$live_or_ptu" = "LIVE" ]; then
-                    live_or_ptu="LIVE"
+                    live_or_ptu="$live_dir"
                 elif [ "$live_or_ptu" = "ptu" ] || [ "$live_or_ptu" = "PTU" ]; then
-                    live_or_ptu="PTU"
+                    live_or_ptu="$ptu_dir"
                 else
                     printf "$0: Invalid option '$1'\n"
                     exit 0
