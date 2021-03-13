@@ -75,12 +75,23 @@ conf_subdir="starcitizen-lug"
 tmp_dir="$(mktemp -d --suffix=".lughelper")"
 trap 'rm -r "$tmp_dir"' EXIT
 
-# The game's user subdirectory name
+######## Game Directories #################################################
+
+# The game's base directory name
+sc_base_dir="StarCitizen"
+# The default install location within a WINE prefix:
+install_path="drive_c/Program Files/Roberts Space Industries/$sc_base_dir"
+# The game's user subdirectory name (within the LIVE or PTU directories)
 user_subdir_name="USER"
 # The location within the USER directory to which the game exports keybinds
+# ie. USER/Controls/Mappings
 keybinds_export_path="Controls/Mappings"
 
 dxvk_cache_file="StarCitizen.dxvk-cache"
+
+# Remaining directory paths are set at the end of the getdirs() function
+
+###########################################################################
 
 # Lutris wine runners directory
 runners_dir="$data_dir/lutris/runners/wine"
@@ -360,7 +371,7 @@ getdirs() {
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
-        if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "StarCitizen" ]; then
+        if [ ! -d "$game_path" ] || [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
             debug_print continue "Unexpected game path found in config file, ignoring."
             game_path=""
         fi
@@ -387,15 +398,15 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-                if [ -d "$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" ] && 
-                       message question "Is this your Star Citizen game directory?\n\n$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"; then
-                    game_path="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
+                if [ -d "$wine_prefix/$install_path" ] && 
+                       message question "Is this your Star Citizen game directory?\n\n$wine_prefix/$install_path"; then
+                    game_path="$wine_prefix/$install_path"
                 else
-                    while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" 2>/dev/null)"; do
+                    while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/$install_path" 2>/dev/null)"; do
                         if [ "$?" -eq -1 ]; then
                             message warning "An unexpected error has occurred. The Helper is unable to proceed."
                             return 1
-                        elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
+                        elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
                             message warning "You must select the Star Citizen base game directory.\n\nFor Example:  prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
                         else
                             # All good or cancel
@@ -428,17 +439,17 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-                if [ -d "$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen" ] && 
-                       message question "Is this your Star Citizen game directory?\n\n$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"; then
-                    game_path="$wine_prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen"
+                if [ -d "$wine_prefix/$install_path" ] && 
+                       message question "Is this your Star Citizen game directory?\n\n$wine_prefix/$install_path"; then
+                    game_path="$wine_prefix/$install_path"
                 else
                     printf "\nEnter the full path to your Star Citizen installation directory (case sensitive)\n"
                     printf "ie. /home/USER/Games/star-citizen/drive_c/Program Files/Roberts Space Industries/StarCitizen\n"
                     while read -rp ": " game_path; do
                         if [ ! -d "$game_path" ]; then
                             printf "That directory is invalid or does not exist. Please try again.\n\n"
-                        elif [ "$(basename "$game_path")" != "StarCitizen" ]; then
-                            printf "You must enter the full path to the directory named 'StarCitizen'\n\n"
+                        elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
+                            printf "You must enter the full path to the directory named '$sc_base_dir'\n\n"
                         else
                             break
                         fi
@@ -452,10 +463,12 @@ getdirs() {
         echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
     fi
 
-    # Set some remaining directory paths
+    # Set remaining directory paths
     user_dir="$game_path/$live_or_ptu/$user_subdir_name"
     keybinds_dir="$user_dir/$keybinds_export_path"
     backup_path="$conf_dir/$conf_subdir"
+    shaders_dir="$user_dir/shaders"
+    dxvk_cache="$game_path/$live_or_ptu/$dxvk_cache_file"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -668,8 +681,6 @@ rm_shaders() {
         return 0
     fi
 
-    shaders_dir="$user_dir/shaders"
-
     # Sanity check
     if [ ! -d "$shaders_dir" ]; then
         message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
@@ -693,9 +704,7 @@ rm_dxvkcache() {
         # or there was an error
         return 0
     fi
-    
-    dxvk_cache="$game_path/$live_or_ptu/$dxvk_cache_file"
-    
+
     # Sanity check
     if [ ! -f "$dxvk_cache" ]; then
         message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
