@@ -47,6 +47,12 @@
 # https://github.com/richardtatum/sc-runner-updater
 ############################################################################
 
+# Check if script is run as root
+if [ "$(id -u)" = 0 ]; then
+echo "This script is not supposed to be run as root!"
+exit 1
+fi
+
 # Check for dependencies
 if [ ! -x "$(command -v curl)" ]; then
 # Print to stderr and also try warning the user through notify-send
@@ -464,7 +470,7 @@ getdirs() {
     # $live_or_ptu is set in the set_version() function
     ############################################################################
     # The game's user directory
-    user_dir="$game_path/$live_or_ptu/USER"
+    user_dir="$game_path/$live_or_ptu/USER/Client/0/"
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # Shaders directory
