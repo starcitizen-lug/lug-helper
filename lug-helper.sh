@@ -106,6 +106,7 @@ runners_dir="$data_dir/lutris/runners/wine"
 runner_sources=(
     "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
     "Molotov/Snatella" "https://api.github.com/repos/snatella/wine-runner-sc/releases"
+    "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
 )
 # Set a maximum number of runner versions to display from each url
 max_runners=20
@@ -819,6 +820,9 @@ runner_install() {
         *.tgz)
             runner_name="$(basename "$runner_file" .tgz)"
             ;;
+        *.tar.xz)
+            runner_name="$(basename "$runner_file" .tar.xz)"
+            ;;
         *)
             debug_print exit "Unknown archive filetype in runner_install function. Aborting."
             ;;
@@ -882,10 +886,10 @@ runner_install() {
             debug_print continue "Installing runner into $runners_dir/$runner_name..."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
+                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
             else
-                mkdir -p "$runners_dir/$runner_name" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
+                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
             fi
             lutris_needs_restart="true"
             ;;
@@ -894,10 +898,10 @@ runner_install() {
             debug_print continue "Installing runner into $runners_dir..."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir" | \
+                mkdir -p "$runners_dir" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
             else
-                mkdir -p "$runners_dir" && tar -xzf "$tmp_dir/$runner_file" -C "$runners_dir"
+                mkdir -p "$runners_dir" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir"
             fi
             lutris_needs_restart="true"
             ;;
@@ -967,6 +971,9 @@ runner_select_install() {
             *.tgz)
                 runner_name="$(basename "${runner_versions[i]}" .tgz)"
                 ;;
+            *.tar.xz)
+                runner_name="$(basename "${runner_versions[i]}" .tar.xz)"
+                ;;            
             *)
                 debug_print exit "Unknown archive filetype in runner_select_install function. Aborting."
                 ;;
