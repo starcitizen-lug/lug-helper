@@ -106,6 +106,7 @@ runners_dir="$data_dir/lutris/runners/wine"
 runner_sources=(
     "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
     "Molotov/Snatella" "https://api.github.com/repos/snatella/wine-runner-sc/releases"
+    "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
 )
 # Set a maximum number of runner versions to display from each url
 max_runners=20
