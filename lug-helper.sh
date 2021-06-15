@@ -106,6 +106,7 @@ runners_dir="$data_dir/lutris/runners/wine"
 runner_sources=(
     "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
     "Molotov/Snatella" "https://api.github.com/repos/snatella/wine-runner-sc/releases"
+    "/dev/null" "https://api.github.com/repos/gort818/wine-sc-lug/releases"
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
 )
 # Set a maximum number of runner versions to display from each url
@@ -934,6 +935,18 @@ runner_select_install() {
             debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
             ;;
     esac
+    
+    # Check for GlibC-Version if TKG is selected, as he requires 2.33
+    if [ "$contributor_url" = "https://api.github.com/repos/gort818/wine-sc-lug/releases" ]; then
+        printf "checking for glibc \n"
+        system_glibc=($(ldd --version | awk '/ldd/{print $NF}'))
+        printf "system glibc-versuib: $system_glibc \n"
+        required_glibc="2.33"
+        if [ "$(bc <<< "$required_glibc>$system_glibc")" == "1" ]; then
+            message warning "Your glibc version is too low, /dev/null requires v$required_glibc "
+            proton_manage
+        fi
+    fi
 
     # Fetch a list of runner versions from the selected contributor
     # To add new sources, handle them here, in the if statement
@@ -1241,6 +1254,24 @@ fi
 # Set some defaults
 live_or_ptu="$live_dir"
 lutris_needs_restart="false"
+
+# Credits for this go to https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
+get_latest_release() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+    grep '"tag_name":' |                                            # Get tag line
+    sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+}
+
+# Check if a new Verison of the script is available
+repo="the-sane/lug-helper"
+current_version="v1.9"
+latest_version=$(get_latest_release "$repo")
+
+if [ "$latest_version" != "$current_version" ]; then
+    # Print to stdout and also try warning the user through message
+    printf "New version available, check https://github.com/the-sane/lug-helper/releases \n"
+    message info "New version available, check <a href='https://github.com/the-sane/lug-helper/releases'>https://github.com/the-sane/lug-helper/releases</a> \n"
+fi
 
 # If invoked with command line arguments, process them and exit
 if [ "$#" -gt 0 ]; then
