@@ -665,7 +665,7 @@ filelimit_check() {
 
 # Check total system memory
 memory_check() {
-    memtotal="$(awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
+    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
     if [ ${memtotal%.*} -ge "15" ]; then
         preflight_pass+=("Your system has $memtotal GB of memory.")  
     else
