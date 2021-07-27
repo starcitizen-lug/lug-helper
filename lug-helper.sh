@@ -986,19 +986,14 @@ runner_select_install() {
                 ;;
             *.tar.xz)
                 runner_name="$(basename "${runner_versions[i]}" .tar.xz)"
-                ;;        
-            *.sha512sum)
-                runner_name="ignore"
-                ;;
+                ;;            
             *)
                 debug_print exit "Unknown archive filetype in runner_select_install function. Aborting."
                 ;;
         esac
 
         # Add the runner names to the menu
-        if [ "$runner_name" = "ignore" ]; then
-            debug_print continue "Ignoring .sha512sum file."
-        elif [ -d "$runners_dir/$runner_name" ]; then
+        if [ -d "$runners_dir/$runner_name" ]; then
             menu_options+=("$runner_name    [installed]")
         else
             menu_options+=("$runner_name")
@@ -1269,7 +1264,7 @@ get_latest_release() {
 
 # Check if a new Verison of the script is available
 repo="the-sane/lug-helper"
-current_version="v1.9.1"
+current_version="v1.9"
 latest_version=$(get_latest_release "$repo")
 
 if [ "$latest_version" != "$current_version" ]; then
