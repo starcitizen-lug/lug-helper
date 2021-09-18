@@ -263,6 +263,7 @@ message() {
 #   This text will be displayed above the menu options.
 #   Zenity supports Pango Markup for text formatting.
 # - The integer "menu_height" specifies the height of the zenity menu.
+# - The string "cancel_label" should contain the text of the cancel button.
 # 
 # The final element in each array is expected to be a quit option.
 #
@@ -284,6 +285,8 @@ menu() {
         debug_print exit "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
     elif [ -z "$menu_height" ]; then
         debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+    elif [ -z "$cancel_label" ]; then
+        debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
     fi
     
     # Use Zenity if it is available
@@ -303,7 +306,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --window-icon=$lug_logo --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon=$lug_logo --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Loop through the options array to match the chosen option
         matched="false"
@@ -799,6 +802,9 @@ runner_select_delete() {
         menu_height="400"
     fi
     
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+       
     # Call the menu function.  It will use the options as configured above
     menu
 }
@@ -1016,6 +1022,9 @@ runner_select_install() {
         menu_height="400"
     fi
     
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+       
     # Call the menu function.  It will use the options as configured above
     menu
 }
@@ -1063,6 +1072,9 @@ runner_manage() {
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
         
+       # Set the label for the cancel button
+       cancel_label="Go Back"
+       
         # Call the menu function.  It will use the options as configured above
         menu
     done
@@ -1200,7 +1212,10 @@ maintenance_menu() {
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-        
+       
+       # Set the label for the cancel button
+       cancel_label="Go Back"
+       
         # Call the menu function.  It will use the options as configured above
         menu
     done
@@ -1393,6 +1408,9 @@ while true; do
 
     # Calculate the total height the menu should be
     menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+    
+    # Set the label for the cancel button
+    cancel_label="Quit"
     
     # Call the menu function.  It will use the options as configured above
     menu
