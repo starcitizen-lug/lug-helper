@@ -829,9 +829,6 @@ runner_install() {
         *.tar.xz)
             runner_name="$(basename "$runner_file" .tar.xz)"
             ;;
-        *.sha512sum)
-            runner_name="$(basename "$runner_file" .tar.xz)"
-            ;;
         *)
             debug_print exit "Unknown archive filetype in runner_install function. Aborting."
             ;;
@@ -842,7 +839,6 @@ runner_install() {
     # runner_select_install function below
     if [ "$runner_url_type" = "github" ]; then
         runner_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$runner_file" | cut -d \" -f4)"
-        debug_print continue "runner_dl_url= $runner_dl_url"
     else
         debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
     fi
@@ -997,14 +993,12 @@ runner_select_install() {
                 runner_name="$(basename "${runner_versions[i]}" .tar.xz)"
                 ;;        
             *)
-                runner_name="skip"
+                debug_print exit "Unknown archive filetype in runner_select_install function. Aborting."
                 ;;
         esac
 
         # Add the runner names to the menu
-        if [ "$runner_name" = "skip" ]; then
-            continue
-        elif [ -d "$runners_dir/$runner_name" ]; then
+        if [ -d "$runners_dir/$runner_name" ]; then
             menu_options+=("$runner_name    [installed]")
         else
             menu_options+=("$runner_name")
