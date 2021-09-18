@@ -48,9 +48,9 @@
 ############################################################################
 
 # Check if script is run as root
-if [ "$(id -u)" = 0 ]; then
-echo "This script is not supposed to be run as root!"
-exit 1
+if [ "$(id -u)" -eq 0 ]; then
+    echo "This script is not supposed to be run as root!"
+    exit 1
 fi
 
 # Check for dependencies
@@ -125,6 +125,10 @@ elif [ -f "lug-logo.png" ]; then
 else
     lug_logo="info"
 fi
+
+# Github repo and script version info
+repo="the-sane/lug-helper"
+current_version="v1.9.1"
 
 ############################################################################
 ############################################################################
@@ -925,7 +929,8 @@ runner_select_install() {
         debug_print exit "Script error:  The runner_select_install function expects a numerical argument. Aborting."
     fi
 
-    # Store the url from the selected contributor
+    # Store info from the selected contributor
+    contributor_name="${runner_sources[$1]}"
     contributor_url="${runner_sources[$1+1]}"
 
     # Check the provided contributor url to make sure we know how to handle it
@@ -940,15 +945,14 @@ runner_select_install() {
             ;;
     esac
     
-    # Check for GlibC-Version if TKG is selected, as he requires 2.33
-    if [ "$contributor_url" = "https://api.github.com/repos/gort818/wine-sc-lug/releases" ]; then
-        printf "checking for glibc \n"
-        system_glibc=($(ldd --version | awk '/ldd/{print $NF}'))
-        printf "system glibc-versuib: $system_glibc \n"
+    # Check GlibC version against the requirements of the selected runner
+    if [ "$contributor_name" = "/dev/null" ]; then
         required_glibc="2.33"
-        if [ "$(bc <<< "$required_glibc>$system_glibc")" == "1" ]; then
-            message warning "Your glibc version is too low, /dev/null requires v$required_glibc "
-            proton_manage
+        system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+
+        if [ "$(bc <<< "$required_glibc > $system_glibc")" = "1" ]; then
+            message warning "Your glibc version is incompatible with the selected runner.\n\nSystem glibc: v$system_glibc\nMinimum required glibc: v$required_glibc"
+            return 1
         fi
     fi
 
@@ -1242,6 +1246,19 @@ reset_helper() {
     fi
 }
 
+# Get the latest release version of a repo. Expects "user/repo_name" as input
+# Credits for this go to https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
+get_latest_release() {
+    # Sanity check
+    if [ "$#" -lt 1 ]; then
+        debug_print exit "Script error: The get_latest_release function expects one argument. Aborting."
+    fi
+    
+    curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+        grep '"tag_name":' |                                            # Get tag line
+        sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+}
+
 quit() {
     exit 0
 }
@@ -1261,22 +1278,15 @@ fi
 live_or_ptu="$live_dir"
 lutris_needs_restart="false"
 
-# Credits for this go to https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
-get_latest_release() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
-    grep '"tag_name":' |                                            # Get tag line
-    sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
-}
-
-# Check if a new Verison of the script is available
-repo="the-sane/lug-helper"
-current_version="v1.9.1"
+# Check if a newer verison of the script is available
 latest_version=$(get_latest_release "$repo")
 
 if [ "$latest_version" != "$current_version" ]; then
-    # Print to stdout and also try warning the user through message
-    printf "New version available, check https://github.com/the-sane/lug-helper/releases \n"
-    message info "New version available, check <a href='https://github.com/the-sane/lug-helper/releases'>https://github.com/the-sane/lug-helper/releases</a> \n"
+    if [ "$use_zenity" -eq 1 ]; then
+        message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n<a href='https://github.com/the-sane/lug-helper/releases'>https://github.com/the-sane/lug-helper/releases</a>"
+    else
+        message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\nhttps://github.com/the-sane/lug-helper/releases"
+    fi
 fi
 
 # If invoked with command line arguments, process them and exit
