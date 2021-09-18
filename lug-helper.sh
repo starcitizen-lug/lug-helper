@@ -883,7 +883,7 @@ runner_install() {
     # Get the path of the first item listed in the archive
     # This should either be a subdirectory or the path ./
     # depending on how the archive was created
-    first_filepath="$(stdbuf -oL tar -tzf "$tmp_dir/$runner_file" | head -n 1)"
+    first_filepath="$(stdbuf -oL tar -tf "$tmp_dir/$runner_file" | head -n 1)"
     
     # Extract the runner
     case "$first_filepath" in
