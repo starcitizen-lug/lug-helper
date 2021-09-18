@@ -128,6 +128,7 @@ fi
 
 # Github repo and script version info
 repo="the-sane/lug-helper"
+releases_url="https://github.com/the-sane/lug-helper/releases"
 current_version="v1.9.1"
 
 ############################################################################
@@ -1283,10 +1284,12 @@ latest_version=$(get_latest_release "$repo")
 
 if [ "$latest_version" != "$current_version" ]; then
     if [ "$use_zenity" -eq 1 ]; then
-        message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n<a href='https://github.com/the-sane/lug-helper/releases'>https://github.com/the-sane/lug-helper/releases</a>"
+        releases_url_formatted="<a href='$releases_url'>$releases_url</a>"
     else
-        message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\nhttps://github.com/the-sane/lug-helper/releases"
+        releases_url_formatted="$releases_url"
     fi
+    
+    message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url_formatted"
 fi
 
 # If invoked with command line arguments, process them and exit
