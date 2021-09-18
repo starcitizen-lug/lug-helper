@@ -480,7 +480,7 @@ getdirs() {
     # $live_or_ptu is set in the set_version() function
     ############################################################################
     # The game's user directory
-    user_dir="$game_path/$live_or_ptu/USER/Client/0/"
+    user_dir="$game_path/$live_or_ptu/USER/Client/0"
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # Shaders directory
