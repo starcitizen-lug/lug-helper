@@ -491,6 +491,30 @@ getdirs() {
     backup_path="$conf_dir/$conf_subdir"
 }
 
+# Display all directories currently used by this helper and Star Citizen
+display_dirs() {
+    # Helper configs and keybinds
+    if [ -d "$conf_dir/$conf_subdir" ]; then
+        dirs_list+=("\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds")
+    fi
+
+    # Wine prefix
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        dirs_list+="\n\nWine prefix:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+    fi
+
+    # Star Citizen installation
+    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+        dirs_list+="\n\nStar Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")"
+    fi
+
+    # Lutris runners
+    dirs_list+="\n\nLutris Runners:\n$runners_dir"
+
+    
+    message info "These directories are currently being used by this Helper and Star Citizen:${dirs_list[@]}"
+}
+
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 sanitize() {
     # Prompt user to back up the current keybinds in the game
@@ -1202,13 +1226,14 @@ maintenance_menu() {
         sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
         shaders_msg="Delete my shaders folder only (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
+        dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
         
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "reset_helper" "menu_loop_done")
+        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
@@ -1397,7 +1422,7 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     runners_msg="Manage Lutris Runners"
-    maintenance_msg="User Folder Maintenance and Troubleshooting"
+    maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
     
