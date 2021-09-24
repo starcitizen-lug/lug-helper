@@ -512,7 +512,7 @@ display_dirs() {
     dirs_list+="\n\nLutris Runners:\n$runners_dir"
 
     
-    message info "These directories are currently being used by this Helper and Star Citizen:${dirs_list[@]}"
+    message info "These directories are currently being used by this Helper and Star Citizen\n${dirs_list[@]}"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
