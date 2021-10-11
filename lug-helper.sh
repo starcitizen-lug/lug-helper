@@ -130,7 +130,7 @@ fi
 # Github repo and script version info
 repo="the-sane/lug-helper"
 releases_url="https://github.com/the-sane/lug-helper/releases"
-current_version="v1.9.2"
+current_version="v1.10"
 
 ############################################################################
 ############################################################################
