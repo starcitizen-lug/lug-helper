@@ -23,7 +23,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
-`User Folder Maintenance and Troubleshooting`
+`Maintenance and Troubleshooting`
 - `Switch the helper between LIVE and PTU`
   - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
 
@@ -34,11 +34,14 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - To re-import your keybinds from within the game, select them from the list:
     - *Options->Keybindings->Control Profiles*
 
-- `Delete my shaders only`
+- `Delete my shaders folder only`
   - Sometimes all you need to do between major version updates is delete your shaders directory.
 
 - `Delete my DXVK cache`
   - A troubleshooting step that sometimes helps fix various issues and crashes.
+
+- `Display Helper and Star Citizen directories`
+  - Show all the directories currently in use by both the Helper and Star Citizen.
 
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
@@ -62,4 +65,5 @@ Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 - https://github.com/pstn
 - https://github.com/gort818
 - https://github.com/victort
+- https://github.com/Wrzlprnft
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
