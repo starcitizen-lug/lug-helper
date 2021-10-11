@@ -509,7 +509,7 @@ display_dirs() {
     fi
 
     # Lutris runners
-    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+    if [ -d "$runners_dir" ]; then
         dirs_list+="\n\nLutris Runners:\n$runners_dir"
     fi
 
