@@ -509,7 +509,9 @@ display_dirs() {
     fi
 
     # Lutris runners
-    dirs_list+="\n\nLutris Runners:\n$runners_dir"
+    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+        dirs_list+="\n\nLutris Runners:\n$runners_dir"
+    fi
 
     
     message info "These directories are currently being used by this Helper and Star Citizen\n${dirs_list[@]}"
