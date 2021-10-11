@@ -43,6 +43,7 @@
 # Contributor: https://github.com/pstn
 # Contributor: https://github.com/gort818
 # Contributor: https://github.com/victort
+# Contributor: https://github.com/Wrzlprnft
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 ############################################################################
