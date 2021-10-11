@@ -514,8 +514,13 @@ display_dirs() {
         dirs_list+="\n\nLutris Runners:\n$runners_dir"
     fi
 
-    
-    message info "These directories are currently being used by this Helper and Star Citizen\n${dirs_list[@]}"
+    # Formatting
+    message_heading="These directories are currently being used by this Helper and Star Citizen"
+    if [ "$use_zenity" -eq 1 ]; then
+        message_heading="<b>$message_heading</b>"
+    fi
+
+    message info "$message_heading\n${dirs_list[@]}"
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -1160,7 +1165,13 @@ preflight_check() {
 
     # Display the results of the preflight check
     if [ -z "$preflight_fail_string" ]; then
-        message info "Preflight Check Complete\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
+        # Formatting
+        message_heading="Preflight Check Complete"
+        if [ "$use_zenity" -eq 1 ]; then
+            message_heading="<b>$message_heading</b>"
+        fi
+        
+        message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
         if [ -z "$preflight_action_funcs" ]; then
             message warning "$preflight_pass_string$preflight_fail_string"
