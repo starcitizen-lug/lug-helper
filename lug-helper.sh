@@ -1341,8 +1341,9 @@ Usage: lug-helper <options>
   -s, --delete-shaders      Delete Star Citizen shaders directory
   -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
   -t, --target=[live|ptu]   Target LIVE or PTU (default live)
-  -g, --use-gui=[yes|no]    Use Zenity GUI (default yes)
+  -g, --use-gui=[yes|no]    Use Zenity GUI if available (default yes)
   -r, --get-referral        Get a random LUG member's Star Citizen referral code
+  -d, --show-directories    Show all Star Citizen and LUG Helper directories
   -x, --reset-helper        Delete saved lug-helper configs
 "
                 exit 0
@@ -1390,6 +1391,9 @@ Usage: lug-helper <options>
                 ;;
             --get-referral | -r )
                 cargs+=("referral_randomizer")
+                ;;
+            --show-directories | -d )
+                cargs+=("display_dirs")
                 ;;
             --reset-helper | -x )
                 cargs+=("reset_helper")
