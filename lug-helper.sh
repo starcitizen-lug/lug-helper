@@ -1317,7 +1317,7 @@ live_or_ptu="$live_dir"
 lutris_needs_restart="false"
 
 # Check if a newer verison of the script is available
-latest_version=$(get_latest_release "$repo")
+latest_version="$(get_latest_release "$repo")"
 
 if [ "$latest_version" != "$current_version" ]; then
     if [ "$use_zenity" -eq 1 ]; then
