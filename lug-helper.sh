@@ -15,7 +15,7 @@
 # - Check your system for optimal settings and
 #   change them as needed to prevent crashes.
 #
-# - Easily install and remove Lutris wine Runners.
+# - Easily install and remove Lutris wine Runners and DXVK versions.
 #
 # - Qickly wipe your Star Citizen USER folder as is recommended
 #   by CIG after major version updates.
@@ -95,7 +95,7 @@ ptu_dir="PTU"
 
 # Remaining directory paths are set at the end of the getdirs() function
 
-############################################################################
+######## Runners ###########################################################
 
 # Lutris wine runners directory
 runners_dir="$data_dir/lutris/runners/wine"
@@ -113,9 +113,26 @@ runner_sources=(
 # Set a maximum number of runner versions to display from each url
 max_runners=20
 
+######## DXVK ##############################################################
+
+# Lutris dxvk directory
+dxvk_dir="$data_dir/lutris/runtime/dxvk"
+# URLs for downloading dxvk versions
+# Elements in this array must be added in quoted pairs of: "description" "url"
+# The first string in the pair is expected to contain the runner description
+# The second is expected to contain the github api releases url
+# ie. "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
+dxvk_sources=(
+    "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
+)
+# Set a maximum number of runner versions to display from each url
+max_dxvks=20
+
 # Pixels to add for each Zenity menu option
 # used to dynamically determine the height of menus
 menu_option_height="25"
+
+############################################################################
 
 # Use logo installed by a packaged version of this script if available
 # Otherwise, default to the logo in the same directory
@@ -771,18 +788,18 @@ rm_dxvkcache() {
     fi
 }
 
-#------------------------- begin runner functions ----------------------------#
-
 # Restart lutris
 lutris_restart() {
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
-        if message question "Lutris must be restarted to detect runner changes.\nWould you like this Helper to restart it for you?"; then
+        if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
             debug_print continue "Restarting Lutris..."
             pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
         fi
     fi
     lutris_needs_restart="false"
 }
+
+#------------------------- begin runner functions ----------------------------#
 
 # Delete the selected runner
 runner_delete() {
@@ -1117,6 +1134,330 @@ runner_manage() {
 
 #-------------------------- end runner functions -----------------------------#
 
+#------------------------- begin dxvk functions ----------------------------#
+
+# Delete the selected dxvk
+dxvk_delete() {
+    # This function expects an index number for the array
+    # installed_dxvks to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The dxvk_delete function expects an argument. Aborting."
+    fi
+    
+    dxvk_to_delete="$1"
+    if message question "Are you sure you want to delete the following DXVK?\n\n${installed_dxvks[$dxvk_to_delete]}"; then
+        rm -r "${installed_dxvks[$dxvk_to_delete]}"
+        debug_print continue "Deleted ${installed_dxvks[$dxvk_to_delete]}"
+        lutris_needs_restart="true"
+    fi
+}
+
+# List installed dxvks for deletion
+dxvk_select_delete() {
+    # Configure the menu
+    menu_text_zenity="Select the DXVK version you want to remove:"
+    menu_text_terminal="Select the DXVK version you want to remove:"
+    menu_text_height="65"
+    goback="Return to the DXVK management menu"
+    unset installed_dxvks
+    unset menu_options
+    unset menu_actions
+     
+    # Create an array containing all directories in the dxvk_dir
+    for dxvks_list in "$dxvk_dir"/*; do
+        if [ -d "$dxvks_list" ]; then
+            installed_dxvks+=("$dxvks_list")
+        fi
+    done
+    
+    # Create menu options for the installed dxvks
+    for (( i=0; i<"${#installed_dxvks[@]}"; i++ )); do
+        menu_options+=("$(basename "${installed_dxvks[i]}")")
+        menu_actions+=("dxvk_delete $i")
+    done
+    
+    # Complete the menu by adding the option to go back to the previous menu
+    menu_options+=("$goback")
+    menu_actions+=(":") # no-op
+
+    # Calculate the total height the menu should be
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+    if [ "$menu_height" -gt "400" ]; then
+        menu_height="400"
+    fi
+    
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+       
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+# Download and install the selected dxvk
+# Note: The variables dxvk_versions, contributor_url, and dxvk_url_type
+# are expected to be set before calling this function
+dxvk_install() {
+    # This function expects an index number for the array
+    # dxvk_versions to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The dxvk_install function expects a numerical argument. Aborting."
+    fi
+
+    # Get the dxvk filename including file extension
+    dxvk_file="${dxvk_versions[$1]}"
+
+    # Get the selected dxvk name minus the file extension
+    # To add new file extensions, handle them here and in
+    # the dxvk_select_install function below
+    case "$dxvk_file" in
+        *.tar.gz)
+            dxvk_name="$(basename "$dxvk_file" .tar.gz)"
+            ;;
+        *.tgz)
+            dxvk_name="$(basename "$dxvk_file" .tgz)"
+            ;;
+        *.tar.xz)
+            dxvk_name="$(basename "$dxvk_file" .tar.xz)"
+            ;;
+        *)
+            debug_print exit "Unknown archive filetype in dxvk_install function. Aborting."
+            ;;
+    esac
+
+    # Get the selected dxvk url
+    # To add new sources, handle them here and in the
+    # dxvk_select_install function below
+    if [ "$dxvk_url_type" = "github" ]; then
+        dxvk_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$dxvk_file" | cut -d \" -f4)"
+    else
+        debug_print exit "Script error:  Unknown api/url format in dxvk_sources array. Aborting."
+    fi
+
+    # Sanity check
+    if [ -z "$dxvk_dl_url" ]; then
+        message warning "Could not find the requested DXVK.  The source API may be down or rate limited."
+        return 1
+    fi
+
+    # Download the dxvk to the tmp directory
+    debug_print continue "Downloading $dxvk_dl_url into $tmp_dir/$dxvk_file..."
+    if [ "$use_zenity" -eq 1 ]; then
+        # Format the curl progress bar for zenity
+        mkfifo "$tmp_dir/lugpipe"
+        cd "$tmp_dir" && curl -#LO "$dxvk_dl_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
+        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
+        (
+            trap 'kill "$curlpid"' ERR
+            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading DXVK.  This might take a moment.\n" 2>/dev/null
+        )
+
+        if [ "$?" -eq 1 ]; then
+            # User clicked cancel
+            debug_print continue "Download aborted. Removing $tmp_dir/$dxvk_file..."
+            rm "$tmp_dir/$dxvk_file"
+            rm "$tmp_dir/lugpipe"
+            return 1
+        fi
+        rm "$tmp_dir/lugpipe"
+    else
+        # Standard curl progress bar
+        (cd "$tmp_dir" && curl -LO "$dxvk_dl_url")
+    fi
+
+    # Sanity check
+    if [ ! -f "$tmp_dir/$dxvk_file" ]; then
+        debug_print exit "Script error:  The requested DXVK file was not downloaded. Aborting"
+    fi  
+    
+    # Get the path of the first item listed in the archive
+    # This should either be a subdirectory or the path ./
+    # depending on how the archive was created
+    first_filepath="$(stdbuf -oL tar -tf "$tmp_dir/$dxvk_file" | head -n 1)"
+    
+    # Extract the dxvk
+    case "$first_filepath" in
+        # If the files in the archive begin with ./ there is no subdirectory
+        ./*)
+            debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
+            else
+                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name"
+            fi
+            lutris_needs_restart="true"
+            ;;
+        *)
+            # dxvks with a subdirectory in the archive
+            debug_print continue "Installing DXVK into $dxvk_dir..."
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "$dxvk_dir" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
+            else
+                mkdir -p "$dxvk_dir" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir"
+            fi
+            lutris_needs_restart="true"
+            ;;
+    esac
+
+    # Cleanup tmp download
+    debug_print continue "Removing $tmp_dir/$dxvk_file..."
+    rm "$tmp_dir/$dxvk_file"
+}
+
+# List available dxvks for download
+dxvk_select_install() {
+    # This function expects an element number for the array
+    # dxvk_sources to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The dxvk_select_install function expects a numerical argument. Aborting."
+    fi
+
+    # Store info from the selected contributor
+    contributor_name="${dxvk_sources[$1]}"
+    contributor_url="${dxvk_sources[$1+1]}"
+
+    # Check the provided contributor url to make sure we know how to handle it
+    # To add new sources, add them here and handle in the if statement
+    # just below and the dxvk_install function above
+    case "$contributor_url" in
+        https://api.github.com*)
+            dxvk_url_type="github"
+            ;;
+        *)
+            debug_print exit "Script error:  Unknown api/url format in dxvk_sources array. Aborting."
+            ;;
+    esac
+
+    # Fetch a list of dxvk versions from the selected contributor
+    # To add new sources, handle them here, in the if statement
+    # just above, and the dxvk_install function above
+    if [ "$dxvk_url_type" = "github" ]; then
+        dxvk_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | grep -vE "*.sha512sum" | xargs basename -a))
+    else
+        debug_print exit "Script error:  Unknown api/url format in dxvk_sources array. Aborting."
+    fi
+
+    # Sanity check
+    if [ "${#dxvk_versions[@]}" -eq 0 ]; then
+        message warning "No DXVK versions were found.  The source API may be down or rate limited."
+        return 1
+    fi
+
+    # Configure the menu
+    menu_text_zenity="Select the DXVK version you want to install:"
+    menu_text_terminal="Select the DXVK version you want to install:"
+    menu_text_height="65"
+    goback="Return to the DXVK management menu"
+    unset menu_options
+    unset menu_actions
+    
+    # Iterate through the versions, check if they are installed,
+    # and add them to the menu options
+    # To add new file extensions, handle them here and in
+    # the dxvk_install function above
+    for (( i=0; i<"$max_dxvks" && i<"${#dxvk_versions[@]}"; i++ )); do
+        # Get the dxvk name minus the file extension
+        case "${dxvk_versions[i]}" in
+            *.tar.gz)
+                dxvk_name="$(basename "${dxvk_versions[i]}" .tar.gz)"
+                ;;
+            *.tgz)
+                dxvk_name="$(basename "${dxvk_versions[i]}" .tgz)"
+                ;;
+            *.tar.xz)
+                dxvk_name="$(basename "${dxvk_versions[i]}" .tar.xz)"
+                ;;        
+            *)
+                debug_print exit "Unknown archive filetype in dxvk_select_install function. Aborting."
+                ;;
+        esac
+
+        # Add the dxvk names to the menu
+        if [ -d "$dxvk_dir/$dxvk_name" ]; then
+            menu_options+=("$dxvk_name    [installed]")
+        else
+            menu_options+=("$dxvk_name")
+        fi
+        menu_actions+=("dxvk_install $i")
+    done
+
+    # Complete the menu by adding the option to go back to the previous menu
+    menu_options+=("$goback")
+    menu_actions+=(":") # no-op
+
+    # Calculate the total height the menu should be
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+    if [ "$menu_height" -gt "400" ]; then
+        menu_height="400"
+    fi
+    
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+       
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+# Manage Lutris dxvks
+dxvk_manage() {
+    # Check if Lutris is installed
+    if [ ! -x "$(command -v lutris)" ]; then
+        message info "Lutris does not appear to be installed."
+        return 0
+    fi
+    if [ ! -d "$dxvk_dir" ]; then
+        message info "Lutris DXVK directory not found.  Unable to continue.\n\n$dxvk_dir"
+        return 0
+    fi
+    
+    # The dxvk management menu will loop until the user cancels
+    looping_menu="true"
+    while [ "$looping_menu" = "true" ]; do
+        # Configure the menu
+        menu_text_zenity="<b><big>Manage Your DXVK Versions</big>\n\nThe DXVK versions below may help improve game performance</b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Manage Your DXVK Versions\n\nThe DXVK versions below may help improve game performance\nYou may choose from the following options:"
+        menu_text_height="140"
+
+        # Configure the menu options
+        delete="Remove an installed DXVK"
+        back="Return to the main menu"
+        unset menu_options
+        unset menu_actions
+
+        # Loop through the dxvk_sources array and create a menu item
+        # for each one. Even numbered elements will contain the dxvk name
+        for (( i=0; i<"${#dxvk_sources[@]}"; i=i+2 )); do
+            # Set the options to be displayed in the menu
+            menu_options+=("Install a DXVK from ${dxvk_sources[i]}")
+            # Set the corresponding functions to be called for each of the options
+            menu_actions+=("dxvk_select_install $i")
+        done
+        
+        # Complete the menu by adding options to remove a dxvk
+        # or go back to the previous menu
+        menu_options+=("$delete" "$back")
+        menu_actions+=("dxvk_select_delete" "menu_loop_done")
+
+        # Calculate the total height the menu should be
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+        
+       # Set the label for the cancel button
+       cancel_label="Go Back"
+       
+        # Call the menu function.  It will use the options as configured above
+        menu
+    done
+    
+    # Check if lutris needs to be restarted after making changes
+    lutris_restart
+}
+
+#-------------------------- end dxvk functions -----------------------------#
+
 # Check that the system is optimized for Star Citizen
 preflight_check() {
     # Initialize variables
@@ -1440,14 +1781,15 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     runners_msg="Manage Lutris Runners"
+    dxvk_msg="Manage DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$runners_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "runner_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
