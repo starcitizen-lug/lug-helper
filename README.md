@@ -23,6 +23,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
+`Manage DXVK Versions`
+- Quickly install and delete DXVK versions for Lutris
+
 `Maintenance and Troubleshooting`
 - `Switch the helper between LIVE and PTU`
   - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
