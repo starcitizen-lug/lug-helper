@@ -531,6 +531,11 @@ display_dirs() {
         dirs_list+="\n\nLutris Runners:\n$runners_dir"
     fi
 
+    # Lutris dxvk
+    if [ -d "$runners_dir" ]; then
+        dirs_list+="\n\nLutris DXVK Versions:\n$dxvk_dir"
+    fi
+
     # Formatting
     message_heading="These directories are currently being used by this Helper and Star Citizen"
     if [ "$use_zenity" -eq 1 ]; then
