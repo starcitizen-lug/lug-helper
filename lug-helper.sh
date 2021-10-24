@@ -948,7 +948,8 @@ runner_install() {
     
     # Extract the runner
     case "$first_filepath" in
-        # If the files in the archive begin with ./ there is no subdirectory
+        # If the files in the archive begin with ./ there is no subdirectory,
+        # so we must create one
         ./*)
             debug_print continue "Installing runner into $runners_dir/$runner_name..."
             if [ "$use_zenity" -eq 1 ]; then
@@ -960,15 +961,29 @@ runner_install() {
             fi
             lutris_needs_restart="true"
             ;;
-        *)
-            # Runners with a subdirectory in the archive
-            debug_print continue "Installing runner into $runners_dir..."
+        # If a subdirectory exists and has the same name as the archive,
+        # extract it as is
+        "$runner_name")
+            debug_print continue "Installing runner into $runners_dir/$runner_name....."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
                 mkdir -p "$runners_dir" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
             else
                 mkdir -p "$runners_dir" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir"
+            fi
+            lutris_needs_restart="true"
+            ;;
+        # If a subdirectory exists and has any other name,
+        # we must create the correct subdirectory
+        *)
+            debug_print continue "Installing runner into $runners_dir/$runner_name..."
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
+            else
+                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
             fi
             lutris_needs_restart="true"
             ;;
@@ -1283,7 +1298,8 @@ dxvk_install() {
     
     # Extract the dxvk
     case "$first_filepath" in
-        # If the files in the archive begin with ./ there is no subdirectory
+        # If the files in the archive begin with ./ there is no subdirectory,
+        # so we must create one
         ./*)
             debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
             if [ "$use_zenity" -eq 1 ]; then
@@ -1295,15 +1311,29 @@ dxvk_install() {
             fi
             lutris_needs_restart="true"
             ;;
-        *)
-            # dxvks with a subdirectory in the archive
-            debug_print continue "Installing DXVK into $dxvk_dir..."
+        # If a subdirectory exists and has the same name as the archive,
+        # extract it as is
+        "$dxvk_name")
+            debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
                 mkdir -p "$dxvk_dir" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
             else
                 mkdir -p "$dxvk_dir" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir"
+            fi
+            lutris_needs_restart="true"
+            ;;
+        # If a subdirectory exists and has any other name,
+        # we must create the correct subdirectory
+        *)
+            debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
+            else
+                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name"
             fi
             lutris_needs_restart="true"
             ;;
