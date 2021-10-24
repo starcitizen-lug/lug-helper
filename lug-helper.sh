@@ -124,6 +124,7 @@ dxvk_dir="$data_dir/lutris/runtime/dxvk"
 # ie. "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
 dxvk_sources=(
     "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
+    "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
 )
 # Set a maximum number of runner versions to display from each url
 max_dxvks=20
