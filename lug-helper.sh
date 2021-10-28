@@ -807,13 +807,17 @@ lutris_restart() {
 #------------------------- begin download functions ----------------------------#
 
 # Display post download message or instructions if needed
+# Expects the variables message_heading, post_download_msg1,
+# post_download_msg2, and downloaded_item_name
 post_download() {
     if [ "$trigger_post_download" = "true" ]; then
         message_heading="Download Complete"
+        
         if [ "$use_zenity" -eq 1 ]; then
             message_heading="<b>$message_heading</b>"
+            post_download_msg2="<i>$post_download_msg2</i>"
         fi
-        message info "$message_heading\n\n$post_download_msg"
+        message info "$message_heading\n\n$post_download_msg1\n\n$post_download_msg2\n$downloaded_item_name"
     fi
     trigger_post_download="false"
 }
@@ -993,6 +997,9 @@ download_install() {
         # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
 
+        # Store the final name of the downloaded directory
+        downloaded_item_name="$extracted_dir"
+
         # Trigger the post_download() function
         trigger_post_download="true"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
@@ -1010,6 +1017,9 @@ download_install() {
         # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
 
+        # Store the final name of the downloaded directory
+        downloaded_item_name="$download_name"
+
         # Trigger the post_download() function
         trigger_post_download="true"
     else
@@ -1021,6 +1031,9 @@ download_install() {
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_file..."
     rm "$tmp_dir/$download_file"
+
+    # Display any post-download messages or instructions
+    post_download
 }
 
 # List available items for download
@@ -1206,9 +1219,6 @@ download_manage() {
     
     # Check if lutris needs to be restarted after making changes
     lutris_restart
-
-    # Display any post-download messages or instructions
-    post_download
 }
 
 #-------------------------- end download functions -----------------------------#
@@ -1230,7 +1240,8 @@ runner_manage() {
     download_menu_height="140"
 
     # Set the post download instructions
-    post_download_msg="Select the runner in Lutris from the dropdown menu:\nConfigure->Runner Options->Wine version"
+    post_download_msg1="Select the runner in Lutris from the dropdown menu:"
+    post_download_msg2="Configure->Runner Options->Wine version"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -1255,7 +1266,8 @@ dxvk_manage() {
     download_menu_height="140"
 
     # Set the post download instructions
-    post_download_msg="Type the DXVK folder name in your Lutris settings:\nConfigure->Runner Options->DXVK version"
+    post_download_msg1="Type the DXVK folder name in your Lutris settings:"
+    post_download_msg2="Configure->Runner Options->DXVK version"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
