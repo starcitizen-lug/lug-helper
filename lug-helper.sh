@@ -1193,7 +1193,8 @@ download_manage() {
 
 # Configure the download_manage function for runners
 runner_manage() {
-    # Set the required variables to manage runners
+    # Use indirect expansion to point download_sources
+    # to the runner_sources array set at the top of the script
     declare -n download_sources=runner_sources
     download_dir="$runners_dir"
 
@@ -1203,12 +1204,15 @@ runner_manage() {
     download_menu_height="140"
 
     # Call the download_manage function with the above configuration
+    # The argument passed to the function is used for special handling
+    # and displayed in the menus and dialogs.
     download_manage "runner"
 }
 
 # Configure the download_manage function for dxvks
 dxvk_manage() {
-    # Set the required variables to manage dxvks
+    # Use indirect expansion to point download_sources
+    # to the dxvk_sources array set at the top of the script
     declare -n download_sources=dxvk_sources
     download_dir="$dxvk_dir"
 
@@ -1218,6 +1222,8 @@ dxvk_manage() {
     download_menu_height="140"
 
     # Call the download_manage function with the above configuration
+    # The argument passed to the function is used for special handling
+    # and displayed in the menus and dialogs.
     download_manage "dxvk"
 }
 
