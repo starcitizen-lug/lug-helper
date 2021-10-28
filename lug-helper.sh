@@ -985,21 +985,21 @@ download_install() {
         message warning "The downloaded archive is empty. There is nothing to do."
     elif [ "$num_dirs" -eq 1 ] && [ "$num_files" -eq 0 ]; then
         # If the archive contains only one directory, install that directory
-        debug_print continue "Installing $download_type into $download_dir/$extracted_dir..."
+        # We rename it to the name of the archive in case it is different
+        # so we can easily detect installed items in download_select_install()
+        debug_print continue "Installing $download_type into $download_dir/$download_name..."
         if [ "$use_zenity" -eq 1 ]; then
             # Use Zenity progress bar
-            mkdir -p "$download_dir" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir" | \
+            mkdir -p "$download_dir" && cp -r "$tmp_dir/$download_name/$extracted_dir" "$download_dir/$download_name" | \
                     zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
         else
-            mkdir -p "$download_dir" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"
+            mkdir -p "$download_dir" && cp -r "$tmp_dir/$download_name/$extracted_dir" "$download_dir/$download_name"
         fi
 
         # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
-
         # Store the final name of the downloaded directory
-        downloaded_item_name="$extracted_dir"
-
+        downloaded_item_name="$download_name"
         # Trigger the post_download() function
         trigger_post_download="true"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
@@ -1016,10 +1016,8 @@ download_install() {
 
         # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
-
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
-
         # Trigger the post_download() function
         trigger_post_download="true"
     else
