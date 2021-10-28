@@ -939,54 +939,65 @@ download_install() {
     if [ ! -f "$tmp_dir/$download_file" ]; then
         debug_print exit "Script error:  The requested $download_type file was not downloaded. Aborting"
     fi  
-    
-    # Get the path of the first item listed in the archive
-    # This should either be a subdirectory or the path ./
-    # depending on how the archive was created
-    first_filepath="$(stdbuf -oL tar -tf "$tmp_dir/$download_file" | head -n 1)"
-    
-    # Extract the archive
-    case "$first_filepath" in
-        # If the files in the archive begin with ./ there is no subdirectory,
-        # so we must create one
-        ./*)
-            debug_print continue "Installing $download_type into $download_dir/$download_name..."
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name"
-            fi
-            lutris_needs_restart="true"
-            ;;
-        # If a subdirectory exists and has the same name as the archive,
-        # extract it as is
-        "$download_name")
-            debug_print continue "Installing $download_type into $download_dir/$download_name..."
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir"
-            fi
-            lutris_needs_restart="true"
-            ;;
-        # If a subdirectory exists and has any other name,
-        # we must create the correct subdirectory
-        *)
-            debug_print continue "Installing $download_type into $download_dir/$download_name..."
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name"
-            fi
-            lutris_needs_restart="true"
-            ;;
-    esac
+
+    # Extract the archive to the tmp directory
+    debug_print continue "Extracting $download_type into $tmp_dir/$download_name..."
+    if [ "$use_zenity" -eq 1 ]; then
+        # Use Zenity progress bar
+        mkdir "$tmp_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$tmp_dir/$download_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Extracting ${download_type}...\n" 2>/dev/null
+    else
+        mkdir "$tmp_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$tmp_dir/$download_name"
+    fi
+
+    # Check the contents of the extracted archive to determine the
+    # directory structure we must create upon installation
+    num_dirs=0
+    num_files=0
+    for extracted_item in "$tmp_dir/$download_name"/*; do
+        if [ -d "$extracted_item" ]; then
+            num_dirs="$((num_dirs+1))"
+        elif [ -f "$extracted_item" ]; then
+            num_files="$((num_files+1))"
+        fi
+    done
+
+    # Create the correct directory structure and install the item
+    if [ "$num_dirs" -eq 0 ] && [ "$num_files" -eq 0 ]; then
+        # Sanity check
+        message warning "The downloaded archive is empty. There is nothing to do."
+        # Cleanup tmp download
+        debug_print continue "Removing $tmp_dir/$download_file..."
+        rm "$tmp_dir/$download_file"
+        return 1
+    elif [ "$num_dirs" -eq 1 ] && [ "$num_files" -eq 0 ]; then
+        # If the archive contains only one directory, install that directory
+        debug_print continue "Installing $download_type into $download_dir..."
+        if [ "$use_zenity" -eq 1 ]; then
+            # Use Zenity progress bar
+            mkdir -p "$download_dir" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir" | \
+                    zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
+        else
+            mkdir -p "$download_dir" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"
+        fi
+        lutris_needs_restart="true"
+    elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
+        # If the archive contains more than one directory or
+        # one or more files, we must create a subdirectory
+        debug_print continue "Installing $download_type into $download_dir/$download_name..."
+        if [ "$use_zenity" -eq 1 ]; then
+            # Use Zenity progress bar
+            mkdir -p "$download_dir/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"/"$download_name" | \
+                    zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
+        else
+            mkdir -p "$download_dir/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"/"$download_name"
+        fi
+        lutris_needs_restart="true"
+    else
+        # Some unexpected combination of directories and files
+        debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
+        exit 0
+    fi
 
     # Cleanup tmp download
     debug_print continue "Removing $tmp_dir/$download_file..."
