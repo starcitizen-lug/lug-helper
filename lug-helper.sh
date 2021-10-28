@@ -110,8 +110,6 @@ runner_sources=(
     "/dev/null" "https://api.github.com/repos/gort818/wine-sc-lug/releases"
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
 )
-# Set a maximum number of runner versions to display from each url
-max_runners=20
 
 ######## DXVK ##############################################################
 
@@ -126,8 +124,9 @@ dxvk_sources=(
     "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
     "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
 )
-# Set a maximum number of runner versions to display from each url
-max_dxvks=20
+
+# Set a maximum number of versions to display from each download url
+max_download_items=20
 
 # Pixels to add for each Zenity menu option
 # used to dynamically determine the height of menus
@@ -805,48 +804,48 @@ lutris_restart() {
     lutris_needs_restart="false"
 }
 
-#------------------------- begin runner functions ----------------------------#
+#------------------------- begin download functions ----------------------------#
 
-# Delete the selected runner
-runner_delete() {
+# Uninstall the selected item
+download_delete() {
     # This function expects an index number for the array
-    # installed_runners to be passed in as an argument
+    # installed_items to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_print exit "Script error:  The runner_delete function expects an argument. Aborting."
+        debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
     fi
     
-    runner_to_delete="$1"
-    if message question "Are you sure you want to delete the following runner?\n\n${installed_runners[$runner_to_delete]}"; then
-        rm -r "${installed_runners[$runner_to_delete]}"
-        debug_print continue "Deleted ${installed_runners[$runner_to_delete]}"
+    item_to_delete="$1"
+    if message question "Are you sure you want to delete the following ${download_type}?\n\n${installed_items[$item_to_delete]}"; then
+        rm -r "${installed_items[$item_to_delete]}"
+        debug_print continue "Deleted ${installed_items[$item_to_delete]}"
         lutris_needs_restart="true"
     fi
 }
 
-# List installed runners for deletion
-runner_select_delete() {
+# List installed items for deletion
+download_select_delete() {
     # Configure the menu
-    menu_text_zenity="Select the Lutris runner you want to remove:"
-    menu_text_terminal="Select the Lutris runner you want to remove:"
+    menu_text_zenity="Select the $download_type you want to remove:"
+    menu_text_terminal="Select the $download_type you want to remove:"
     menu_text_height="65"
-    goback="Return to the runner management menu"
-    unset installed_runners
+    goback="Return to the $download_type management menu"
+    unset installed_items
     unset menu_options
     unset menu_actions
      
-    # Create an array containing all directories in the runners_dir
-    for runners_list in "$runners_dir"/*; do
-        if [ -d "$runners_list" ]; then
-            installed_runners+=("$runners_list")
+    # Create an array containing all directories in the download_dir
+    for items_list in "$download_dir"/*; do
+        if [ -d "$items_list" ]; then
+            installed_items+=("$items_list")
         fi
     done
-    
-    # Create menu options for the installed runners
-    for (( i=0; i<"${#installed_runners[@]}"; i++ )); do
-        menu_options+=("$(basename "${installed_runners[i]}")")
-        menu_actions+=("runner_delete $i")
+
+    # Create menu options for the installed items
+    for (( i=0; i<"${#installed_items[@]}"; i++ )); do
+        menu_options+=("$(basename "${installed_items[i]}")")
+        menu_actions+=("download_delete $i")
     done
-    
+
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
     menu_actions+=(":") # no-op
@@ -856,170 +855,170 @@ runner_select_delete() {
     if [ "$menu_height" -gt "400" ]; then
         menu_height="400"
     fi
-    
+
     # Set the label for the cancel button
     cancel_label="Go Back"
-       
+
     # Call the menu function.  It will use the options as configured above
     menu
 }
 
-# Download and install the selected runner
-# Note: The variables runner_versions, contributor_url, and runner_url_type
+# Download and install the selected item
+# Note: The variables download_versions, contributor_url, and download_url_type
 # are expected to be set before calling this function
-runner_install() {
+download_install() {
     # This function expects an index number for the array
-    # runner_versions to be passed in as an argument
+    # download_versions to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_print exit "Script error:  The runner_install function expects a numerical argument. Aborting."
+        debug_print exit "Script error:  The download_install function expects a numerical argument. Aborting."
     fi
 
-    # Get the runner filename including file extension
-    runner_file="${runner_versions[$1]}"
+    # Get the filename including file extension
+    download_file="${download_versions[$1]}"
 
-    # Get the selected runner name minus the file extension
+    # Get the selected item name minus the file extension
     # To add new file extensions, handle them here and in
-    # the runner_select_install function below
-    case "$runner_file" in
+    # the download_select_install function below
+    case "$download_file" in
         *.tar.gz)
-            runner_name="$(basename "$runner_file" .tar.gz)"
+            download_name="$(basename "$download_file" .tar.gz)"
             ;;
         *.tgz)
-            runner_name="$(basename "$runner_file" .tgz)"
+            download_name="$(basename "$download_file" .tgz)"
             ;;
         *.tar.xz)
-            runner_name="$(basename "$runner_file" .tar.xz)"
+            download_name="$(basename "$download_file" .tar.xz)"
             ;;
         *)
-            debug_print exit "Unknown archive filetype in runner_install function. Aborting."
+            debug_print exit "Unknown archive filetype in download_install function. Aborting."
             ;;
     esac
 
-    # Get the selected runner url
+    # Get the selected download url
     # To add new sources, handle them here and in the
-    # runner_select_install function below
-    if [ "$runner_url_type" = "github" ]; then
-        runner_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$runner_file" | cut -d \" -f4)"
+    # download_select_install function below
+    if [ "$download_url_type" = "github" ]; then
+        download_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$download_file" | cut -d \" -f4)"
     else
-        debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
+        debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
 
     # Sanity check
-    if [ -z "$runner_dl_url" ]; then
-        message warning "Could not find the requested runner.  The source API may be down or rate limited."
+    if [ -z "$download_url" ]; then
+        message warning "Could not find the requested ${download_type}.  The source API may be down or rate limited."
         return 1
     fi
 
-    # Download the runner to the tmp directory
-    debug_print continue "Downloading $runner_dl_url into $tmp_dir/$runner_file..."
+    # Download the item to the tmp directory
+    debug_print continue "Downloading $download_url into $tmp_dir/$download_file..."
     if [ "$use_zenity" -eq 1 ]; then
         # Format the curl progress bar for zenity
         mkfifo "$tmp_dir/lugpipe"
-        cd "$tmp_dir" && curl -#LO "$runner_dl_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        cd "$tmp_dir" && curl -#LO "$download_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
         stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
         grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
         (
             trap 'kill "$curlpid"' ERR
-            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading Runner.  This might take a moment.\n" 2>/dev/null
+            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
         )
 
         if [ "$?" -eq 1 ]; then
             # User clicked cancel
-            debug_print continue "Download aborted. Removing $tmp_dir/$runner_file..."
-            rm "$tmp_dir/$runner_file"
+            debug_print continue "Download aborted. Removing $tmp_dir/$download_file..."
+            rm "$tmp_dir/$download_file"
             rm "$tmp_dir/lugpipe"
             return 1
         fi
         rm "$tmp_dir/lugpipe"
     else
         # Standard curl progress bar
-        (cd "$tmp_dir" && curl -LO "$runner_dl_url")
+        (cd "$tmp_dir" && curl -LO "$download_url")
     fi
 
     # Sanity check
-    if [ ! -f "$tmp_dir/$runner_file" ]; then
-        debug_print exit "Script error:  The requested runner file was not downloaded. Aborting"
+    if [ ! -f "$tmp_dir/$download_file" ]; then
+        debug_print exit "Script error:  The requested $download_type file was not downloaded. Aborting"
     fi  
     
     # Get the path of the first item listed in the archive
     # This should either be a subdirectory or the path ./
     # depending on how the archive was created
-    first_filepath="$(stdbuf -oL tar -tf "$tmp_dir/$runner_file" | head -n 1)"
+    first_filepath="$(stdbuf -oL tar -tf "$tmp_dir/$download_file" | head -n 1)"
     
-    # Extract the runner
+    # Extract the archive
     case "$first_filepath" in
         # If the files in the archive begin with ./ there is no subdirectory,
         # so we must create one
         ./*)
-            debug_print continue "Installing runner into $runners_dir/$runner_name..."
+            debug_print continue "Installing $download_type into $download_dir/$download_name..."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
+                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
             else
-                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
+                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name"
             fi
             lutris_needs_restart="true"
             ;;
         # If a subdirectory exists and has the same name as the archive,
         # extract it as is
-        "$runner_name")
-            debug_print continue "Installing runner into $runners_dir/$runner_name....."
+        "$download_name")
+            debug_print continue "Installing $download_type into $download_dir/$download_name..."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
+                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
             else
-                mkdir -p "$runners_dir" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir"
+                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir"
             fi
             lutris_needs_restart="true"
             ;;
         # If a subdirectory exists and has any other name,
         # we must create the correct subdirectory
         *)
-            debug_print continue "Installing runner into $runners_dir/$runner_name..."
+            debug_print continue "Installing $download_type into $download_dir/$download_name..."
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing runner...\n" 2>/dev/null
+                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
             else
-                mkdir -p "$runners_dir/$runner_name" && tar -xf "$tmp_dir/$runner_file" -C "$runners_dir/$runner_name"
+                mkdir -p "$download_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$download_dir/$download_name"
             fi
             lutris_needs_restart="true"
             ;;
     esac
 
     # Cleanup tmp download
-    debug_print continue "Removing $tmp_dir/$runner_file..."
-    rm "$tmp_dir/$runner_file"
+    debug_print continue "Removing $tmp_dir/$download_file..."
+    rm "$tmp_dir/$download_file"
 }
 
-# List available runners for download
-runner_select_install() {
-    # This function expects an element number for the array
-    # runner_sources to be passed in as an argument
+# List available items for download
+download_select_install() {
+    # This function expects an element number for the sources array
+    # to be passed in as an argument
     if [ -z "$1" ]; then
-        debug_print exit "Script error:  The runner_select_install function expects a numerical argument. Aborting."
+        debug_print exit "Script error:  The download_select_install function expects a numerical argument. Aborting."
     fi
-
+    
     # Store info from the selected contributor
-    contributor_name="${runner_sources[$1]}"
-    contributor_url="${runner_sources[$1+1]}"
+    contributor_name="${download_sources[$1]}"
+    contributor_url="${download_sources[$1+1]}"
 
     # Check the provided contributor url to make sure we know how to handle it
     # To add new sources, add them here and handle in the if statement
-    # just below and the runner_install function above
+    # just below and the download_install function above
     case "$contributor_url" in
         https://api.github.com*)
-            runner_url_type="github"
+            download_url_type="github"
             ;;
         *)
-            debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
+            debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
             ;;
     esac
     
-    # Check GlibC version against the requirements of the selected runner
-    if [ "$contributor_name" = "/dev/null" ]; then
+    # For runners, check GlibC version against runner requirements
+    if [ "download_type" = "runner" ] && [ "$contributor_name" = "/dev/null" ]; then
         required_glibc="2.33"
         system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
 
@@ -1029,57 +1028,57 @@ runner_select_install() {
         fi
     fi
 
-    # Fetch a list of runner versions from the selected contributor
+    # Fetch a list of versions from the selected contributor
     # To add new sources, handle them here, in the if statement
-    # just above, and the runner_install function above
-    if [ "$runner_url_type" = "github" ]; then
-        runner_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | grep -vE "*.sha512sum" | xargs basename -a))
+    # just above, and the download_install function above
+    if [ "$download_url_type" = "github" ]; then
+        download_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | grep -vE "*.sha512sum" | xargs basename -a))
     else
-        debug_print exit "Script error:  Unknown api/url format in runner_sources array. Aborting."
+        debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
 
     # Sanity check
-    if [ "${#runner_versions[@]}" -eq 0 ]; then
-        message warning "No runner versions were found.  The source API may be down or rate limited."
+    if [ "${#download_versions[@]}" -eq 0 ]; then
+        message warning "No $download_type versions were found.  The source API may be down or rate limited."
         return 1
     fi
 
     # Configure the menu
-    menu_text_zenity="Select the Lutris runner you want to install:"
-    menu_text_terminal="Select the Lutris runner you want to install:"
+    menu_text_zenity="Select the $download_type you want to install:"
+    menu_text_terminal="Select the $download_type you want to install:"
     menu_text_height="65"
-    goback="Return to the runner management menu"
+    goback="Return to the $download_type management menu"
     unset menu_options
     unset menu_actions
     
     # Iterate through the versions, check if they are installed,
     # and add them to the menu options
     # To add new file extensions, handle them here and in
-    # the runner_install function above
-    for (( i=0; i<"$max_runners" && i<"${#runner_versions[@]}"; i++ )); do
-        # Get the runner name minus the file extension
-        case "${runner_versions[i]}" in
+    # the download_install function above
+    for (( i=0; i<"$max_download_items" && i<"${#download_versions[@]}"; i++ )); do
+        # Get the file name minus the extension
+        case "${download_versions[i]}" in
             *.tar.gz)
-                runner_name="$(basename "${runner_versions[i]}" .tar.gz)"
+                download_name="$(basename "${download_versions[i]}" .tar.gz)"
                 ;;
             *.tgz)
-                runner_name="$(basename "${runner_versions[i]}" .tgz)"
+                download_name="$(basename "${download_versions[i]}" .tgz)"
                 ;;
             *.tar.xz)
-                runner_name="$(basename "${runner_versions[i]}" .tar.xz)"
+                download_name="$(basename "${download_versions[i]}" .tar.xz)"
                 ;;        
             *)
-                debug_print exit "Unknown archive filetype in runner_select_install function. Aborting."
+                debug_print exit "Unknown archive filetype in download_select_install function. Aborting."
                 ;;
         esac
 
-        # Add the runner names to the menu
-        if [ -d "$runners_dir/$runner_name" ]; then
-            menu_options+=("$runner_name    [installed]")
+        # Add the file names to the menu
+        if [ -d "$download_dir/$download_name" ]; then
+            menu_options+=("$download_name    [installed]")
         else
-            menu_options+=("$runner_name")
+            menu_options+=("$download_name")
         fi
-        menu_actions+=("runner_install $i")
+        menu_actions+=("download_install $i")
     done
 
     # Complete the menu by adding the option to go back to the previous menu
@@ -1099,45 +1098,71 @@ runner_select_install() {
     menu
 }
 
-# Manage Lutris runners
-runner_manage() {
+# Manage downloads
+#
+# This function expects the following variables to be set:
+#
+# - The string download_sources is a formatted array containing the URLs
+#   of items to download. It should be pointed to the appropriate
+#   array set at the top of the script using indirect expansion.
+#   See runner_sources at the top and runner_manage() below for examples.
+# - The string download_dir should contain the location the downloaded item
+#   will be installed to.
+# - The string "download_menu_heading" should contain the type of item
+#   being downloaded.  It will appear in the menu heading.
+# - The string "download_menu_description" should contain a description of
+#   the item being downloaded.  It will appear in the menu subheading.
+# - The integer "download_menu_height" specifies the height of the zenity menu.
+#
+# This function also expects one string argument containing the type of item to
+# be downloaded.  ie. runner or dxvk.
+#
+# See runner_manage below for a configuration example.
+download_manage() {
+    # This function expects a string to be passed as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The download_manage function expects a string argument. Aborting."
+    fi
     # Check if Lutris is installed
     if [ ! -x "$(command -v lutris)" ]; then
         message info "Lutris does not appear to be installed."
         return 0
     fi
-    if [ ! -d "$runners_dir" ]; then
-        message info "Lutris runners directory not found.  Unable to continue.\n\n$runners_dir"
+    if [ ! -d "$download_dir" ]; then
+        message info "Lutris $download_type directory not found.  Unable to continue.\n\n$download_dir"
         return 0
     fi
-    
-    # The runner management menu will loop until the user cancels
+
+    # Get the type of item we're downloading from the function arguments
+    download_type="$1"
+
+    # The download management menu will loop until the user cancels
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
         # Configure the menu
-        menu_text_zenity="<b><big>Manage Your Lutris Runners</big>\n\nThe runners listed below are wine builds created for Star Citizen</b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Manage Your Lutris Runners\n\nThe runners listed below are wine builds created for Star Citizen\nYou may choose from the following options:"
-        menu_text_height="140"
+        menu_text_zenity="<b><big>Manage Your $download_menu_heading</big>\n\n$download_menu_description</b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nYou may choose from the following options:"
+        menu_text_height="$download_menu_height"
 
         # Configure the menu options
-        delete="Remove an installed runner"
+        delete="Remove an installed $download_type"
         back="Return to the main menu"
         unset menu_options
         unset menu_actions
 
-        # Loop through the runner_sources array and create a menu item
+        # Loop through the download_sources array and create a menu item
         # for each one. Even numbered elements will contain the runner name
-        for (( i=0; i<"${#runner_sources[@]}"; i=i+2 )); do
+        for (( i=0; i<"${#download_sources[@]}"; i=i+2 )); do
             # Set the options to be displayed in the menu
-            menu_options+=("Install a runner from ${runner_sources[i]}")
+            menu_options+=("Install a $download_type from ${download_sources[i]}")
             # Set the corresponding functions to be called for each of the options
-            menu_actions+=("runner_select_install $i")
+            menu_actions+=("download_select_install $i")
         done
         
-        # Complete the menu by adding options to remove a runner
+        # Complete the menu by adding options to uninstall an item
         # or go back to the previous menu
         menu_options+=("$delete" "$back")
-        menu_actions+=("runner_select_delete" "menu_loop_done")
+        menu_actions+=("download_select_delete" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
@@ -1153,343 +1178,36 @@ runner_manage() {
     lutris_restart
 }
 
-#-------------------------- end runner functions -----------------------------#
+#-------------------------- end download functions -----------------------------#
 
-#------------------------- begin dxvk functions ----------------------------#
+# Configure the download_manage function for runners
+runner_manage() {
+    # Set the required variables to manage runners
+    declare -n download_sources=runner_sources
+    download_dir="$runners_dir"
 
-# Delete the selected dxvk
-dxvk_delete() {
-    # This function expects an index number for the array
-    # installed_dxvks to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The dxvk_delete function expects an argument. Aborting."
-    fi
-    
-    dxvk_to_delete="$1"
-    if message question "Are you sure you want to delete the following DXVK?\n\n${installed_dxvks[$dxvk_to_delete]}"; then
-        rm -r "${installed_dxvks[$dxvk_to_delete]}"
-        debug_print continue "Deleted ${installed_dxvks[$dxvk_to_delete]}"
-        lutris_needs_restart="true"
-    fi
+    # Configure the text displayed in the menus
+    download_menu_heading="Lutris Runners"
+    download_menu_description="The runners listed below are wine builds created for Star Citizen"
+    download_menu_height="140"
+
+    # Call the download_manage function with the above configuration
+    download_manage "runner"
 }
 
-# List installed dxvks for deletion
-dxvk_select_delete() {
-    # Configure the menu
-    menu_text_zenity="Select the DXVK version you want to remove:"
-    menu_text_terminal="Select the DXVK version you want to remove:"
-    menu_text_height="65"
-    goback="Return to the DXVK management menu"
-    unset installed_dxvks
-    unset menu_options
-    unset menu_actions
-     
-    # Create an array containing all directories in the dxvk_dir
-    for dxvks_list in "$dxvk_dir"/*; do
-        if [ -d "$dxvks_list" ]; then
-            installed_dxvks+=("$dxvks_list")
-        fi
-    done
-    
-    # Create menu options for the installed dxvks
-    for (( i=0; i<"${#installed_dxvks[@]}"; i++ )); do
-        menu_options+=("$(basename "${installed_dxvks[i]}")")
-        menu_actions+=("dxvk_delete $i")
-    done
-    
-    # Complete the menu by adding the option to go back to the previous menu
-    menu_options+=("$goback")
-    menu_actions+=(":") # no-op
-
-    # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    if [ "$menu_height" -gt "400" ]; then
-        menu_height="400"
-    fi
-    
-    # Set the label for the cancel button
-    cancel_label="Go Back"
-       
-    # Call the menu function.  It will use the options as configured above
-    menu
-}
-
-# Download and install the selected dxvk
-# Note: The variables dxvk_versions, contributor_url, and dxvk_url_type
-# are expected to be set before calling this function
-dxvk_install() {
-    # This function expects an index number for the array
-    # dxvk_versions to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The dxvk_install function expects a numerical argument. Aborting."
-    fi
-
-    # Get the dxvk filename including file extension
-    dxvk_file="${dxvk_versions[$1]}"
-
-    # Get the selected dxvk name minus the file extension
-    # To add new file extensions, handle them here and in
-    # the dxvk_select_install function below
-    case "$dxvk_file" in
-        *.tar.gz)
-            dxvk_name="$(basename "$dxvk_file" .tar.gz)"
-            ;;
-        *.tgz)
-            dxvk_name="$(basename "$dxvk_file" .tgz)"
-            ;;
-        *.tar.xz)
-            dxvk_name="$(basename "$dxvk_file" .tar.xz)"
-            ;;
-        *)
-            debug_print exit "Unknown archive filetype in dxvk_install function. Aborting."
-            ;;
-    esac
-
-    # Get the selected dxvk url
-    # To add new sources, handle them here and in the
-    # dxvk_select_install function below
-    if [ "$dxvk_url_type" = "github" ]; then
-        dxvk_dl_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$dxvk_file" | cut -d \" -f4)"
-    else
-        debug_print exit "Script error:  Unknown api/url format in dxvk_sources array. Aborting."
-    fi
-
-    # Sanity check
-    if [ -z "$dxvk_dl_url" ]; then
-        message warning "Could not find the requested DXVK.  The source API may be down or rate limited."
-        return 1
-    fi
-
-    # Download the dxvk to the tmp directory
-    debug_print continue "Downloading $dxvk_dl_url into $tmp_dir/$dxvk_file..."
-    if [ "$use_zenity" -eq 1 ]; then
-        # Format the curl progress bar for zenity
-        mkfifo "$tmp_dir/lugpipe"
-        cd "$tmp_dir" && curl -#LO "$dxvk_dl_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
-        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
-        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
-        (
-            trap 'kill "$curlpid"' ERR
-            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading DXVK.  This might take a moment.\n" 2>/dev/null
-        )
-
-        if [ "$?" -eq 1 ]; then
-            # User clicked cancel
-            debug_print continue "Download aborted. Removing $tmp_dir/$dxvk_file..."
-            rm "$tmp_dir/$dxvk_file"
-            rm "$tmp_dir/lugpipe"
-            return 1
-        fi
-        rm "$tmp_dir/lugpipe"
-    else
-        # Standard curl progress bar
-        (cd "$tmp_dir" && curl -LO "$dxvk_dl_url")
-    fi
-
-    # Sanity check
-    if [ ! -f "$tmp_dir/$dxvk_file" ]; then
-        debug_print exit "Script error:  The requested DXVK file was not downloaded. Aborting"
-    fi  
-    
-    # Get the path of the first item listed in the archive
-    # This should either be a subdirectory or the path ./
-    # depending on how the archive was created
-    first_filepath="$(stdbuf -oL tar -tf "$tmp_dir/$dxvk_file" | head -n 1)"
-    
-    # Extract the dxvk
-    case "$first_filepath" in
-        # If the files in the archive begin with ./ there is no subdirectory,
-        # so we must create one
-        ./*)
-            debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
-            else
-                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name"
-            fi
-            lutris_needs_restart="true"
-            ;;
-        # If a subdirectory exists and has the same name as the archive,
-        # extract it as is
-        "$dxvk_name")
-            debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "$dxvk_dir" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
-            else
-                mkdir -p "$dxvk_dir" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir"
-            fi
-            lutris_needs_restart="true"
-            ;;
-        # If a subdirectory exists and has any other name,
-        # we must create the correct subdirectory
-        *)
-            debug_print continue "Installing DXVK into $dxvk_dir/$dxvk_name..."
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing DXVK...\n" 2>/dev/null
-            else
-                mkdir -p "$dxvk_dir/$dxvk_name" && tar -xf "$tmp_dir/$dxvk_file" -C "$dxvk_dir/$dxvk_name"
-            fi
-            lutris_needs_restart="true"
-            ;;
-    esac
-
-    # Cleanup tmp download
-    debug_print continue "Removing $tmp_dir/$dxvk_file..."
-    rm "$tmp_dir/$dxvk_file"
-}
-
-# List available dxvks for download
-dxvk_select_install() {
-    # This function expects an element number for the array
-    # dxvk_sources to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The dxvk_select_install function expects a numerical argument. Aborting."
-    fi
-
-    # Store info from the selected contributor
-    contributor_name="${dxvk_sources[$1]}"
-    contributor_url="${dxvk_sources[$1+1]}"
-
-    # Check the provided contributor url to make sure we know how to handle it
-    # To add new sources, add them here and handle in the if statement
-    # just below and the dxvk_install function above
-    case "$contributor_url" in
-        https://api.github.com*)
-            dxvk_url_type="github"
-            ;;
-        *)
-            debug_print exit "Script error:  Unknown api/url format in dxvk_sources array. Aborting."
-            ;;
-    esac
-
-    # Fetch a list of dxvk versions from the selected contributor
-    # To add new sources, handle them here, in the if statement
-    # just above, and the dxvk_install function above
-    if [ "$dxvk_url_type" = "github" ]; then
-        dxvk_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | grep -vE "*.sha512sum" | xargs basename -a))
-    else
-        debug_print exit "Script error:  Unknown api/url format in dxvk_sources array. Aborting."
-    fi
-
-    # Sanity check
-    if [ "${#dxvk_versions[@]}" -eq 0 ]; then
-        message warning "No DXVK versions were found.  The source API may be down or rate limited."
-        return 1
-    fi
-
-    # Configure the menu
-    menu_text_zenity="Select the DXVK version you want to install:"
-    menu_text_terminal="Select the DXVK version you want to install:"
-    menu_text_height="65"
-    goback="Return to the DXVK management menu"
-    unset menu_options
-    unset menu_actions
-    
-    # Iterate through the versions, check if they are installed,
-    # and add them to the menu options
-    # To add new file extensions, handle them here and in
-    # the dxvk_install function above
-    for (( i=0; i<"$max_dxvks" && i<"${#dxvk_versions[@]}"; i++ )); do
-        # Get the dxvk name minus the file extension
-        case "${dxvk_versions[i]}" in
-            *.tar.gz)
-                dxvk_name="$(basename "${dxvk_versions[i]}" .tar.gz)"
-                ;;
-            *.tgz)
-                dxvk_name="$(basename "${dxvk_versions[i]}" .tgz)"
-                ;;
-            *.tar.xz)
-                dxvk_name="$(basename "${dxvk_versions[i]}" .tar.xz)"
-                ;;        
-            *)
-                debug_print exit "Unknown archive filetype in dxvk_select_install function. Aborting."
-                ;;
-        esac
-
-        # Add the dxvk names to the menu
-        if [ -d "$dxvk_dir/$dxvk_name" ]; then
-            menu_options+=("$dxvk_name    [installed]")
-        else
-            menu_options+=("$dxvk_name")
-        fi
-        menu_actions+=("dxvk_install $i")
-    done
-
-    # Complete the menu by adding the option to go back to the previous menu
-    menu_options+=("$goback")
-    menu_actions+=(":") # no-op
-
-    # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    if [ "$menu_height" -gt "400" ]; then
-        menu_height="400"
-    fi
-    
-    # Set the label for the cancel button
-    cancel_label="Go Back"
-       
-    # Call the menu function.  It will use the options as configured above
-    menu
-}
-
-# Manage Lutris dxvks
+# Configure the download_manage function for dxvks
 dxvk_manage() {
-    # Check if Lutris is installed
-    if [ ! -x "$(command -v lutris)" ]; then
-        message info "Lutris does not appear to be installed."
-        return 0
-    fi
-    if [ ! -d "$dxvk_dir" ]; then
-        message info "Lutris DXVK directory not found.  Unable to continue.\n\n$dxvk_dir"
-        return 0
-    fi
-    
-    # The dxvk management menu will loop until the user cancels
-    looping_menu="true"
-    while [ "$looping_menu" = "true" ]; do
-        # Configure the menu
-        menu_text_zenity="<b><big>Manage Your DXVK Versions</big>\n\nThe DXVK versions below may help improve game performance</b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Manage Your DXVK Versions\n\nThe DXVK versions below may help improve game performance\nYou may choose from the following options:"
-        menu_text_height="140"
+    # Set the required variables to manage dxvks
+    declare -n download_sources=dxvk_sources
+    download_dir="$dxvk_dir"
 
-        # Configure the menu options
-        delete="Remove an installed DXVK"
-        back="Return to the main menu"
-        unset menu_options
-        unset menu_actions
+    # Configure the text displayed in the menus
+    download_menu_heading="DXVK Versions"
+    download_menu_description="The DXVK versions below may help improve game performance"
+    download_menu_height="140"
 
-        # Loop through the dxvk_sources array and create a menu item
-        # for each one. Even numbered elements will contain the dxvk name
-        for (( i=0; i<"${#dxvk_sources[@]}"; i=i+2 )); do
-            # Set the options to be displayed in the menu
-            menu_options+=("Install a DXVK from ${dxvk_sources[i]}")
-            # Set the corresponding functions to be called for each of the options
-            menu_actions+=("dxvk_select_install $i")
-        done
-        
-        # Complete the menu by adding options to remove a dxvk
-        # or go back to the previous menu
-        menu_options+=("$delete" "$back")
-        menu_actions+=("dxvk_select_delete" "menu_loop_done")
-
-        # Calculate the total height the menu should be
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-        
-       # Set the label for the cancel button
-       cancel_label="Go Back"
-       
-        # Call the menu function.  It will use the options as configured above
-        menu
-    done
-    
-    # Check if lutris needs to be restarted after making changes
-    lutris_restart
+    # Call the download_manage function with the above configuration
+    download_manage "dxvk"
 }
 
 #-------------------------- end dxvk functions -----------------------------#
