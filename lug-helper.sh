@@ -1240,7 +1240,12 @@ runner_manage() {
     download_menu_height="140"
 
     # Set the post download instructions
-    post_download_msg1="Select the runner in Lutris from the dropdown menu:"
+    # Format:
+    # A header is automatically displayed that reads: Download Complete
+    # msg1 is displayed below the header
+    # msg2 is displayed below that in italics when zenity is in use
+    # Lastly, the downloaded directory name is automatically displayed
+    post_download_msg1="Select the runner in Lutris from the dropdown menu"
     post_download_msg2="Configure->Runner Options->Wine version"
 
     # Call the download_manage function with the above configuration
@@ -1266,7 +1271,12 @@ dxvk_manage() {
     download_menu_height="140"
 
     # Set the post download instructions
-    post_download_msg1="Type the DXVK folder name in your Lutris settings:"
+    # Format:
+    # A header is automatically displayed that reads: Download Complete
+    # msg1 is displayed below the header
+    # msg2 is displayed below that in italics when zenity is in use
+    # Lastly, the downloaded directory name is automatically displayed
+    post_download_msg1="Type the DXVK folder name in your Lutris settings"
     post_download_msg2="Configure->Runner Options->DXVK version"
 
     # Call the download_manage function with the above configuration
