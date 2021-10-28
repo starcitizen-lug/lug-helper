@@ -966,10 +966,6 @@ download_install() {
     if [ "$num_dirs" -eq 0 ] && [ "$num_files" -eq 0 ]; then
         # Sanity check
         message warning "The downloaded archive is empty. There is nothing to do."
-        # Cleanup tmp download
-        debug_print continue "Removing $tmp_dir/$download_file..."
-        rm "$tmp_dir/$download_file"
-        return 1
     elif [ "$num_dirs" -eq 1 ] && [ "$num_files" -eq 0 ]; then
         # If the archive contains only one directory, install that directory
         debug_print continue "Installing $download_type into $download_dir..."
