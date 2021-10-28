@@ -806,6 +806,18 @@ lutris_restart() {
 
 #------------------------- begin download functions ----------------------------#
 
+# Display post download message or instructions if needed
+post_download() {
+    if [ "$trigger_post_download" = "true" ]; then
+        message_heading="Download Complete"
+        if [ "$use_zenity" -eq 1 ]; then
+            message_heading="<b>$message_heading</b>"
+        fi
+        message info "$message_heading\n\n$post_download_msg"
+    fi
+    trigger_post_download="false"
+}
+
 # Uninstall the selected item
 download_delete() {
     # This function expects an index number for the array
@@ -957,6 +969,7 @@ download_install() {
     for extracted_item in "$tmp_dir/$download_name"/*; do
         if [ -d "$extracted_item" ]; then
             num_dirs="$((num_dirs+1))"
+            extracted_dir="$(basename "$extracted_item")"
         elif [ -f "$extracted_item" ]; then
             num_files="$((num_files+1))"
         fi
@@ -968,7 +981,7 @@ download_install() {
         message warning "The downloaded archive is empty. There is nothing to do."
     elif [ "$num_dirs" -eq 1 ] && [ "$num_files" -eq 0 ]; then
         # If the archive contains only one directory, install that directory
-        debug_print continue "Installing $download_type into $download_dir..."
+        debug_print continue "Installing $download_type into $download_dir/$extracted_dir..."
         if [ "$use_zenity" -eq 1 ]; then
             # Use Zenity progress bar
             mkdir -p "$download_dir" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir" | \
@@ -976,7 +989,12 @@ download_install() {
         else
             mkdir -p "$download_dir" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"
         fi
+
+        # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
+
+        # Trigger the post_download() function
+        trigger_post_download="true"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
@@ -988,7 +1006,12 @@ download_install() {
         else
             mkdir -p "$download_dir/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"/"$download_name"
         fi
+
+        # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
+
+        # Trigger the post_download() function
+        trigger_post_download="true"
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
@@ -996,7 +1019,7 @@ download_install() {
     fi
 
     # Cleanup tmp download
-    debug_print continue "Removing $tmp_dir/$download_file..."
+    debug_print continue "Cleaning up $tmp_dir/$download_file..."
     rm "$tmp_dir/$download_file"
 }
 
@@ -1183,12 +1206,19 @@ download_manage() {
     
     # Check if lutris needs to be restarted after making changes
     lutris_restart
+
+    # Display any post-download messages or instructions
+    post_download
 }
 
 #-------------------------- end download functions -----------------------------#
 
 # Configure the download_manage function for runners
 runner_manage() {
+    # Set some defaults
+    lutris_needs_restart="false"
+    trigger_post_download="false"
+
     # Use indirect expansion to point download_sources
     # to the runner_sources array set at the top of the script
     declare -n download_sources=runner_sources
@@ -1199,6 +1229,9 @@ runner_manage() {
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
     download_menu_height="140"
 
+    # Set the post download instructions
+    post_download_msg="Select the runner in Lutris from the dropdown menu:\nConfigure->Runner Options->Wine version"
+
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
     # and displayed in the menus and dialogs.
@@ -1207,6 +1240,10 @@ runner_manage() {
 
 # Configure the download_manage function for dxvks
 dxvk_manage() {
+    # Set some defaults
+    lutris_needs_restart="false"
+    trigger_post_download="false"
+
     # Use indirect expansion to point download_sources
     # to the dxvk_sources array set at the top of the script
     declare -n download_sources=dxvk_sources
@@ -1216,6 +1253,9 @@ dxvk_manage() {
     download_menu_heading="DXVK Versions"
     download_menu_description="The DXVK versions below may help improve game performance"
     download_menu_height="140"
+
+    # Set the post download instructions
+    post_download_msg="Type the DXVK folder name in your Lutris settings:\nConfigure->Runner Options->DXVK version"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -1431,9 +1471,8 @@ if [ -x "$(command -v zenity)" ]; then
     use_zenity=1
 fi
 
-# Set some defaults
+# Set defaults
 live_or_ptu="$live_dir"
-lutris_needs_restart="false"
 
 # Check if a newer verison of the script is available
 latest_version="$(get_latest_release "$repo")"
