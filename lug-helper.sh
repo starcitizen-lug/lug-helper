@@ -304,7 +304,7 @@ menu() {
     elif [ -z "$menu_height" ]; then
         debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
     elif [ -z "$cancel_label" ]; then
-        debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'cancel_label' was not set\nbefore calling the menu function. Aborting."
     fi
     
     # Use Zenity if it is available
