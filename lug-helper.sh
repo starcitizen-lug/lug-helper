@@ -807,17 +807,17 @@ lutris_restart() {
 #------------------------- begin download functions ----------------------------#
 
 # Display post download message or instructions if needed
-# Expects the variables message_heading, post_download_msg1,
-# post_download_msg2, and downloaded_item_name
+# Expects the variables message_heading, post_download_msg_text,
+# post_download_msg_italics, and downloaded_item_name
 post_download() {
     if [ "$trigger_post_download" = "true" ]; then
         message_heading="Download Complete"
         
         if [ "$use_zenity" -eq 1 ]; then
             message_heading="<b>$message_heading</b>"
-            post_download_msg2="<i>$post_download_msg2</i>"
+            post_download_msg_italics="<i>$post_download_msg_italics</i>"
         fi
-        message info "$message_heading\n\n$post_download_msg1\n\n$post_download_msg2\n$downloaded_item_name"
+        message info "$message_heading\n\n$post_download_msg_text\n\n$post_download_msg_italics\n$downloaded_item_name"
     fi
     trigger_post_download="false"
 }
@@ -1240,11 +1240,11 @@ runner_manage() {
     # Set the post download instructions
     # Format:
     # A header is automatically displayed that reads: Download Complete
-    # msg1 is displayed below the header
-    # msg2 is displayed below that in italics when zenity is in use
+    # msg_text is displayed below the header
+    # msg_italics is displayed below that in italics when zenity is in use
     # Lastly, the downloaded directory name is automatically displayed
-    post_download_msg1="Select the runner in Lutris from the dropdown menu"
-    post_download_msg2="Configure->Runner Options->Wine version"
+    post_download_msg_text="Select the runner in Lutris from the dropdown menu"
+    post_download_msg_italics="Configure->Runner Options->Wine version"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -1271,11 +1271,11 @@ dxvk_manage() {
     # Set the post download instructions
     # Format:
     # A header is automatically displayed that reads: Download Complete
-    # msg1 is displayed below the header
-    # msg2 is displayed below that in italics when zenity is in use
+    # msg_text is displayed below the header
+    # msg_italics is displayed below that in italics when zenity is in use
     # Lastly, the downloaded directory name is automatically displayed
-    post_download_msg1="Type the DXVK folder name in your Lutris settings"
-    post_download_msg2="Configure->Runner Options->DXVK version"
+    post_download_msg_text="Type the DXVK folder name in your Lutris settings"
+    post_download_msg_italics="Configure->Runner Options->DXVK version"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
