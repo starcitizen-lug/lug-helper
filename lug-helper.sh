@@ -637,7 +637,7 @@ mapcount_check() {
     # Add to the results and actions arrays
     if [ "$mapcount" -ge 16777216 ]; then
         # All good
-        preflight_pass+=("vm.max_map_count is set to at least 16777216.")
+        preflight_pass+=("vm.max_map_count is set to $mapcount.")
     elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
         # Was it supposed to have been set by sysctl?
         preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
@@ -702,7 +702,7 @@ filelimit_check() {
     # Add to the results and actions arrays
     if [ "$filelimit" -ge 524288 ]; then
         # All good
-        preflight_pass+=("Hard open file descriptors limit is set to at least 524288.")
+        preflight_pass+=("Hard open file descriptors limit is set to $filelimit.")
     else
         # The file limit should be changed
         preflight_fail+=("Your hard open file descriptors limit is $filelimit\nand should be set to at least 524288\nto increase the maximum number of open files.")
