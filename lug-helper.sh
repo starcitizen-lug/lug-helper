@@ -1410,7 +1410,7 @@ eac_workaround() {
 
     # Configure message variables
     eac_title="Easy Anti-Cheat Workaround"
-    eac_hosts_formatted="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
+    eac_hosts_formatted="$eac_hosts"
     eac_dir_formatted="$eac_dir"
     if [ "$use_zenity" -eq 1 ]; then
         eac_title="<b>$eac_title</b>"
@@ -1420,7 +1420,13 @@ eac_workaround() {
 
     if message question "$eac_title\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted\n\nThe following directory will be deleted:\n$eac_dir_formatted\n\n\nTo revert these changes, delete the above line from\n/etc/hosts and relaunch the game\n\nDo you want to proceed?"; then
         debug_print continue "Editing hosts file..."
-        sudo sh -c "echo '127.0.0.1 modules-cdn.eac-prod.on.epicgames.com' >> /etc/hosts"
+        
+        # Use pollkit's pkexec for gui with a fallback to sudo
+        if [ -x "$(command -v pkexec)" ]; then
+            pkexec sh -c "echo $eac_hosts '#Star Citizen EAC workaround' >> /etc/hosts"
+        else
+            sudo sh -c "echo $eac_hosts '#Star Citizen EAC workaround' >> /etc/hosts"
+        fi
 
         debug_print continue "Deleting $eac_dir..."
         rm -r "$eac_dir"
