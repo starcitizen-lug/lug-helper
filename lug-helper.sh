@@ -1393,6 +1393,42 @@ preflight_check() {
     fi
 }
 
+# Deploy Easy Anti-Cheat Workaround
+eac_workaround() {
+    # Get/set directory paths
+    getdirs
+
+    # Set the EAC directory path and hosts modification
+    eac_dir="$wine_prefix/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat"
+    eac_hosts="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
+
+    # Check if EAC is installed
+    if [ ! -d "$eac_dir" ]; then
+        message info "Easy Anti-Cheat does not appear to be installed.\nThere is nothing to do!"
+        return 1
+    fi
+
+    # Configure message variables
+    eac_title="Easy Anti-Cheat Workaround"
+    eac_hosts_formatted="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
+    eac_dir_formatted="$eac_dir"
+    if [ "$use_zenity" -eq 1 ]; then
+        eac_title="<b>$eac_title</b>"
+        eac_hosts_formatted="<i>$eac_hosts_formatted</i>"
+        eac_dir_formatted="<i>$eac_dir_formatted</i>"
+    fi
+
+    if message question "$eac_title\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted\n\nThe following directory will be deleted:\n$eac_dir_formatted\n\n\nTo revert these changes, delete the above line from\n/etc/hosts and relaunch the game\n\nDo you want to proceed?"; then
+        debug_print continue "Editing hosts file..."
+        sudo sh -c "echo '127.0.0.1 modules-cdn.eac-prod.on.epicgames.com' >> /etc/hosts"
+
+        debug_print continue "Deleting $eac_dir..."
+        rm -r "$eac_dir"
+
+        message info "Easy Anti-Cheat workaround has been deployed!"
+    fi
+}
+
 # Show maintenance/troubleshooting options
 maintenance_menu() {
     # Loop the menu until the user selects quit
@@ -1606,6 +1642,7 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
+    eac_msg="Deploy Easy Anti-Cheat Workaround"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -1613,9 +1650,9 @@ while true; do
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$eac_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "eac_workaround" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
