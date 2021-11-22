@@ -972,10 +972,10 @@ download_install() {
     num_files=0
     for extracted_item in "$tmp_dir/$download_name"/*; do
         if [ -d "$extracted_item" ]; then
-            num_dirs="$((num_dirs+1))"
+            num_dirs="$(($num_dirs+1))"
             extracted_dir="$(basename "$extracted_item")"
         elif [ -f "$extracted_item" ]; then
-            num_files="$((num_files+1))"
+            num_files="$(($num_files+1))"
         fi
     done
 
