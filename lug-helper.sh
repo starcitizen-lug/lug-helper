@@ -145,8 +145,8 @@ else
 fi
 
 # Github repo and script version info
-repo="the-sane/lug-helper"
-releases_url="https://github.com/the-sane/lug-helper/releases"
+repo="starcitizen-lug/lug-helper"
+releases_url="https://github.com/$repo/releases"
 current_version="v1.11.1"
 
 ############################################################################
