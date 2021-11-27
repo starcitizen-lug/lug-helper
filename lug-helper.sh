@@ -1518,6 +1518,7 @@ if [ "$#" -gt 0 ]; then
 Usage: lug-helper <options>
   -p, --preflight-check     Run system optimization checks
   -m, --manage-runners      Install or remove Lutris runners
+  -k, --manage-dxvk         Install or remove DXVK versions
   -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
   -s, --delete-shaders      Delete Star Citizen shaders directory
   -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
@@ -1534,6 +1535,9 @@ Usage: lug-helper <options>
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
+                ;;
+            --manage-dxvk | -k )
+                cargs+=("dxvk_manage")
                 ;;
             --delete-user-folder | -u )
                 cargs+=("sanitize")
