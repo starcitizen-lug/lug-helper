@@ -61,10 +61,10 @@ if [ ! -x "$(command -v curl)" ]; then
     notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v sort)" ]; then
     # Print to stderr and also try warning the user through notify-send
-    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n" --icon=dialog-warning
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n- sort (part of gnu coreutils)\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n- sort (part of gnu coreutils)\n" --icon=dialog-warning
     exit 1
 fi
 
@@ -1497,7 +1497,8 @@ live_or_ptu="$live_dir"
 # Check if a newer verison of the script is available
 latest_version="$(get_latest_release "$repo")"
 
-if [ "$latest_version" != "$current_version" ]; then
+if [ "$latest_version" != "$current_version" ] &&
+   [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
     if [ "$use_zenity" -eq 1 ]; then
         releases_url_formatted="<a href='$releases_url'>$releases_url</a>"
     else
