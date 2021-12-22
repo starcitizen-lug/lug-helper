@@ -46,6 +46,8 @@
 # Contributor: https://github.com/Wrzlprnft
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
+#
+# License: GPLv3.0
 ############################################################################
 
 # Check if script is run as root
