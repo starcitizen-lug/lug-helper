@@ -20,6 +20,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Checks that the hard open file descriptors limit is set to at least 524288.
     - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
 
+`Install Star Citizen`
+- Launches Lutris and uses the bundled json to install Star Citizen
+
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
