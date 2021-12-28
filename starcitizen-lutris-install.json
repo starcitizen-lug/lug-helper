@@ -1,0 +1,90 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 10872,
+      "game_id": 17622,
+      "game_slug": "star-citizen",
+      "name": "Star Citizen",
+      "year": 2016,
+      "user": "ungarscool1",
+      "runner": "wine",
+      "slug": "starcitizen-lutris-install",
+      "version": "LIVE/PTU",
+      "description": "Welcome to the Star Citizen installer maintained by the Star Citizen LUG!\r\nBefore continuing, please see our Quick Start Guide:\r\nhttps://github.com/starcitizen-lug/information-howtos/wiki\r\n\r\nFor help with the installer or to just hang out, we invite Linux Star Citizen players to join us: https://robertsspaceindustries.com/orgs/LUG/",
+      "notes": "Performance may be choppy the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nIf you receive a Runtime Error you can continue using Star Citizen by dragging the dialog box to the side, but in-game VoIP and FoIP will cease to function until Star Citizen is restarted. Drop in to the LUG group's chat and forums, we have custom runners to work around this problem.\r\n\r\nPlease make sure you have all Wine dependencies properly installed, or your game may crash during start-up. See our wiki linked above for more information and instructions.\r\n\r\nTo prevent crashes in areas with lots of geometry, the game needs a Linux resource limit named \"vm.max_map_count\" increased. If you are following our Quick Start Guide and using our LUG Helper, the Preflight Check will do this for you. To set it manually, execute:\r\n\r\nsudo sysctl -w vm.max_map_count=16777216\r\n\r\nConsult your distro's documentation on how to set this permanently, or ask a LUG member.\r\n\r\nSee you in the 'verse!",
+      "created_at": "2018-11-15T17:43:07.367000Z",
+      "updated_at": "2021-12-24T00:49:16.775712Z",
+      "draft": false,
+      "published": true,
+      "published_by": 64834,
+      "rating": "",
+      "steamid": null,
+      "gogid": null,
+      "gogslug": "",
+      "humbleid": "",
+      "humblestoreid": "",
+      "humblestoreid_real": "",
+      "script": {
+        "files": [
+          {
+            "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.5.4.exe"
+          }
+        ],
+        "game": {
+          "arch": "win64",
+          "args": null,
+          "exe": "drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe",
+          "prefix": "$GAMEDIR"
+        },
+        "installer": [
+          {
+            "task": {
+              "arch": "win64",
+              "description": "Creating Wine prefix",
+              "name": "create_prefix",
+              "prefix": "$GAMEDIR"
+            }
+          },
+          {
+            "task": {
+              "app": "--force arial vcrun2019 win10",
+              "arch": "win64",
+              "description": "Installing dlls",
+              "name": "winetricks",
+              "prefix": "$GAMEDIR"
+            }
+          },
+          {
+            "task": {
+              "arch": "win64",
+              "args": "/S",
+              "description": "Installing client",
+              "executable": "client",
+              "name": "wineexec",
+              "prefix": "$GAMEDIR"
+            }
+          }
+        ],
+        "system": {
+          "env": {
+            "DXVK_HUD": "0",
+            "__GL_SHADER_DISK_CACHE": 1,
+            "__GL_SHADER_DISK_CACHE_SIZE": "1073741824",
+            "__GL_THREADED_OPTIMIZATIONS": "1"
+          }
+        },
+        "wine": {
+          "dxvk": true,
+          "esync": true,
+          "overrides": {
+            "nvapi,nvapi64": "disabled"
+          },
+        }
+      },
+      "content": "files:\n- client: https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.5.4.exe\ngame:\n  arch: win64\n  args: null\n  exe: drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe\n  prefix: $GAMEDIR\ninstaller:\n- task:\n    arch: win64\n    description: Creating Wine prefix\n    name: create_prefix\n    prefix: $GAMEDIR\n- task:\n    app: --force arial vcrun2019 win10\n    arch: win64\n    description: Installing dlls\n    name: winetricks\n    prefix: $GAMEDIR\n- task:\n    arch: win64\n    args: /S\n    description: Installing client\n    executable: client\n    name: wineexec\n    prefix: $GAMEDIR\nsystem:\n  env:\n    DXVK_HUD: '0'\n    __GL_SHADER_DISK_CACHE: 1\n    __GL_SHADER_DISK_CACHE_SIZE: '1073741824'\n    __GL_THREADED_OPTIMIZATIONS: '1'\nwine:\n  dxvk: true\n  esync: true\n  overrides:\n    nvapi,nvapi64: disabled\n"
+    }
+  ]
+}
