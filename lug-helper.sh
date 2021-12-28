@@ -15,6 +15,8 @@
 # - Check your system for optimal settings and
 #   change them as needed to prevent crashes.
 #
+# - Install Star Citizen using a bundled Lutris install script
+#
 # - Easily install and remove Lutris wine Runners and DXVK versions.
 #
 # - Qickly wipe your Star Citizen USER folder as is recommended
@@ -63,10 +65,10 @@ if [ ! -x "$(command -v curl)" ]; then
     notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v sort)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ]; then
     # Print to stderr and also try warning the user through notify-send
-    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n- sort (part of gnu coreutils)\n" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following packages are installed:\n- mktemp (part of gnu coreutils)\n- basename (part of gnu coreutils)\n- sort (part of gnu coreutils)\n" --icon=dialog-warning
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" --icon=dialog-warning
     exit 1
 fi
 
@@ -79,6 +81,9 @@ data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
 
 # .config subdirectory
 conf_subdir="starcitizen-lug"
+
+# Helper directory
+helper_dir="$(realpath "$0" | xargs dirname)"
 
 # Temporary directory
 tmp_dir="$(mktemp -d --suffix=".lughelper")"
@@ -140,16 +145,19 @@ menu_option_height="25"
 # Otherwise, default to the logo in the same directory
 if [ -f "/usr/share/pixmaps/lug-logo.png" ]; then
     lug_logo="/usr/share/pixmaps/lug-logo.png"
-elif [ -f "lug-logo.png" ]; then
-    lug_logo="lug-logo.png"
+elif [ -f "$helper_dir/lug-logo.png" ]; then
+    lug_logo="$helper_dir/lug-logo.png"
 else
     lug_logo="info"
 fi
 
+# Lutris install script
+install_script="$helper_dir/starcitizen-lutris-install.json"
+
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v1.13"
+current_version="v1.14"
 
 ############################################################################
 ############################################################################
@@ -747,6 +755,23 @@ avx_check() {
 }
 
 #------------------------- end preflight check functions ---------------------#
+
+# Install Star Citizen using Lutris
+install_game() {
+    # Check if Lutris is installed
+    if [ ! -x "$(command -v lutris)" ]; then
+        message warning "Lutris is required but does not appear to be installed."
+        return 0
+    fi
+    # Check if the install script exists
+    if [ ! -f "$install_script" ]; then
+        message warning "Lutris install script not found.\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
+        return 0
+    fi
+
+    lutris --install "$install_script" &
+    message info "The installation will continue in Lutris"
+}
 
 # Delete the shaders directory
 rm_shaders() {
@@ -1613,6 +1638,7 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
+    install_msg="Install Star Citizen"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -1620,9 +1646,9 @@ while true; do
     quit_msg="Quit"
     
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
