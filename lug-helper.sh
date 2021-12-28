@@ -152,7 +152,7 @@ else
 fi
 
 # Lutris install script
-install_script="$helper_dir/starcitizen-lutris-install.json"
+install_script="$helper_dir/lug-lutris-install.json"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
