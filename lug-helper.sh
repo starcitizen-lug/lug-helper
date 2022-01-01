@@ -159,6 +159,9 @@ repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
 current_version="v1.14"
 
+# LUG Wiki
+lug_wiki="https://github.com/starcitizen-lug/information-howtos/wiki"
+
 ############################################################################
 ############################################################################
 
@@ -735,6 +738,15 @@ filelimit_check() {
 
 #------------------------- end filelimit functions ---------------------------#
 
+# Check if WINE is installed
+wine_check() {
+    if [ -x "$(command -v wine)" ]; then
+        preflight_pass+=("Wine is installed on your system.")  
+    else
+        preflight_fail+=("Wine does not appear to be installed.\nAt a minimum, wine dependencies must be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
+    fi
+}
+
 # Check total system memory
 memory_check() {
     memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
@@ -769,7 +781,7 @@ install_game() {
         return 0
     fi
 
-    if message question "Before proceeding, please refer to our Quick Start Guide:\n\nhttps://github.com/starcitizen-lug/information-howtos/wiki\n\nAre you ready to continue?"; then
+    if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
         lutris --install "$install_script" &
         message info "The installation will continue in Lutris"
     fi
@@ -1326,6 +1338,7 @@ preflight_check() {
     unset preflight_followup
     
     # Call the optimization functions to perform the checks
+    wine_check
     memory_check
     avx_check
     mapcount_check
