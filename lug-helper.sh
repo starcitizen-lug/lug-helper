@@ -1436,7 +1436,7 @@ eac_workaround() {
 
     # Check if EAC is installed
     if [ ! -d "$eac_dir" ]; then
-        message info "Easy Anti-Cheat does not appear to be installed.\nThere is nothing to do!"
+        message info "Easy Anti-Cheat does not appear to be installed yet.\nThere is nothing to do!"
         return 1
     fi
 
