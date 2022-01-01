@@ -611,17 +611,6 @@ sanitize() {
     fi
 }
 
-# Restart lutris
-lutris_restart() {
-    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
-        if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-            debug_print continue "Restarting Lutris..."
-            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-        fi
-    fi
-    lutris_needs_restart="false"
-}
-
 #--------------------- begin preflight check functions -----------------------#
 #------------------------- begin mapcount functions --------------------------#
 
@@ -890,11 +879,25 @@ preflight_check() {
 
 #------------------------- begin download functions ----------------------------#
 
-# Display post download message or instructions if needed
+# Restart lutris if necessary
+lutris_restart() {
+    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
+        if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
+            debug_print continue "Restarting Lutris..."
+            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+        fi
+    fi
+    lutris_needs_restart="false"
+}
+
+# Perform post-download actions, display messages or instructions
 # Expects the variables message_heading, post_download_msg_text,
 # post_download_msg_italics, and downloaded_item_name
 post_download() {
-    if [ "$trigger_post_download" = "true" ]; then
+    # Check if lutris needs to be restarted after making changes
+    lutris_restart
+    
+    if [ "$display_post_download_msg" = "true" ]; then
         message_heading="Download Complete"
         
         if [ "$use_zenity" -eq 1 ]; then
@@ -903,7 +906,7 @@ post_download() {
         fi
         message info "$message_heading\n\n$post_download_msg_text\n$post_download_msg_italics\n\n$downloaded_item_name"
     fi
-    trigger_post_download="false"
+    display_post_download_msg="false"
 }
 
 # Uninstall the selected item
@@ -1085,7 +1088,7 @@ download_install() {
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
         # Trigger the post_download() function
-        trigger_post_download="true"
+        display_post_download_msg="true"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
@@ -1103,7 +1106,7 @@ download_install() {
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
         # Trigger the post_download() function
-        trigger_post_download="true"
+        display_post_download_msg="true"
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
@@ -1113,9 +1116,6 @@ download_install() {
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_file..."
     rm "$tmp_dir/$download_file"
-
-    # Display any post-download messages or instructions
-    post_download
 }
 
 # List available items for download
@@ -1297,17 +1297,16 @@ download_manage() {
        
         # Call the menu function.  It will use the options as configured above
         menu
+        # Perform post-download actions and display messages or instructions
+        post_download
     done
-    
-    # Check if lutris needs to be restarted after making changes
-    lutris_restart
 }
 
 # Configure the download_manage function for runners
 runner_manage() {
     # Set some defaults
     lutris_needs_restart="false"
-    trigger_post_download="false"
+    display_post_download_msg="false"
 
     # Use indirect expansion to point download_sources
     # to the runner_sources array set at the top of the script
@@ -1338,7 +1337,7 @@ runner_manage() {
 dxvk_manage() {
     # Set some defaults
     lutris_needs_restart="false"
-    trigger_post_download="false"
+    display_post_download_msg="false"
 
     # Use indirect expansion to point download_sources
     # to the dxvk_sources array set at the top of the script
