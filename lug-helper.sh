@@ -1592,6 +1592,7 @@ if [ "$#" -gt 0 ]; then
                 printf "Star Citizen Linux Users Group Helper Script
 Usage: lug-helper <options>
   -p, --preflight-check     Run system optimization checks
+  -i, --install             Install Star Citizen
   -m, --manage-runners      Install or remove Lutris runners
   -k, --manage-dxvk         Install or remove DXVK versions
   -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
@@ -1607,6 +1608,9 @@ Usage: lug-helper <options>
                 ;;
             --preflight-check | -p )
                 cargs+=("preflight_check")
+                ;;
+            --install | -i )
+                cargs+=("install_game")
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
