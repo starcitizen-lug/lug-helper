@@ -611,6 +611,17 @@ sanitize() {
     fi
 }
 
+# Restart lutris
+lutris_restart() {
+    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
+        if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
+            debug_print continue "Restarting Lutris..."
+            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+        fi
+    fi
+    lutris_needs_restart="false"
+}
+
 #--------------------- begin preflight check functions -----------------------#
 #------------------------- begin mapcount functions --------------------------#
 
@@ -766,84 +777,116 @@ avx_check() {
     fi
 }
 
-#------------------------- end preflight check functions ---------------------#
+# Check that the system is optimized for Star Citizen
+preflight_check() {
+    # Initialize variables
+    unset preflight_pass
+    unset preflight_fail
+    unset preflight_action_funcs
+    unset preflight_actions
+    unset preflight_results
+    unset preflight_manual
+    unset preflight_followup
+    
+    # Call the optimization functions to perform the checks
+    wine_check
+    memory_check
+    avx_check
+    mapcount_check
+    filelimit_check
 
-# Install Star Citizen using Lutris
-install_game() {
-    # Check if Lutris is installed
-    if [ ! -x "$(command -v lutris)" ]; then
-        message warning "Lutris is required but does not appear to be installed."
-        return 0
-    fi
-    # Check if the install script exists
-    if [ ! -f "$install_script" ]; then
-        message warning "Lutris install script not found.\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
-        return 0
-    fi
-
-    if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
-        lutris --install "$install_script" &
-        message info "The installation will continue in Lutris"
-    fi
-}
-
-# Delete the shaders directory
-rm_shaders() {
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu, or error
-        return 0
-    fi
-
-    # Sanity check
-    if [ ! -d "$shaders_dir" ]; then
-        message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
-        return 0
-    fi
-
-    # Delete the shader directory
-    if message question "The following directory will be deleted:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $shaders_dir..."
-        rm -r "$shaders_dir"
-        message info "Your shaders have been deleted!"
-    fi
-}
-
-# Delete DXVK cache
-rm_dxvkcache() {
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu
-        # or there was an error
-        return 0
-    fi
-
-    # Sanity check
-    if [ ! -f "$dxvk_cache" ]; then
-        message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
-        return 0
-    fi
-
-    # Delete the cache file
-    if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $dxvk_cache..."
-        rm "$dxvk_cache"
-        message info "Your DXVK cache has been deleted!"
-    fi
-}
-
-# Restart lutris
-lutris_restart() {
-    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
-        if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-            debug_print continue "Restarting Lutris..."
-            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+    # Populate info strings with the results and add formatting
+    if [ "${#preflight_pass[@]}" -gt 0 ]; then
+        preflight_pass_string="Passed Checks:"
+        for (( i=0; i<"${#preflight_pass[@]}"; i++ )); do
+            preflight_pass_string="$preflight_pass_string\n- ${preflight_pass[i]//\\n/\\n    }"
+        done
+        # Add extra newlines if there are also failures to report
+        if [ "${#preflight_fail[@]}" -gt 0 ]; then
+            preflight_pass_string="$preflight_pass_string\n\n"
         fi
     fi
-    lutris_needs_restart="false"
+    if [ "${#preflight_fail[@]}" -gt 0 ]; then
+        preflight_fail_string="Failed Checks:"
+        for (( i=0; i<"${#preflight_fail[@]}"; i++ )); do
+            if [ "$i" -eq 0 ]; then
+                preflight_fail_string="$preflight_fail_string\n- ${preflight_fail[i]//\\n/\\n    }"
+            else
+                preflight_fail_string="$preflight_fail_string\n\n- ${preflight_fail[i]//\\n/\\n    }"
+            fi
+        done
+    fi
+    for (( i=0; i<"${#preflight_manual[@]}"; i++ )); do
+        if [ "$i" -eq 0 ]; then
+            preflight_manual_string="${preflight_manual[i]}"
+        else
+            preflight_manual_string="$preflight_manual_string\n\n${preflight_manual[i]}"
+        fi
+    done
+
+    # Display the results of the preflight check
+    if [ -z "$preflight_fail_string" ]; then
+        # Formatting
+        message_heading="Preflight Check Complete"
+        if [ "$use_zenity" -eq 1 ]; then
+            message_heading="<b>$message_heading</b>"
+        fi
+        
+        message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
+    else
+        if [ -z "$preflight_action_funcs" ]; then
+            message warning "$preflight_pass_string$preflight_fail_string"
+        elif message question "$preflight_pass_string$preflight_fail_string\n\nWould you like configuration issues to be fixed for you?"; then
+            # Call functions to build fixes for any issues found
+            for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
+                ${preflight_action_funcs[i]}
+            done
+            # Populate a string of actions to be executed
+            for (( i=0; i<"${#preflight_actions[@]}"; i++ )); do
+                if [ "$i" -eq 0 ]; then
+                    preflight_actions_string="${preflight_actions[i]}"
+                else
+                    preflight_actions_string="$preflight_actions_string; ${preflight_actions[i]}"
+                fi
+            done
+
+            # Execute the actions set by the functions
+            if [ ! -z "$preflight_actions_string" ]; then
+                # Use pollkit's pkexec for gui with a fallback to sudo
+                if [ -x "$(command -v pkexec)" ]; then
+                    pkexec sh -c "$preflight_actions_string"
+                else
+                    sudo sh -c "$preflight_actions_string"
+                fi
+            fi
+
+            # Call any followup functions
+            for (( i=0; i<"${#preflight_followup[@]}"; i++ )); do
+                ${preflight_followup[i]}
+            done
+
+            # Populate the results string
+            for (( i=0; i<"${#preflight_results[@]}"; i++ )); do
+                if [ "$i" -eq 0 ]; then
+                    preflight_results_string="${preflight_results[i]}"
+                else
+                    preflight_results_string="$preflight_results_string\n\n${preflight_results[i]}"
+                fi
+            done
+
+            # Display the results
+            message info "$preflight_results_string"
+        else
+            # User declined to automatically fix configuration issues
+            # Show manual configuration options
+            if [ ! -z "$preflight_manual_string" ]; then
+                message info "$preflight_manual_string"
+            fi
+        fi
+    fi
 }
+
+#------------------------- end preflight check functions ---------------------#
 
 #------------------------- begin download functions ----------------------------#
 
@@ -1260,8 +1303,6 @@ download_manage() {
     lutris_restart
 }
 
-#-------------------------- end download functions -----------------------------#
-
 # Configure the download_manage function for runners
 runner_manage() {
     # Set some defaults
@@ -1324,116 +1365,7 @@ dxvk_manage() {
     download_manage "dxvk"
 }
 
-#-------------------------- end dxvk functions -----------------------------#
-
-# Check that the system is optimized for Star Citizen
-preflight_check() {
-    # Initialize variables
-    unset preflight_pass
-    unset preflight_fail
-    unset preflight_action_funcs
-    unset preflight_actions
-    unset preflight_results
-    unset preflight_manual
-    unset preflight_followup
-    
-    # Call the optimization functions to perform the checks
-    wine_check
-    memory_check
-    avx_check
-    mapcount_check
-    filelimit_check
-
-    # Populate info strings with the results and add formatting
-    if [ "${#preflight_pass[@]}" -gt 0 ]; then
-        preflight_pass_string="Passed Checks:"
-        for (( i=0; i<"${#preflight_pass[@]}"; i++ )); do
-            preflight_pass_string="$preflight_pass_string\n- ${preflight_pass[i]//\\n/\\n    }"
-        done
-        # Add extra newlines if there are also failures to report
-        if [ "${#preflight_fail[@]}" -gt 0 ]; then
-            preflight_pass_string="$preflight_pass_string\n\n"
-        fi
-    fi
-    if [ "${#preflight_fail[@]}" -gt 0 ]; then
-        preflight_fail_string="Failed Checks:"
-        for (( i=0; i<"${#preflight_fail[@]}"; i++ )); do
-            if [ "$i" -eq 0 ]; then
-                preflight_fail_string="$preflight_fail_string\n- ${preflight_fail[i]//\\n/\\n    }"
-            else
-                preflight_fail_string="$preflight_fail_string\n\n- ${preflight_fail[i]//\\n/\\n    }"
-            fi
-        done
-    fi
-    for (( i=0; i<"${#preflight_manual[@]}"; i++ )); do
-        if [ "$i" -eq 0 ]; then
-            preflight_manual_string="${preflight_manual[i]}"
-        else
-            preflight_manual_string="$preflight_manual_string\n\n${preflight_manual[i]}"
-        fi
-    done
-
-    # Display the results of the preflight check
-    if [ -z "$preflight_fail_string" ]; then
-        # Formatting
-        message_heading="Preflight Check Complete"
-        if [ "$use_zenity" -eq 1 ]; then
-            message_heading="<b>$message_heading</b>"
-        fi
-        
-        message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
-    else
-        if [ -z "$preflight_action_funcs" ]; then
-            message warning "$preflight_pass_string$preflight_fail_string"
-        elif message question "$preflight_pass_string$preflight_fail_string\n\nWould you like configuration issues to be fixed for you?"; then
-            # Call functions to build fixes for any issues found
-            for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
-                ${preflight_action_funcs[i]}
-            done
-            # Populate a string of actions to be executed
-            for (( i=0; i<"${#preflight_actions[@]}"; i++ )); do
-                if [ "$i" -eq 0 ]; then
-                    preflight_actions_string="${preflight_actions[i]}"
-                else
-                    preflight_actions_string="$preflight_actions_string; ${preflight_actions[i]}"
-                fi
-            done
-
-            # Execute the actions set by the functions
-            if [ ! -z "$preflight_actions_string" ]; then
-                # Use pollkit's pkexec for gui with a fallback to sudo
-                if [ -x "$(command -v pkexec)" ]; then
-                    pkexec sh -c "$preflight_actions_string"
-                else
-                    sudo sh -c "$preflight_actions_string"
-                fi
-            fi
-
-            # Call any followup functions
-            for (( i=0; i<"${#preflight_followup[@]}"; i++ )); do
-                ${preflight_followup[i]}
-            done
-
-            # Populate the results string
-            for (( i=0; i<"${#preflight_results[@]}"; i++ )); do
-                if [ "$i" -eq 0 ]; then
-                    preflight_results_string="${preflight_results[i]}"
-                else
-                    preflight_results_string="$preflight_results_string\n\n${preflight_results[i]}"
-                fi
-            done
-
-            # Display the results
-            message info "$preflight_results_string"
-        else
-            # User declined to automatically fix configuration issues
-            # Show manual configuration options
-            if [ ! -z "$preflight_manual_string" ]; then
-                message info "$preflight_manual_string"
-            fi
-        fi
-    fi
-}
+#-------------------------- end download functions -----------------------------#
 
 # Deploy Easy Anti-Cheat Workaround
 eac_workaround() {
@@ -1479,6 +1411,72 @@ eac_workaround() {
         rm -r "$eac_dir"
 
         message info "Easy Anti-Cheat workaround has been deployed!"
+    fi
+}
+
+# Install Star Citizen using Lutris
+install_game() {
+    # Check if Lutris is installed
+    if [ ! -x "$(command -v lutris)" ]; then
+        message warning "Lutris is required but does not appear to be installed."
+        return 0
+    fi
+    # Check if the install script exists
+    if [ ! -f "$install_script" ]; then
+        message warning "Lutris install script not found.\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
+        return 0
+    fi
+
+    if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
+        lutris --install "$install_script" &
+        message info "The installation will continue in Lutris"
+    fi
+}
+
+# Delete the shaders directory
+rm_shaders() {
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu, or error
+        return 0
+    fi
+
+    # Sanity check
+    if [ ! -d "$shaders_dir" ]; then
+        message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
+        return 0
+    fi
+
+    # Delete the shader directory
+    if message question "The following directory will be deleted:\n\n$shaders_dir\n\nDo you want to proceed?"; then
+        debug_print continue "Deleting $shaders_dir..."
+        rm -r "$shaders_dir"
+        message info "Your shaders have been deleted!"
+    fi
+}
+
+# Delete DXVK cache
+rm_dxvkcache() {
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu
+        # or there was an error
+        return 0
+    fi
+
+    # Sanity check
+    if [ ! -f "$dxvk_cache" ]; then
+        message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
+        return 0
+    fi
+
+    # Delete the cache file
+    if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
+        debug_print continue "Deleting $dxvk_cache..."
+        rm "$dxvk_cache"
+        message info "Your DXVK cache has been deleted!"
     fi
 }
 
