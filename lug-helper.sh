@@ -421,7 +421,7 @@ getdirs() {
     # If we don't have the directory paths we need yet,
     # ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ]; then
-        message info "Star Citizen must be installed before proceeding.\n\nAt the next screen, please select your Star Citizen WINE prefix.\nIt will be remembered for future use."
+        message info "Star Citizen must be installed before proceeding.\n\nAt the next screen, please select your Star Citizen install directory (WINE prefix)\nIt will be remembered for future use.\n\nLutris default install path: ~/Games/star-citizen"
         if [ "$use_zenity" -eq 1 ]; then
             # Using Zenity file selection menus
             # Get the wine prefix directory
@@ -769,8 +769,10 @@ install_game() {
         return 0
     fi
 
-    lutris --install "$install_script" &
-    message info "The installation will continue in Lutris"
+    if message question "Before proceeding, please refer to our Quick Start Guide:\n\nhttps://github.com/starcitizen-lug/information-howtos/wiki\n\nAre you ready to continue?"; then
+        lutris --install "$install_script" &
+        message info "The installation will continue in Lutris"
+    fi
 }
 
 # Delete the shaders directory
@@ -844,7 +846,7 @@ post_download() {
             message_heading="<b>$message_heading</b>"
             post_download_msg_italics="<i>$post_download_msg_italics</i>"
         fi
-        message info "$message_heading\n\n$post_download_msg_text\n\n$post_download_msg_italics\n$downloaded_item_name"
+        message info "$message_heading\n\n$post_download_msg_text\n$post_download_msg_italics\n\n$downloaded_item_name"
     fi
     trigger_post_download="false"
 }
@@ -1270,7 +1272,7 @@ runner_manage() {
     # msg_text is displayed below the header
     # msg_italics is displayed below that in italics when zenity is in use
     # Lastly, the downloaded directory name is automatically displayed
-    post_download_msg_text="Select the runner in Lutris from the dropdown menu"
+    post_download_msg_text="Select the following runner in Lutris from the dropdown menu under:"
     post_download_msg_italics="Configure->Runner Options->Wine version"
 
     # Call the download_manage function with the above configuration
@@ -1301,7 +1303,7 @@ dxvk_manage() {
     # msg_text is displayed below the header
     # msg_italics is displayed below that in italics when zenity is in use
     # Lastly, the downloaded directory name is automatically displayed
-    post_download_msg_text="Type the DXVK folder name in your Lutris settings"
+    post_download_msg_text="Type the following DXVK name into your Lutris settings under:"
     post_download_msg_italics="Configure->Runner Options->DXVK version"
 
     # Call the download_manage function with the above configuration
