@@ -151,7 +151,8 @@ else
     lug_logo="info"
 fi
 
-# Lutris install script
+# Use Lutris install script installed by a packaged version of this script if available
+# Otherwise, default to the json in the same directory
 if [ -f "/usr/share/lug-helper/lug-lutris-install.json" ]; then
     install_script="/usr/share/lug-helper/lug-lutris-install.json"
 else
