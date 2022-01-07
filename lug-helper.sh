@@ -72,6 +72,8 @@ if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$
     exit 1
 fi
 
+######## Config ############################################################
+
 wine_conf="winedir.conf"
 game_conf="gamedir.conf"
 
@@ -139,7 +141,7 @@ max_download_items=20
 # used to dynamically determine the height of menus
 menu_option_height="25"
 
-############################################################################
+######## Bundled Files #####################################################
 
 # Use logo installed by a packaged version of this script if available
 # Otherwise, default to the logo in the same directory
@@ -158,6 +160,8 @@ if [ -f "/usr/share/lug-helper/lug-lutris-install.json" ]; then
 else
     install_script="$helper_dir/lug-lutris-install.json"
 fi
+
+######## Links #############################################################
 
 # LUG Wiki
 lug_wiki="https://github.com/starcitizen-lug/information-howtos/wiki"
