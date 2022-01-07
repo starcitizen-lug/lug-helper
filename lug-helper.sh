@@ -1146,13 +1146,15 @@ download_select_install() {
             debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
             ;;
     esac
-    
+
     # For runners, check GlibC version against runner requirements
-    if [ "download_type" = "runner" ] && [ "$contributor_name" = "/dev/null" ]; then
+    if [ "$download_type" = "runner" ] && [ "$contributor_name" = "/dev/null" ]; then
         required_glibc="2.33"
         system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
 
-        if [ "$(bc <<< "$required_glibc > $system_glibc")" = "1" ]; then
+        # Sort the versions and check if the installed glibc is smaller
+        if [ "$required_glibc" != "$system_glibc" ] &&
+           [ "$system_glibc" = "$(printf "$system_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
             message warning "Your glibc version is incompatible with the selected runner.\n\nSystem glibc: v$system_glibc\nMinimum required glibc: v$required_glibc"
             return 1
         fi
