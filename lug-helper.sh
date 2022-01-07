@@ -1602,6 +1602,7 @@ live_or_ptu="$live_dir"
 # Check if a newer verison of the script is available
 latest_version="$(get_latest_release "$repo")"
 
+# Sort the versions and check if the installed Helper is smaller
 if [ "$latest_version" != "$current_version" ] &&
    [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
     if [ "$use_zenity" -eq 1 ]; then
