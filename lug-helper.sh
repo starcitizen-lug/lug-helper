@@ -1437,6 +1437,17 @@ install_game() {
     fi
 }
 
+# Display the LUG Wiki
+display_wiki() {
+    if [ -x "$(command -v xdg-open)" ]; then
+        # Open the link in the default browser if xdg-open is available
+        xdg-open "$lug_wiki" >/dev/null 2>&1
+    fi
+    
+    # Display a message containing the URL
+    message info "See the Wiki for our Quick-Start Guide, Manual Installation instructions,\nPerformance Tuning, and Common Issues and Solutions:\n\n$lug_wiki"
+}
+
 # Delete the shaders directory
 rm_shaders() {
     # Get/Set directory paths
@@ -1500,13 +1511,14 @@ maintenance_menu() {
         shaders_msg="Delete my shaders folder only (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
+        wiki_msg="Show the LUG Wiki"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
         
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$wiki_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "display_dirs" "display_wiki" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
