@@ -80,11 +80,12 @@
           "dxvk": true,
           "esync": true,
           "overrides": {
-            "nvapi,nvapi64": "disabled"
-          },
+            "nvapi,nvapi64": "disabled",
+            "libglesv2": "disabled"
+          }
         }
       },
-      "content": "files:\n- client: https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.5.4.exe\ngame:\n  arch: win64\n  args: null\n  exe: drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe\n  prefix: $GAMEDIR\ninstaller:\n- task:\n    arch: win64\n    description: Creating Wine prefix\n    name: create_prefix\n    prefix: $GAMEDIR\n- task:\n    app: --force arial vcrun2019 win10\n    arch: win64\n    description: Installing dlls\n    name: winetricks\n    prefix: $GAMEDIR\n- task:\n    arch: win64\n    args: /S\n    description: Installing client\n    executable: client\n    name: wineexec\n    prefix: $GAMEDIR\nsystem:\n  env:\n    DXVK_HUD: '0'\n    __GL_SHADER_DISK_CACHE: 1\n    __GL_SHADER_DISK_CACHE_SIZE: '1073741824'\n    __GL_THREADED_OPTIMIZATIONS: '1'\nwine:\n  dxvk: true\n  esync: true\n  overrides:\n    nvapi,nvapi64: disabled\n"
+      "content": "files:\n- client: https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.5.4.exe\ngame:\n  arch: win64\n  args: null\n  exe: drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe\n  prefix: $GAMEDIR\ninstaller:\n- task:\n    arch: win64\n    description: Creating Wine prefix\n    name: create_prefix\n    prefix: $GAMEDIR\n- task:\n    app: --force arial vcrun2019 win10\n    arch: win64\n    description: Installing dlls\n    name: winetricks\n    prefix: $GAMEDIR\n- task:\n    arch: win64\n    args: /S\n    description: Installing client\n    executable: client\n    name: wineexec\n    prefix: $GAMEDIR\nsystem:\n  env:\n    DXVK_HUD: '0'\n    __GL_SHADER_DISK_CACHE: 1\n    __GL_SHADER_DISK_CACHE_SIZE: '1073741824'\n    __GL_THREADED_OPTIMIZATIONS: '1'\nwine:\n  dxvk: true\n  esync: true\n  overrides:\n    nvapi,nvapi64: disabled\n    libglesv2: disabled\n"
     }
   ]
 }
