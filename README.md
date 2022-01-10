@@ -71,4 +71,5 @@ Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 - https://github.com/gort818
 - https://github.com/victort
 - https://github.com/Wrzlprnft
+- https://github.com/ananace
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
