@@ -62,7 +62,6 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 From Source:
 1. Download it!
 2. Run it!
-3. If you want, move *lug-logo.png* to */usr/share/pixmaps/*
 
 Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 
