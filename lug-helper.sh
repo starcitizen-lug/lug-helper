@@ -1356,7 +1356,7 @@ dxvk_manage() {
     download_dir="$dxvk_dir"
 
     # Configure the text displayed in the menus
-    download_menu_heading="DXVK Versions"
+    download_menu_heading="Lutris DXVK Versions"
     download_menu_description="The DXVK versions below may help improve game performance"
     download_menu_height="140"
 
@@ -1724,7 +1724,7 @@ while true; do
     install_msg="Install Star Citizen"
     eac_msg="Deploy Easy Anti-Cheat Workaround"
     runners_msg="Manage Lutris Runners"
-    dxvk_msg="Manage DXVK Versions"
+    dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
