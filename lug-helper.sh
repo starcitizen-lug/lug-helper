@@ -701,8 +701,8 @@ filelimit_set() {
     if [ -f "/etc/systemd/system.conf" ]; then
         # Using systemd
         # Append to the file
-        preflight_actions+=('printf "\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" >> /etc/systemd/system.conf && systemctl daemon-reexec')
-        preflight_results+=("The open files limit configuration has been appended to:\n/etc/systemd/system.conf")
+        preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/starcitizen-filelimit.conf && systemctl daemon-reexec')
+        preflight_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/starcitizen-filelimit.conf")
     elif [ -f "/etc/security/limits.conf" ]; then
         # Using limits.conf
         # Insert before the last line in the file
@@ -734,7 +734,7 @@ filelimit_check() {
         # Add info for manually changing the settings
         if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
-            preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/systemd/system.conf':\n    DefaultLimitNOFILE=524288")
+            preflight_manual+=("To change your open file descriptors limit, add the following to\n'/etc/systemd/system.conf.d/filelimit.conf':\n\n[Manager]\nDefaultLimitNOFILE=524288")
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
             preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/security/limits.conf':\n    * hard nofile 524288")
