@@ -691,9 +691,34 @@ mapcount_check() {
 
 # Check if setting the open file descriptors limit was successful
 filelimit_confirm() {
-    if [ "$(ulimit -Hn)" -lt 524288 ]; then
+    if [ "$(filelimit_check_value)" -lt 524288 ]; then
         preflight_results+=("WARNING: As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.")
     fi
+}
+
+filelimit_check_value() {
+    # Array of processes/checks for the equivalent of `ulimit -Hn`,
+    # but more robust, and in prioritized order.
+    declare -a checks=("0" # This allows the below multi-line declaration of array
+        # Check Lutris first, it's what counts, right?
+        "$(awk '/Max open files/{ print $5 }' /proc/"$(pgrep lutris)"/limits)"
+
+        # Check parent process of this script afterwards, in case above check doesn't work
+        "$(awk '/Max open files/{ print $5 }' /proc/"$PPID"/limits)"
+    )
+
+    # Guard/return variable
+    local return_value=0
+    for check in "${checks[@]}"; do
+        if [ "$check" -gt "$return_value" ]; then
+            return_value="$check"
+            # Exit for-loop on first hit, so make sure of array ordering
+            break
+        fi
+    done
+
+    # Return result to invoker of this function
+    echo "$return_value"
 }
 
 # Set the open file descriptors limit
@@ -719,7 +744,7 @@ filelimit_set() {
 
 # Check the open file descriptors limit
 filelimit_check() {
-    filelimit="$(ulimit -Hn)"
+    filelimit="$(filelimit_check_value)"
 
     # Add to the results and actions arrays
     if [ "$filelimit" -ge 524288 ]; then
