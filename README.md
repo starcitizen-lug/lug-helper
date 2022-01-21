@@ -26,7 +26,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
-`Manage DXVK Versions`
+`Manage Lutris DXVK Versions`
 - Quickly install and delete DXVK versions for Lutris
 
 `Maintenance and Troubleshooting`
