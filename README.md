@@ -23,6 +23,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Install Star Citizen`
 - Launches Lutris and uses the bundled json to install Star Citizen
 
+`Deploy Easy Anti-Cheat Workaround`
+- Applies the workaround to /etc/hosts and deletes the necessary EAC files
+
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
