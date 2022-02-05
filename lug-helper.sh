@@ -1391,9 +1391,9 @@ eac_workaround() {
     eac_dir="$wine_prefix/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat"
     eac_hosts="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
 
-    # Check if EAC is installed
-    if [ ! -d "$eac_dir" ]; then
-        message info "Easy Anti-Cheat does not appear to be installed yet.\nThere is nothing to do!"
+    # Check if EAC workaround is already applied
+    if grep "$eac_hosts" /etc/hosts; then
+        message info "The Easy Anti-Cheat workaround has already been applied.\nYou're all set!"
         return 1
     fi
 
@@ -1417,8 +1417,11 @@ eac_workaround() {
             sudo sh -c "echo $eac_hosts '#Star Citizen EAC workaround' >> /etc/hosts"
         fi
 
-        debug_print continue "Deleting $eac_dir..."
-        rm -r "$eac_dir"
+        # Delete the EAC directory if it exists
+        if [ -d "$eac_dir" ]; then
+            debug_print continue "Deleting $eac_dir..."
+            rm -r "$eac_dir"
+        fi
 
         message info "Easy Anti-Cheat workaround has been deployed!"
     fi
