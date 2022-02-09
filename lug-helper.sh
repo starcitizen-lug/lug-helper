@@ -85,7 +85,7 @@ data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
 conf_subdir="starcitizen-lug"
 
 # Helper directory
-helper_dir="$(realpath "$0" | xargs dirname)"
+helper_dir="$(realpath "$0" | xargs -0 dirname)"
 
 # Temporary directory
 tmp_dir="$(mktemp -d --suffix=".lughelper")"
