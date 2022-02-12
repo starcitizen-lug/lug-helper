@@ -64,7 +64,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 From Source:
 1. Download it!
-2. Run it!
+2. Extract it!
+3. Run it!
 
 Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 
