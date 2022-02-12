@@ -63,7 +63,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 ## Installation:
 
 From Source:
-1. Download it!
+1. Download it! https://github.com/starcitizen-lug/lug-helper/releases
 2. Extract it!
 3. Run it!
 
