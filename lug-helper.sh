@@ -902,6 +902,7 @@ lutris_restart() {
 # Perform post-download actions, display messages or instructions
 # Expects the variables message_heading, post_download_msg_text,
 # post_download_msg_italics, and downloaded_item_name
+# Optional: post_download_msg_more_info and post_download_msg_link
 post_download() {
     # Check if lutris needs to be restarted after making changes
     lutris_restart
@@ -909,12 +910,30 @@ post_download() {
     if [ "$display_post_download_msg" = "true" ]; then
         message_heading="Download Complete"
         
+        # Format some variables for zenity
         if [ "$use_zenity" -eq 1 ]; then
             message_heading="<b>$message_heading</b>"
             post_download_msg_italics="<i>$post_download_msg_italics</i>"
+            
+            # If we have a link to provide, format it as well
+            if [ -n "$post_download_msg_link" ]; then
+                post_download_msg_link="<a href='$post_download_msg_link'>$post_download_msg_link</a>"
+            fi
         fi
-        message info "$message_heading\n\n$post_download_msg_text\n$post_download_msg_italics\n\n$downloaded_item_name"
+
+        # Add newlines to the optional variables if set
+        if [ -n "$post_download_msg_more_info" ]; then
+            post_download_msg_more_info="\n\n$post_download_msg_more_info"
+        fi
+        if [ -n "$post_download_msg_link" ]; then
+            post_download_msg_link="\n$post_download_msg_link"
+        fi
+
+        # Display the info
+        message info "$message_heading\n\n$post_download_msg_text\n$post_download_msg_italics\n\n$downloaded_item_name$post_download_msg_more_info$post_download_msg_link"
     fi
+
+    # Reset
     display_post_download_msg="false"
 }
 
@@ -1334,9 +1353,13 @@ runner_manage() {
     # A header is automatically displayed that reads: Download Complete
     # msg_text is displayed below the header
     # msg_italics is displayed below that in italics when zenity is in use
-    # Lastly, the downloaded directory name is automatically displayed
+    # Then, the downloaded directory name is automatically displayed
+    # Optional variables post_download_msg_more_info and
+    # post_download_msg_link will be displayed if set
     post_download_msg_text="Select the following runner in Lutris from the dropdown menu under:"
     post_download_msg_italics="Configure->Runner Options->Wine version"
+    post_download_msg_more_info=""
+    post_download_msg_link=""
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -1357,7 +1380,7 @@ dxvk_manage() {
 
     # Configure the text displayed in the menus
     download_menu_heading="Lutris DXVK Versions"
-    download_menu_description="The DXVK versions below may help improve game performance"
+    download_menu_description="The DXVK versions below may help reduce stuttering"
     download_menu_height="140"
 
     # Set the post download instructions
@@ -1365,9 +1388,13 @@ dxvk_manage() {
     # A header is automatically displayed that reads: Download Complete
     # msg_text is displayed below the header
     # msg_italics is displayed below that in italics when zenity is in use
-    # Lastly, the downloaded directory name is automatically displayed
+    # Then, the downloaded directory name is automatically displayed
+    # Optional variables post_download_msg_more_info and
+    # post_download_msg_link will be displayed if set
     post_download_msg_text="Type the following DXVK name into your Lutris settings under:"
     post_download_msg_italics="Configure->Runner Options->DXVK version"
+    post_download_msg_more_info="See our wiki for instructions on setting the DXVK_ASYNC environment variable in Lutris:"
+    post_download_msg_link="https://github.com/starcitizen-lug/information-howtos/wiki/Performance-Tuning#dxvk-async"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
