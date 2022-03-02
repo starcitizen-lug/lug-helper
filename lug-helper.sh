@@ -780,7 +780,7 @@ swap_check() {
     if cat /proc/swaps | grep -vq "Filename"; then
         preflight_pass+=("You have swap space configured.")  
     else
-        preflight_fail+=("You don't appear to have swap space configured.\nWe recommend swap for systems with 32 GB RAM or less.")
+        preflight_fail+=("You don't appear to have swap space configured.\nWe recommend configuring an 8-16 GB swap file.")
     fi
 }
 
