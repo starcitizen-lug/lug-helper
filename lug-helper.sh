@@ -775,6 +775,15 @@ avx_check() {
     fi
 }
 
+# Check if swap is set up
+swap_check() {
+    if cat /proc/swaps | grep -vq "Filename"; then
+        preflight_pass+=("You have swap space configured.")  
+    else
+        preflight_fail+=("You don't appear to have swap space configured.\nWe recommend swap for systems with 32 GB RAM or less.")
+    fi
+}
+
 # Check that the system is optimized for Star Citizen
 preflight_check() {
     # Initialize variables
@@ -789,6 +798,7 @@ preflight_check() {
     # Call the optimization functions to perform the checks
     wine_check
     memory_check
+    swap_check
     avx_check
     mapcount_check
     filelimit_check
