@@ -132,6 +132,7 @@ dxvk_dir="$data_dir/lutris/runtime/dxvk"
 dxvk_sources=(
     "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
     "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
+    "gnusenpai" "https://api.github.com/repos/gnusenpai/dxvk/releases"
 )
 
 # Set a maximum number of versions to display from each download url
@@ -1030,6 +1031,9 @@ download_install() {
         *.tar.xz)
             download_name="$(basename "$download_file" .tar.xz)"
             ;;
+        *.tar.zst)
+            download_name="$(basename "$download_file" .tar.zst)"
+            ;;
         *)
             debug_print exit "Unknown archive filetype in download_install function. Aborting."
             ;;
@@ -1231,7 +1235,10 @@ download_select_install() {
                 ;;
             *.tar.xz)
                 download_name="$(basename "${download_versions[i]}" .tar.xz)"
-                ;;        
+                ;;
+            *.tar.zst)
+                download_name="$(basename "${download_versions[i]}" .tar.zst)"
+                ;;
             *)
                 debug_print exit "Unknown archive filetype in download_select_install function. Aborting."
                 ;;
