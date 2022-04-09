@@ -102,6 +102,9 @@ install_path="drive_c/Program Files/Roberts Space Industries/$sc_base_dir"
 live_dir="LIVE"
 ptu_dir="PTU"
 
+# AppData directory
+appdata_path="drive_c/users?/appdata?/something/local/idontknow/starcitizen"
+
 # Remaining directory paths are set at the end of the getdirs() function
 
 ######## Runners ###########################################################
@@ -525,7 +528,7 @@ getdirs() {
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # Shaders directory
-    shaders_dir="$user_dir/shaders"
+    shaders_dir="$wine_prefix/$appdata_path/shaders"
     # dxvk cache file
     dxvk_cache="$game_path/$live_or_ptu/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
