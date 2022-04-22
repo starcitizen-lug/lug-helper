@@ -103,8 +103,7 @@ live_dir="LIVE"
 ptu_dir="PTU"
 
 # AppData directory
-appdata_path="drive_c/users?/appdata?/something/local/idontknow/starcitizen"
-
+appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
 # Remaining directory paths are set at the end of the getdirs() function
 
 ######## Runners ###########################################################
@@ -1507,19 +1506,26 @@ rm_shaders() {
         # User cancelled and wants to return to the main menu, or error
         return 0
     fi
+    
+    # Create an array containing all directories in the appdata_path
+    for appdata_list in "$wine_prefix/$appdata_path"/*; do
+        if [ -d "$appdata_list" ]; then
+            appdata_items+=("$appdata_list")
+        fi
+    done
 
-    # Sanity check
-    if [ ! -d "$shaders_dir" ]; then
-        message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
-        return 0
-    fi
-
-    # Delete the shader directory
-    if message question "The following directory will be deleted:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $shaders_dir..."
-        rm -r "$shaders_dir"
-        message info "Your shaders have been deleted!"
-    fi
+    # Delete shaders directory in every directory beginning with "sc-alpha"
+    for (( i=0; i<"${#appdata_items[@]}"; i++ )); do
+        if [[ ${appdata_items[i]} = "$wine_prefix/$appdata_path"/sc-alpha* ]]; then  # check if the item in the array begins with sc-alpha
+            if [  -d "${appdata_items[i]}/shaders" ]; then # check if there is a shaders subfolder
+                if message question "The following directory will be deleted:\n\n${appdata_items[i]}/shaders\n\nDo you want to proceed?"; then
+                debug_print continue "Deleting ${appdata_items[i]}/shaders..."
+                rm -r "${appdata_items[i]}/shaders"
+                message info "Your shaders have been deleted!"
+                fi
+            fi
+        fi
+    done
 }
 
 # Delete DXVK cache
