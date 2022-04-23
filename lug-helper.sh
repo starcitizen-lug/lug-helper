@@ -1519,11 +1519,15 @@ rm_shaders() {
         if [[ "${appdata_items[i]}" = "$wine_prefix/$appdata_path"/sc-alpha* ]]; then  # check if the item in the array begins with sc-alpha
             if [  -d "${appdata_items[i]}/shaders" ]; then # check if there is a shaders subfolder
                 if message question "The following directory will be deleted:\n\n${appdata_items[i]}/shaders\n\nDo you want to proceed?"; then
-                debug_print continue "Deleting ${appdata_items[i]}/shaders..."
-                rm -r "${appdata_items[i]}/shaders"
-                message info "Your shaders have been deleted!"
+                    debug_print continue "Deleting ${appdata_items[i]}/shaders..."
+                    rm -r "${appdata_items[i]}/shaders"
+                    message info "Your shaders have been deleted!"
                 fi
+            elif [[ $i = $(( ${#appdata_items[@]} - 1 )) ]]; then # display message when end of array is reached and no shaders directories were found
+                message info "No more shader directories found"
             fi
+        elif [[ $i = $(( ${#appdata_items[@]} - 1 )) ]]; then # display message when end of array is reached and no shaders or sc-alpha directories were found
+                message info "No more shader directories found"
         fi
     done
 }
