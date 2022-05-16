@@ -1516,7 +1516,7 @@ rm_shaders() {
 
     # Delete shaders directory in every directory beginning with "sc-alpha"
     for (( i=0; i<"${#appdata_items[@]}"; i++ )); do
-        if [ "${appdata_items[i]}" = "$wine_prefix/$appdata_path"/sc-alpha* ] && [ -d "${appdata_items[i]}"/shaders ]; then  # check if the item in the array begins with sc-alpha
+        if [[ "${appdata_items[i]}" = "$wine_prefix/$appdata_path"/sc-alpha* ]]  && [[  -d "${appdata_items[i]}"/shaders ]]; then  # check if the item in the array begins with sc-alpha
             if message question "The following directory will be deleted:\n\n${appdata_items[i]}/shaders\n\nDo you want to proceed?"; then
                     debug_print continue "Deleting ${appdata_items[i]}/shaders..."
                     rm -r "${appdata_items[i]}/shaders"
