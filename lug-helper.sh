@@ -102,6 +102,8 @@ install_path="drive_c/Program Files/Roberts Space Industries/$sc_base_dir"
 live_dir="LIVE"
 ptu_dir="PTU"
 
+# AppData directory
+appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
 # Remaining directory paths are set at the end of the getdirs() function
 
 ######## Runners ###########################################################
@@ -170,7 +172,7 @@ lug_wiki="https://github.com/starcitizen-lug/information-howtos/wiki"
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v1.19"
+current_version="v1.20"
 
 ############################################################################
 ############################################################################
@@ -345,9 +347,9 @@ menu() {
                 zen_options+=("${menu_options[i]}")
             fi
         done
-
+        
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon=$lug_logo --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon="$lug_logo" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Loop through the options array to match the chosen option
         matched="false"
@@ -525,7 +527,7 @@ getdirs() {
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # Shaders directory
-    shaders_dir="$user_dir/shaders"
+    shaders_dir="$wine_prefix/$appdata_path/shaders"
     # dxvk cache file
     dxvk_cache="$game_path/$live_or_ptu/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
@@ -1504,19 +1506,30 @@ rm_shaders() {
         # User cancelled and wants to return to the main menu, or error
         return 0
     fi
+    
+    # Create an array containing all directories in the appdata_path
+    for appdata_list in "$wine_prefix/$appdata_path"/*; do
+        if [ -d "$appdata_list" ]; then
+            appdata_items+=("$appdata_list")
+        fi
+    done
 
-    # Sanity check
-    if [ ! -d "$shaders_dir" ]; then
-        message warning "Shaders directory not found. There is nothing to delete!\n\n$shaders_dir"
-        return 0
-    fi
-
-    # Delete the shader directory
-    if message question "The following directory will be deleted:\n\n$shaders_dir\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $shaders_dir..."
-        rm -r "$shaders_dir"
-        message info "Your shaders have been deleted!"
-    fi
+    # Delete shaders directory in every directory beginning with "sc-alpha"
+    for (( i=0; i<"${#appdata_items[@]}"; i++ )); do
+        if [ "${appdata_items[i]}" = "$wine_prefix/$appdata_path"/sc-alpha* ]; then  # check if the item in the array begins with sc-alpha
+            if [  -d "${appdata_items[i]}/shaders" ]; then # check if there is a shaders subfolder
+                if message question "The following directory will be deleted:\n\n${appdata_items[i]}/shaders\n\nDo you want to proceed?"; then
+                    debug_print continue "Deleting ${appdata_items[i]}/shaders..."
+                    rm -r "${appdata_items[i]}/shaders"
+                    message info "Your shaders have been deleted!"
+                fi
+            elif [ $i = $(( "${#appdata_items[@]}" - 1 )) ]; then # display message when end of array is reached and no shaders directories were found
+                message info "No more shader directories found"
+            fi
+        elif [ $i = $(( "${#appdata_items[@]}" - 1 )) ]; then # display message when end of array is reached and no shaders or sc-alpha directories were found
+                message info "No more shader directories found"
+        fi
+    done
 }
 
 # Delete DXVK cache
