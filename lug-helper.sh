@@ -120,6 +120,7 @@ runner_sources=(
     "Molotov/Snatella" "https://api.github.com/repos/snatella/wine-runner-sc/releases"
     "/dev/null" "https://api.github.com/repos/gort818/wine-sc-lug/releases"
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
+    "TKG" "https://api.github.com/repos/Frogging-Family/wine-tkg-git/releases"
 )
 
 ######## DXVK ##############################################################
@@ -172,7 +173,7 @@ lug_wiki="https://github.com/starcitizen-lug/information-howtos/wiki"
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v1.20"
+current_version="v1.21"
 
 ############################################################################
 ############################################################################
@@ -1242,19 +1243,22 @@ download_select_install() {
                 download_name="$(basename "${download_versions[i]}" .tar.zst)"
                 ;;
             *)
-                debug_print exit "Unknown archive filetype in download_select_install function. Aborting."
+                download_name="skip"
+                debug_print continue "Unknown archive filetype in download_select_install function. Offending String: ${download_versions[i]}"
                 ;;
         esac
 
         # Add the file names to the menu
-        if [ -d "$download_dir/$download_name" ]; then
+         if [[ "$download_name" = "skip" ]] || [[ "${download_versions[i]}" = "proton"* ]] ; then # filter out other file types or proton-downloads (needed for TKG)
+            continue
+        elif [ -d "$download_dir/$download_name" ]; then
             menu_options+=("$download_name    [installed]")
         else
             menu_options+=("$download_name")
         fi
         menu_actions+=("download_install $i")
     done
-
+        
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
     menu_actions+=(":") # no-op
