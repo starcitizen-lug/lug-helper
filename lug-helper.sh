@@ -117,7 +117,6 @@ runners_dir="$data_dir/lutris/runners/wine"
 # ie. "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 runner_sources=(
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
-    "Molotov/Snatella" "https://api.github.com/repos/snatella/wine-runner-sc/releases"
     "/dev/null" "https://api.github.com/repos/gort818/wine-sc-lug/releases"
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
     "TKG" "https://api.github.com/repos/Frogging-Family/wine-tkg-git/releases"
