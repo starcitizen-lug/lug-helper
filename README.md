@@ -67,8 +67,8 @@ From Source:
 2. Extract it!
 3. Run it!
 
-Dependencies: bash, coreurtils, curl, polkit (those should be installed by default on most distributions)
-Optional Dependencies: zenity (for GUI), zstd (to extract some runners)
+Dependencies: bash, coreurtils, curl, polkit (those should be installed by default on most distributions)_
+Optional Dependencies: zenity (for GUI), zstd (to extract some runners)_
 
 Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 
