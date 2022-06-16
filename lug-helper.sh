@@ -1188,7 +1188,7 @@ download_select_install() {
     esac
 
     # For runners, check GlibC version against runner requirements
-    if [ "$download_type" = "runner" ] && [ "$contributor_name" = "/dev/null" ]; then
+    if [ "$download_type" = "runner" ] && ( [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ] ); then
         required_glibc="2.33"
         system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
 

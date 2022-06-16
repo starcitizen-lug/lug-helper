@@ -66,6 +66,8 @@ From Source:
 1. Download it! https://github.com/starcitizen-lug/lug-helper/releases
 2. Extract it!
 3. Run it!
+Dependencies: bash, coreurtils, curl, polkit (those should be installed by default on most distributions)
+Optional Dependencies: zenity (for GUI), zstd (to extract some runners)
 
 Arch Linux: https://aur.archlinux.org/packages/lug-helper/
 
