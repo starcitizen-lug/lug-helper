@@ -909,10 +909,10 @@ preflight_check() {
 
 # Restart lutris if necessary
 lutris_restart() {
-    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep lutris)" ]; then
+    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
         if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
             debug_print continue "Restarting Lutris..."
-            pkill -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+            pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
         fi
     fi
     lutris_needs_restart="false"
