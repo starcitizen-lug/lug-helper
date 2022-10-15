@@ -232,17 +232,17 @@ message() {
             "info")
                 # info message
                 # call format: message info "text to display"
-                margs=("--info" "--window-icon=$lug_logo" "--no-wrap" "--text=")
+                margs=("--info" "--window-icon=\"$lug_logo\"" "--no-wrap" "--text=")
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                margs=("--warning" "--window-icon=$lug_logo" "--text=")
+                margs=("--warning" "--window-icon=\"$lug_logo\"" "--text=")
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                margs=("--question" "--window-icon=$lug_logo" "--text=")
+                margs=("--question" "--window-icon=\"$lug_logo\"" "--text=")
                 ;;
             *)
                 debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
