@@ -1457,7 +1457,7 @@ eac_workaround() {
         if grep "^$eac_hosts" /etc/hosts; then
             message info "The Easy Anti-Cheat workaround has already been applied.\nYou're all set!"
         else
-            message info "The Easy Anti-Cheat workaround has already been applied, but is commented out.\nNo changes have been made, please edit /etc/hosts manually!"
+            message info "The Easy Anti-Cheat workaround has already been applied, but may be commented out.\nNo changes have been made, please edit /etc/hosts manually."
         fi
         return 1
     fi
