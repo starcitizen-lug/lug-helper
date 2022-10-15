@@ -542,6 +542,8 @@ getdirs() {
 
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
+    declare -a dirs_list
+
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
         dirs_list+=("\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds")
@@ -557,6 +559,11 @@ display_dirs() {
         dirs_list+="\n\nStar Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")"
     fi
 
+    # Star Citizen shaders path
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        dirs_list+="\n\nStar Citizen shaders:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")/$appdata_path"
+    fi
+
     # Lutris runners
     if [ -d "$runners_dir" ]; then
         dirs_list+="\n\nLutris Runners:\n$runners_dir"
@@ -567,7 +574,7 @@ display_dirs() {
         dirs_list+="\n\nLutris DXVK Versions:\n$dxvk_dir"
     fi
 
-    # Formatting
+    # Format the info header
     message_heading="These directories are currently being used by this Helper and Star Citizen"
     if [ "$use_zenity" -eq 1 ]; then
         message_heading="<b>$message_heading</b>"
