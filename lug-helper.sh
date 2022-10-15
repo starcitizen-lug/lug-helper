@@ -1460,8 +1460,8 @@ eac_workaround() {
     eac_hosts="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
 
     # Check if EAC workaround is already applied
-    if grep "$eac_hosts" /etc/hosts; then
-        if grep "^$eac_hosts" /etc/hosts; then
+    if grep -q "$eac_hosts" /etc/hosts; then
+        if grep -q "^$eac_hosts" /etc/hosts; then
             message info "The Easy Anti-Cheat workaround has already been applied.\nYou're all set!"
         else
             message info "The Easy Anti-Cheat workaround has already been applied, but may be commented out.\nNo changes have been made, please edit /etc/hosts manually."
