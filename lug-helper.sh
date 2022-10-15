@@ -1209,7 +1209,7 @@ download_select_install() {
     # To add new sources, handle them here, in the if statement
     # just above, and the download_install function above
     if [ "$download_url_type" = "github" ]; then
-        download_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | grep -vE "*.sha512sum" | xargs basename -a))
+        download_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | xargs basename -a))
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
@@ -1232,9 +1232,13 @@ download_select_install() {
     # and add them to the menu options
     # To add new file extensions, handle them here and in
     # the download_install function above
-    for (( i=0; i<"$max_download_items" && i<"${#download_versions[@]}"; i++ )); do
+    for (( i=0,num_download_items=0; i<"${#download_versions[@]}" && "$num_download_items"<"$max_download_items"; i++ )); do
         # Get the file name minus the extension
         case "${download_versions[i]}" in
+            *.sha*sum | *.ini | proton*)
+                # Ignore hashes, configs, and proton downloads
+                continue
+                ;;
             *.tar.gz)
                 download_name="$(basename "${download_versions[i]}" .tar.gz)"
                 ;;
@@ -1248,20 +1252,22 @@ download_select_install() {
                 download_name="$(basename "${download_versions[i]}" .tar.zst)"
                 ;;
             *)
-                download_name="skip"
-                debug_print continue "Unknown archive filetype in download_select_install function. Offending String: ${download_versions[i]}"
+                # Print a warning and move on to the next item
+                debug_print continue "Warning: Unknown archive filetype in download_select_install() function. Offending String: ${download_versions[i]}"
+                continue
                 ;;
         esac
 
         # Add the file names to the menu
-         if [[ "$download_name" = "skip" ]] || [[ "${download_versions[i]}" = "proton"* ]] ; then # filter out other file types or proton-downloads (needed for TKG)
-            continue
-        elif [ -d "$download_dir/$download_name" ]; then
+        if [ -d "$download_dir/$download_name" ]; then
             menu_options+=("$download_name    [installed]")
         else
             menu_options+=("$download_name")
         fi
         menu_actions+=("download_install $i")
+
+        # Increment the added items counter
+        num_download_items="$(($num_download_items+1))"
     done
         
     # Complete the menu by adding the option to go back to the previous menu
