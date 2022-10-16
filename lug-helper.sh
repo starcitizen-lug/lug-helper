@@ -108,8 +108,12 @@ install_path="drive_c/Program Files/Roberts Space Industries/$sc_base_dir"
 live_dir="LIVE"
 ptu_dir="PTU"
 
-# AppData directory
+# Location in the WINE prefix where shaders are stored
 appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
+
+# The shaders subdirectory name
+shaders_subdir="shaders"
+
 # Remaining directory paths are set at the end of the getdirs() function
 
 ######## Runners ###########################################################
@@ -533,7 +537,7 @@ getdirs() {
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # Shaders directory
-    shaders_dir="$wine_prefix/$appdata_path/shaders"
+    shaders_dir="$wine_prefix/$appdata_path"
     # dxvk cache file
     dxvk_cache="$game_path/$live_or_ptu/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
@@ -1532,26 +1536,19 @@ rm_shaders() {
         # User cancelled and wants to return to the main menu, or error
         return 0
     fi
-    
-    # Create an array containing all directories in the appdata_path
-    for appdata_list in "$wine_prefix/$appdata_path"/*; do
-        if [ -d "$appdata_list" ]; then
-            appdata_items+=("$appdata_list")
+
+    # Loop through all possible shader directories
+    for appdata_dir in "$shaders_dir"/*; do
+        if [ -d "$appdata_dir/$shaders_subdir" ]; then
+            # If a shaders directory is found, delete it
+            if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
+                debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
+                rm -r "$appdata_dir/$shaders_subdir"
+            fi
         fi
     done
 
-    # Delete shaders directory in every directory beginning with "sc-alpha"
-    for (( i=0; i<"${#appdata_items[@]}"; i++ )); do
-        if [[ "${appdata_items[i]}" = "$wine_prefix/$appdata_path"/sc-alpha* ]]  && [[  -d "${appdata_items[i]}"/shaders ]]; then  # check if the item in the array begins with sc-alpha
-            if message question "The following directory will be deleted:\n\n${appdata_items[i]}/shaders\n\nDo you want to proceed?"; then
-                    debug_print continue "Deleting ${appdata_items[i]}/shaders..."
-                    rm -r "${appdata_items[i]}/shaders"
-                    message info "Your shaders have been deleted!"
-            fi
-        elif [ $i = $(( "${#appdata_items[@]}" - 1 )) ]; then # display message when end of array is reached and no shaders or sc-alpha directories were found
-                message info "No more shader directories found"
-        fi
-    done
+    message info "All shaders have been deleted"
 }
 
 # Delete DXVK cache
@@ -1591,7 +1588,7 @@ maintenance_menu() {
         # Configure the menu options
         version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
         sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
-        shaders_msg="Delete my shaders folder only (Do this after each game update)"
+        shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
         wiki_msg="Show the LUG Wiki"
