@@ -70,10 +70,10 @@ From Source:
 2. Extract it!
 3. Run it!
 
-Dependencies: bash, coreurtils, curl, polkit (those should be installed by default on most distributions)  
-Optional Dependencies: zenity (for GUI), zstd (to extract some runners)  
-
 Arch Linux: https://aur.archlinux.org/packages/lug-helper/
+
+_Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
+_Optional Dependencies: **zenity** (for GUI), **zstd** (to extract some runners)_  
 
 ## Contributors:
 - https://github.com/Termuellinator
