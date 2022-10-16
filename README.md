@@ -43,8 +43,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - To re-import your keybinds from within the game, select them from the list:
     - *Options->Keybindings->Control Profiles*
 
-- `Delete my shaders folder only`
-  - Sometimes all you need to do between major version updates is delete your shaders directory.
+- `Delete my shaders`
+  - It is recommended to delete your shaders directory after each game update.
 
 - `Delete my DXVK cache`
   - A troubleshooting step that sometimes helps fix various issues and crashes.
@@ -54,6 +54,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
+
+- `Show the LUG Wiki`
+  - Display a link to the LUG Wiki for help with installation and troubleshooting
 
 `Get a random Penguin's Star Citizen referral code`
 - Display a referral code for a random member of the Star Citizen Linux Users Group.
