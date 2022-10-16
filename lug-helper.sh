@@ -588,7 +588,7 @@ display_dirs() {
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
-sanitize() {
+rm_userdir() {
     # Prompt user to back up the current keybinds in the game
     message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
 
@@ -1587,7 +1587,7 @@ maintenance_menu() {
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
-        sanitize_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+        userdir_msg="Delete my Star Citizen USER folder and preserve my keybinds"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
@@ -1596,9 +1596,9 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
         
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$sanitize_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$wiki_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$wiki_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "sanitize" "rm_shaders" "rm_dxvkcache" "display_dirs" "display_wiki" "reset_helper" "menu_loop_done")
+        menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "display_wiki" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
@@ -1714,7 +1714,7 @@ Usage: lug-helper <options>
                 cargs+=("dxvk_manage")
                 ;;
             --delete-user-folder | -u )
-                cargs+=("sanitize")
+                cargs+=("rm_userdir")
                 ;;
             --delete-shaders | -s )
                 cargs+=("rm_shaders")
