@@ -1325,7 +1325,7 @@ download_manage() {
         return 0
     fi
     if [ ! -d "$download_dir" ]; then
-        message info "Lutris $download_type directory not found.  Unable to continue.\n\n$download_dir"
+        message info "The following Lutris directory was not found.  Unable to continue.\n\n$download_dir"
         return 0
     fi
 
