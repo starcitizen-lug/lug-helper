@@ -1176,6 +1176,7 @@ download_install() {
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_file..."
     rm "$tmp_dir/$download_file"
+    rm -r "$tmp_dir/$download_name"
 }
 
 # List available items for download
