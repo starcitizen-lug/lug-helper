@@ -1057,6 +1057,12 @@ download_install() {
             ;;
     esac
 
+    # Check if this file has already been installed
+    if [ -d "$download_dir/$download_name" ]; then
+        message info "The selected $download_type is already installed:\n\n$download_name"
+        return 0
+    fi
+
     # Get the selected download url
     # To add new sources, handle them here and in the
     # download_select_install function below
