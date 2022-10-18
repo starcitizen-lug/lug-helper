@@ -917,6 +917,14 @@ preflight_check() {
 
 #------------------------- begin download functions ----------------------------#
 
+# Detect if lutris is installed
+lutris_detect() {
+    if [ ! -x "$(command -v lutris)" ]; then
+        # Standard Lutris is not installed
+        return 1
+    fi
+}
+
 # Restart lutris if necessary
 lutris_restart() {
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
@@ -1330,8 +1338,9 @@ download_manage() {
         debug_print exit "Script error:  The download_manage function expects a string argument. Aborting."
     fi
     # Check if Lutris is installed
-    if [ ! -x "$(command -v lutris)" ]; then
-        message info "Lutris does not appear to be installed."
+    lutris_detect
+    if [ "$?" -eq 1 ]; then
+        message warning "Lutris is required but does not appear to be installed."
         return 0
     fi
     if [ ! -d "$download_dir" ]; then
@@ -1512,7 +1521,8 @@ eac_workaround() {
 # Install Star Citizen using Lutris
 install_game() {
     # Check if Lutris is installed
-    if [ ! -x "$(command -v lutris)" ]; then
+    lutris_detect
+    if [ "$?" -eq 1 ]; then
         message warning "Lutris is required but does not appear to be installed."
         return 0
     fi
