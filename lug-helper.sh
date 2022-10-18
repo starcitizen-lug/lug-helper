@@ -919,9 +919,24 @@ preflight_check() {
 
 # Detect if lutris is installed
 lutris_detect() {
-    if [ ! -x "$(command -v lutris)" ]; then
-        # Standard Lutris is not installed
-        return 1
+    lutris_installed="false"
+    lutris_standard="false"
+    lutris_flatpak="false"
+
+    # Detect standard lutris
+    if [ -x "$(command -v lutris)" ]; then
+        # Standard Lutris is installed
+        lutris_installed="true"
+        lutris_standard="true"
+    fi
+
+    # Detect flatpak lutris
+    if [ -x "$(command -v flatpak)" ]; then
+        flatpak info lutris >/dev/null 2>&1
+        if [ "$?" -eq 0 ]; then
+            lutris_installed="true"
+            lutris_flatpak="true"
+        fi
     fi
 }
 
@@ -1339,7 +1354,7 @@ download_manage() {
     fi
     # Check if Lutris is installed
     lutris_detect
-    if [ "$?" -eq 1 ]; then
+    if [ "$lutris_installed" = "false" ]; then
         message warning "Lutris is required but does not appear to be installed."
         return 0
     fi
@@ -1522,7 +1537,7 @@ eac_workaround() {
 install_game() {
     # Check if Lutris is installed
     lutris_detect
-    if [ "$?" -eq 1 ]; then
+    if [ "$lutris_installed" = "false" ]; then
         message warning "Lutris is required but does not appear to be installed."
         return 0
     fi
