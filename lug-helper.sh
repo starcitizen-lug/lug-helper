@@ -65,12 +65,12 @@ if [ ! -x "$(command -v curl)" ]; then
     notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
     exit 1
 fi
-if [ ! -x "$(command -v zstd)" ]; then
+#if [ ! -x "$(command -v zstd)" ]; then
 # Print to stderr and also try warning the user through notify-send
-    printf "lug-helper.sh: The  package 'zstd' was not found on this system. It is required for extracting some runner packages.\n" 1>&2
-    notify-send "lug-helper" "The package 'zstd' was not found on this system. It is required for extracting some runner packages.\n" --icon=dialog-warning
-    exit 1
-fi
+#    printf "lug-helper.sh: The  package 'zstd' was not found on this system. It is required for extracting some runner packages.\n" 1>&2
+#    notify-send "lug-helper" "The package 'zstd' was not found on this system. It is required for extracting some runner packages.\n" --icon=dialog-warning
+#    exit 1
+#fi
 if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ]; then
     # Print to stderr and also try warning the user through notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" 1>&2
