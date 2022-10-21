@@ -954,10 +954,30 @@ lutris_detect() {
 
 # Restart lutris if necessary
 lutris_restart() {
+    lutris_detect
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
         if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
             debug_print continue "Restarting Lutris..."
-            pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+            # Detect which version of Lutris is installed
+            if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
+                # Both versions of Lutris are installed so ask the user
+                if zenity --question --cancel-label="Flatpak" --ok-label="Native" --window-icon="$lug_logo" --text="This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null; then
+                    # Native version
+                    pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+                else
+                    # Flatpak version
+                    pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
+                fi
+            elif [ "$lutris_native" = "true" ]; then
+                # Native version only
+                pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+            elif [ "$lutris_flatpak" = "true" ]; then
+                # Flatpak version only
+                pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
+            else
+                # We shouldn't get here
+                debug_print exit "Script error: Unknown condition in lutris_restart function. Aborting."
+            fi
         fi
     fi
     lutris_needs_restart="false"
@@ -1696,8 +1716,10 @@ install_game() {
         if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
             # Both versions of Lutris are installed so ask the user
             if zenity --question --cancel-label="Flatpak" --ok-label="Native" --window-icon="$lug_logo" --text="This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null; then
+                # Native version
                 lutris --install "$install_script" &
             else
+                # Flatpak version
                 flatpak run net.lutris.Lutris --install "$install_script" &
             fi
         elif [ "$lutris_native" = "true" ]; then
