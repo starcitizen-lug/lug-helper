@@ -1692,12 +1692,19 @@ install_game() {
     fi
 
     if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
+        # Detect which version of Lutris is installed
         if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
-            # Both versions of Lutris are installed
-            # ?
+            # Both versions of Lutris are installed so ask the user
+            if zenity --question --cancel-label="Flatpak" --ok-label="Native" --window-icon="$lug_logo" --text="This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null; then
+                lutris --install "$install_script" &
+            else
+                flatpak run net.lutris.Lutris --install "$install_script" &
+            fi
         elif [ "$lutris_native" = "true" ]; then
+            # Native version only
             lutris --install "$install_script" &
         elif [ "$lutris_flatpak" = "true" ]; then
+            # Flatpak version only
             flatpak run net.lutris.Lutris --install "$install_script" &
         else
             # We shouldn't get here
