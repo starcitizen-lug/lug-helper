@@ -1143,7 +1143,7 @@ download_install() {
             download_name="$(basename "$download_file" .tar.zst)"
             ;;
         *)
-            debug_print exit "Unknown archive filetype in download_install function. Aborting."
+            debug_print exit "Script error: Unknown archive filetype in download_install function. Aborting."
             ;;
     esac
 
@@ -1282,7 +1282,6 @@ download_install() {
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
-        exit 0
     fi
 
     # Cleanup tmp download
@@ -1693,7 +1692,17 @@ install_game() {
     fi
 
     if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
-        lutris --install "$install_script" &
+        if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
+            # Both versions of Lutris are installed
+            # ?
+        elif [ "$lutris_native" = "true" ]; then
+            lutris --install "$install_script" &
+        elif [ "$lutris_flatpak" = "true" ]; then
+            flatpak run net.lutris.Lutris --install "$install_script" &
+        else
+            # We shouldn't get here
+            debug_print exit "Script error: Unknown condition in install_game function. Aborting."
+        fi
         message info "The installation will continue in Lutris"
     fi
 }
