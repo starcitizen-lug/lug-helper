@@ -944,7 +944,7 @@ lutris_detect() {
 
     # Detect flatpak lutris
     if [ -x "$(command -v flatpak)" ]; then
-        flatpak info lutris >/dev/null 2>&1
+        flatpak info net.lutris.Lutris >/dev/null 2>&1
         if [ "$?" -eq 0 ]; then
             lutris_installed="true"
             lutris_flatpak="true"
