@@ -1983,8 +1983,8 @@ Usage: lug-helper <options>
 
     # Call the requested functions and exit
     if [ "${#cargs[@]}" -gt 0 ]; then
-        for (( i=0; i<"${#cargs[@]}"; i++ )); do
-            ${cargs[i]}
+        for (( x=0; x<"${#cargs[@]}"; x++ )); do
+            ${cargs[x]}
         done
         exit 0
     fi
