@@ -1909,6 +1909,7 @@ if [ "$#" -gt 0 ]; then
 Usage: lug-helper <options>
   -p, --preflight-check     Run system optimization checks
   -i, --install             Install Star Citizen
+  -e, --eac                 Deploy Easy Anti-Cheat Workaround
   -m, --manage-runners      Install or remove Lutris runners
   -k, --manage-dxvk         Install or remove DXVK versions
   -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
@@ -1927,6 +1928,9 @@ Usage: lug-helper <options>
                 ;;
             --install | -i )
                 cargs+=("install_game")
+                ;;
+            --eac | -e )
+                cargs+=("eac_workaround")
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
