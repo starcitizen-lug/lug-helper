@@ -242,16 +242,29 @@ message() {
                 # info message
                 # call format: message info "text to display"
                 margs=("--info" "--window-icon=\"$lug_logo\"" "--no-wrap" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
                 margs=("--warning" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
                 margs=("--question" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
+                ;;
+            "options")
+                # formats the buttons with two custom options
+                # call format: if message options left_button_name right_button_name "which one do you want?"; then...
+                # The right button returns 0 (ok), the left button returns 1 (cancel)
+                if [ "$#" -lt 4 ]; then
+                    debug_print exit "Script error: The options type in the message function expects four arguments. Aborting."
+                fi
+                margs=("--question" "--cancel-label=$2" "--ok-label=$3" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 3   # drop the type and button label arguments and shift up to the text
                 ;;
             *)
                 debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
@@ -259,7 +272,6 @@ message() {
         esac
 
         # Display the message
-        shift 1   # drop the first argument and shift the remaining up one
         zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null
     else
         # Fall back to text-based messages when zenity is not available
@@ -1712,7 +1724,7 @@ install_game() {
         # Detect which version of Lutris is installed
         if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
             # Both versions of Lutris are installed so ask the user
-            if zenity --question --cancel-label="Flatpak" --ok-label="Native" --window-icon="$lug_logo" --text="This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null; then
+            if message options "Flatpak" "Native" "This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?"; then
                 # Native version
                 install_version="native"
             else
