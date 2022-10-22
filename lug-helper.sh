@@ -1898,6 +1898,22 @@ fi
 # Set defaults
 live_or_ptu="$live_dir"
 
+# Format some URLs for Zenity
+if [ "$use_zenity" -eq 1 ]; then
+    releases_url="<a href='$releases_url'>$releases_url</a>"
+    lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
+fi
+
+# Check if a newer verison of the script is available
+latest_version="$(get_latest_release "$repo")"
+
+# Sort the versions and check if the installed Helper is smaller
+if [ "$latest_version" != "$current_version" ] &&
+   [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
+
+    message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url"
+fi
+
 # If invoked with command line arguments, process them and exit
 if [ "$#" -gt 0 ]; then
     while [ "$#" -gt 0 ]
@@ -2002,22 +2018,6 @@ Usage: lug-helper <options>
         done
         exit 0
     fi
-fi
-
-# Format some URLs for Zenity
-if [ "$use_zenity" -eq 1 ]; then
-    releases_url="<a href='$releases_url'>$releases_url</a>"
-    lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
-fi
-
-# Check if a newer verison of the script is available
-latest_version="$(get_latest_release "$repo")"
-
-# Sort the versions and check if the installed Helper is smaller
-if [ "$latest_version" != "$current_version" ] &&
-   [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
-
-    message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url"
 fi
 
 # Loop the main menu until the user selects quit
