@@ -573,19 +573,25 @@ display_dirs() {
     fi
 
     # Lutris runners
-    if [ -d "$runners_dir_native" ]; then
-        dirs_list+="\n\nLutris Runners:\n$runners_dir_native"
-    fi
-    if [ -d "$runners_dir_flatpak" ]; then
-        dirs_list+="\n\nLutris Runners:\n$runners_dir_flatpak"
+    if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
+        dirs_list+="\n\nLutris Runners:"
+        if [ -d "$runners_dir_native" ]; then
+            dirs_list+="\n$runners_dir_native"
+        fi
+        if [ -d "$runners_dir_flatpak" ]; then
+            dirs_list+="\n$runners_dir_flatpak"
+        fi
     fi
 
     # Lutris dxvk
-    if [ -d "$dxvk_dir_native" ]; then
-        dirs_list+="\n\nLutris DXVK Versions:\n$dxvk_dir_native"
-    fi
-    if [ -d "$dxvk_dir_flatpak" ]; then
-        dirs_list+="\n\nLutris DXVK Versions:\n$dxvk_dir_flatpak"
+    if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
+        dirs_list+="\n\nLutris DXVK Versions:"
+        if [ -d "$dxvk_dir_native" ]; then
+            dirs_list+="\n$dxvk_dir_native"
+        fi
+        if [ -d "$dxvk_dir_flatpak" ]; then
+            dirs_list+="\n$dxvk_dir_flatpak"
+        fi
     fi
 
     # Format the info header
