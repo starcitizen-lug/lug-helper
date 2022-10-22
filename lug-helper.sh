@@ -1543,7 +1543,7 @@ runner_manage() {
     missing_dir="false"
     for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
         if [ ! -d "${download_dirs[i]}" ]; then
-            message info "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            message warning "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
             missing_dir="true"
         fi
     done
@@ -1598,7 +1598,7 @@ dxvk_manage() {
     missing_dir="false"
     for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
         if [ ! -d "${download_dirs[i]}" ]; then
-            message info "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            message warning "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
             missing_dir="true"
         fi
     done
