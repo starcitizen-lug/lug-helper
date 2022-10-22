@@ -277,7 +277,6 @@ message() {
                 clear
                 printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
-                return 0
                 ;;
             "question")
                 # question
