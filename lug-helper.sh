@@ -1913,12 +1913,13 @@ Usage: lug-helper <options>
   -m, --manage-runners      Install or remove Lutris runners
   -k, --manage-dxvk         Install or remove DXVK versions
   -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
-  -s, --delete-shaders      Delete Star Citizen shaders directory
+  -s, --delete-shaders      Delete Star Citizen shaders
   -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
   -t, --target=[live|ptu]   Target LIVE or PTU (default live)
   -g, --use-gui=[yes|no]    Use Zenity GUI if available (default yes)
   -r, --get-referral        Get a random LUG member's Star Citizen referral code
   -d, --show-directories    Show all Star Citizen and LUG Helper directories
+  -w, --show-wiki           Show the LUG Wiki
   -x, --reset-helper        Delete saved lug-helper configs
 "
                 exit 0
@@ -1978,6 +1979,9 @@ Usage: lug-helper <options>
                 ;;
             --show-directories | -d )
                 cargs+=("display_dirs")
+                ;;
+            --show-wiki | -w )
+                cargs+=("display_wiki")
                 ;;
             --reset-helper | -x )
                 cargs+=("reset_helper")
