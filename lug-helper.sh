@@ -1654,7 +1654,7 @@ eac_workaround() {
         else
             message info "The Easy Anti-Cheat workaround has already been applied, but may be commented out.\nNo changes have been made, please edit /etc/hosts manually."
         fi
-        return 1
+        return 0
     fi
 
     # Configure message variables
