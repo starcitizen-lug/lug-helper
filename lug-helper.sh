@@ -346,7 +346,7 @@ menu() {
     elif [ -z "$cancel_label" ]; then
         debug_print exit "Script error: The string 'cancel_label' was not set\nbefore calling the menu function. Aborting."
     fi
-    
+
     # Use Zenity if it is available
     if [ "$use_zenity" -eq 1 ]; then
         # Format the options array for Zenity by adding
@@ -362,7 +362,7 @@ menu() {
                 zen_options+=("${menu_options[i]}")
             fi
         done
-        
+
         # Display the zenity radio button menu
         choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon="$lug_logo" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
@@ -957,26 +957,16 @@ lutris_restart() {
     lutris_detect
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
         if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-            debug_print continue "Restarting Lutris..."
-            # Detect which version of Lutris is installed
-            if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
-                # Both versions of Lutris are installed so ask the user
-                if zenity --question --cancel-label="Flatpak" --ok-label="Native" --window-icon="$lug_logo" --text="This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null; then
-                    # Native version
-                    pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-                else
-                    # Flatpak version
-                    pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
-                fi
-            elif [ "$lutris_native" = "true" ]; then
-                # Native version only
+            # Detect which version of Lutris is running and restart it
+            if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "/usr/bin/lutris"; then
+                # Native Lutris is running
+                debug_print continue "Restarting native Lutris..."
                 pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-            elif [ "$lutris_flatpak" = "true" ]; then
-                # Flatpak version only
+            fi
+            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "lutris-wrapper"; then
+                # Flatpak Lutris is running
+                debug_print continue "Restarting flatpak Lutris..."
                 pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
-            else
-                # We shouldn't get here
-                debug_print exit "Script error: Unknown condition in lutris_restart function. Aborting."
             fi
         fi
     fi
@@ -1717,20 +1707,30 @@ install_game() {
             # Both versions of Lutris are installed so ask the user
             if zenity --question --cancel-label="Flatpak" --ok-label="Native" --window-icon="$lug_logo" --text="This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null; then
                 # Native version
-                lutris --install "$install_script" &
+                install_version="native"
             else
                 # Flatpak version
-                flatpak run net.lutris.Lutris --install "$install_script" &
+                install_version="flatpak"
             fi
         elif [ "$lutris_native" = "true" ]; then
             # Native version only
-            lutris --install "$install_script" &
+            install_version="native"
         elif [ "$lutris_flatpak" = "true" ]; then
             # Flatpak version only
+            install_version="flatpak"
+        else
+            # We shouldn't get here
+            debug_print exit "Script error: Unable to detect Lutris version in install_game function. Aborting."
+        fi
+        
+        # Run the appropriate installer
+        if [ "$install_version" = "native" ]; then
+            lutris --install "$install_script" &
+        elif [ "$install_version" = "flatpak" ]; then
             flatpak run net.lutris.Lutris --install "$install_script" &
         else
             # We shouldn't get here
-            debug_print exit "Script error: Unknown condition in install_game function. Aborting."
+            debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
         fi
         message info "The installation will continue in Lutris"
     fi
