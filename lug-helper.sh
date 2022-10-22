@@ -1746,7 +1746,7 @@ install_game() {
         if [ "$install_version" = "native" ]; then
             lutris --install "$install_script" &
         elif [ "$install_version" = "flatpak" ]; then
-            flatpak run net.lutris.Lutris --install "$install_script" &
+            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
         else
             # We shouldn't get here
             debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
