@@ -995,7 +995,7 @@ lutris_restart() {
                 debug_print continue "Restarting native Lutris..."
                 pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
             fi
-            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "lutris-wrapper"; then
+            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "/app/bin/lutris"; then
                 # Flatpak Lutris is running
                 debug_print continue "Restarting flatpak Lutris..."
                 pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
