@@ -240,7 +240,7 @@ try_exec() {
         pkexec sh -c "$1"
 
         # Check the return value
-        if [ "$?" -eq "126" ] || [ "$?" -eq "127" ]; then
+        if [ "$?" -eq 126 ] || [ "$?" -eq 127 ]; then
             # User cancel or error
             retval=1
         fi
@@ -248,7 +248,7 @@ try_exec() {
         sudo sh -c "$1"
 
         # Check the return value
-        if [ "$?" -eq "1" ]; then
+        if [ "$?" -eq 1 ]; then
             # Error
             retval=1
         fi
