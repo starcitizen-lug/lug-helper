@@ -224,6 +224,39 @@ debug_print() {
     esac
 }
 
+# Try to execute a supplied command as root
+# Expects one string argument
+try_exec() {
+    # This function expects one string arguments
+    if [ "$#" -lt 1 ]; then
+        printf "\nScript error:  The try_exec() function expects an argument. Aborting.\n"
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    retval=0
+    # Use pollkit's pkexec for gui authentication with a fallback to sudo
+    if [ -x "$(command -v pkexec)" ]; then
+        pkexec sh -c "$1"
+
+        # Check the return value
+        if [ "$?" -eq "126" ] || [ "$?" -eq "127" ]; then
+            # User cancel or error
+            retval=1
+        fi
+    else
+        sudo sh -c "$1"
+
+        # Check the return value
+        if [ "$?" -eq "1" ]; then
+            # Error
+            retval=1
+        fi
+    fi
+
+    return "$retval"
+}
+
 # Display a message to the user.
 # Expects the first argument to indicate the message type, followed by
 # a string of arguments that will be passed to zenity or echoed to the user.
@@ -695,11 +728,11 @@ mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         # Newer versions of sysctl
         preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/20-starcitizen-max_map_count.conf && sysctl --system')
-        preflight_results+=("The vm.max_map_count configuration has been appended to:\n/etc/sysctl.d/20-starcitizen-max_map_count.conf")
+        preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/20-starcitizen-max_map_count.conf")
     else
         # Older versions of sysctl
         preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
-        preflight_results+=("The vm.max_map_count configuration has been appended to:\n/etc/sysctl.conf")
+        preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
     fi
     
     # Verify that the setting took effect
@@ -919,11 +952,11 @@ preflight_check() {
 
             # Execute the actions set by the functions
             if [ ! -z "$preflight_actions_string" ]; then
-                # Use pollkit's pkexec for gui with a fallback to sudo
-                if [ -x "$(command -v pkexec)" ]; then
-                    pkexec sh -c "$preflight_actions_string"
-                else
-                    sudo sh -c "$preflight_actions_string"
+                # Try to execute the actions as root
+                try_exec "$preflight_actions_string"
+                if [ "$?" -eq 1 ]; then
+                    message info "Authentication failed or there was an error.\nSee terminal for more information.\n\nReturning to main menu."
+                    return 0
                 fi
             fi
 
@@ -1705,12 +1738,12 @@ eac_workaround() {
 
     if message question "$eac_title\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted\n\nThe following directory will be deleted:\n$eac_dir_formatted\n\n\nTo revert these changes, delete the above line from\n/etc/hosts and relaunch the game\n\nDo you want to proceed?"; then
         debug_print continue "Editing hosts file..."
-        
-        # Use pollkit's pkexec for gui with a fallback to sudo
-        if [ -x "$(command -v pkexec)" ]; then
-            pkexec sh -c "echo $eac_hosts '#Star Citizen EAC workaround' >> /etc/hosts"
-        else
-            sudo sh -c "echo $eac_hosts '#Star Citizen EAC workaround' >> /etc/hosts"
+
+        # Try to modify /etc/hosts as root
+        try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
+        if [ "$?" -eq 1 ]; then
+            message info "Something went wrong. Unable to modify /etc/hosts.\n\nReturning to main menu."
+            return 0
         fi
 
         # Delete the EAC directory if it exists
