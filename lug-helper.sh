@@ -118,8 +118,11 @@ shaders_subdir="shaders"
 
 ######## Runners ###########################################################
 
-# Lutris wine runners directory
-runners_dir="$data_dir/lutris/runners/wine"
+# Lutris native wine runners directory
+runners_dir_native="$data_dir/lutris/runners/wine"
+# Lutris flatpak wine runners directory
+runners_dir_flatpak="$HOME/.var/app/net.lutris.Lutris/data/lutris/runners/wine"
+
 # URLs for downloading Lutris runners
 # Elements in this array must be added in quoted pairs of: "description" "url"
 # The first string in the pair is expected to contain the runner description
@@ -133,8 +136,11 @@ runner_sources=(
 
 ######## DXVK ##############################################################
 
-# Lutris dxvk directory
-dxvk_dir="$data_dir/lutris/runtime/dxvk"
+# Lutris native dxvk directory
+dxvk_dir_native="$data_dir/lutris/runtime/dxvk"
+# Lutris flatpak dxvk directory
+dxvk_dir_flatpak="$HOME/.var/app/net.lutris.Lutris/data/lutris/runtime/dxvk"
+
 # URLs for downloading dxvk versions
 # Elements in this array must be added in quoted pairs of: "description" "url"
 # The first string in the pair is expected to contain the runner description
@@ -183,6 +189,7 @@ repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
 current_version="v1.22"
 
+############################################################################
 ############################################################################
 ############################################################################
 
@@ -236,16 +243,29 @@ message() {
                 # info message
                 # call format: message info "text to display"
                 margs=("--info" "--window-icon=\"$lug_logo\"" "--no-wrap" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
                 margs=("--warning" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
                 margs=("--question" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
+                ;;
+            "options")
+                # formats the buttons with two custom options
+                # call format: if message options left_button_name right_button_name "which one do you want?"; then...
+                # The right button returns 0 (ok), the left button returns 1 (cancel)
+                if [ "$#" -lt 4 ]; then
+                    debug_print exit "Script error: The options type in the message function expects four arguments. Aborting."
+                fi
+                margs=("--question" "--cancel-label=$2" "--ok-label=$3" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 3   # drop the type and button label arguments and shift up to the text
                 ;;
             *)
                 debug_print exit "Script Error: Invalid message type passed to the message function. Aborting."
@@ -253,7 +273,6 @@ message() {
         esac
 
         # Display the message
-        shift 1   # drop the first argument and shift the remaining up one
         zenity "${margs[@]}""$@" --width="400" --title="Star Citizen LUG Helper" 2>/dev/null
     else
         # Fall back to text-based messages when zenity is not available
@@ -271,7 +290,6 @@ message() {
                 clear
                 printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
-                return 0
                 ;;
             "question")
                 # question
@@ -340,7 +358,7 @@ menu() {
     elif [ -z "$cancel_label" ]; then
         debug_print exit "Script error: The string 'cancel_label' was not set\nbefore calling the menu function. Aborting."
     fi
-    
+
     # Use Zenity if it is available
     if [ "$use_zenity" -eq 1 ]; then
         # Format the options array for Zenity by adding
@@ -356,7 +374,7 @@ menu() {
                 zen_options+=("${menu_options[i]}")
             fi
         done
-        
+
         # Display the zenity radio button menu
         choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon="$lug_logo" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
@@ -545,7 +563,7 @@ getdirs() {
 
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
-    declare -a dirs_list
+    unset dirs_list
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
@@ -568,13 +586,25 @@ display_dirs() {
     fi
 
     # Lutris runners
-    if [ -d "$runners_dir" ]; then
-        dirs_list+="\n\nLutris Runners:\n$runners_dir"
+    if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
+        dirs_list+="\n\nLutris Runners:"
+        if [ -d "$runners_dir_native" ]; then
+            dirs_list+="\n$runners_dir_native"
+        fi
+        if [ -d "$runners_dir_flatpak" ]; then
+            dirs_list+="\n$runners_dir_flatpak"
+        fi
     fi
 
     # Lutris dxvk
-    if [ -d "$runners_dir" ]; then
-        dirs_list+="\n\nLutris DXVK Versions:\n$dxvk_dir"
+    if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
+        dirs_list+="\n\nLutris DXVK Versions:"
+        if [ -d "$dxvk_dir_native" ]; then
+            dirs_list+="\n$dxvk_dir_native"
+        fi
+        if [ -d "$dxvk_dir_flatpak" ]; then
+            dirs_list+="\n$dxvk_dir_flatpak"
+        fi
     fi
 
     # Format the info header
@@ -639,8 +669,12 @@ rm_userdir() {
     fi
 }
 
-#--------------------- begin preflight check functions -----------------------#
-#------------------------- begin mapcount functions --------------------------#
+
+############################################################################
+######## begin preflight check functions ###################################
+############################################################################
+######## begin mapcount functions ##########################################
+############################################################################
 
 # Check if setting vm.max_map_count was successful
 mapcount_confirm() {
@@ -704,9 +738,13 @@ mapcount_check() {
     fi
 }
 
-#-------------------------- end mapcount functions ---------------------------#
+############################################################################
+######## end mapcount functions ############################################
+############################################################################
 
-#------------------------ begin filelimit functions --------------------------#
+############################################################################
+######## begin filelimit functions #########################################
+############################################################################
 
 # Check if setting the open file descriptors limit was successful
 filelimit_confirm() {
@@ -764,7 +802,9 @@ filelimit_check() {
     fi
 }
 
-#------------------------- end filelimit functions ---------------------------#
+############################################################################
+######## end filelimit functions ###########################################
+############################################################################
 
 # Check if WINE is installed
 wine_check() {
@@ -913,26 +953,30 @@ preflight_check() {
     fi
 }
 
-#------------------------- end preflight check functions ---------------------#
+############################################################################
+######## end preflight check functions #####################################
+############################################################################
 
-#------------------------- begin download functions ----------------------------#
+############################################################################
+######## begin download functions ##########################################
+############################################################################
 
 # Detect if lutris is installed
 lutris_detect() {
     lutris_installed="false"
-    lutris_standard="false"
+    lutris_native="false"
     lutris_flatpak="false"
 
-    # Detect standard lutris
+    # Detect native lutris
     if [ -x "$(command -v lutris)" ]; then
-        # Standard Lutris is installed
+        # Native Lutris is installed
         lutris_installed="true"
-        lutris_standard="true"
+        lutris_native="true"
     fi
 
     # Detect flatpak lutris
     if [ -x "$(command -v flatpak)" ]; then
-        flatpak info lutris >/dev/null 2>&1
+        flatpak info net.lutris.Lutris >/dev/null 2>&1
         if [ "$?" -eq 0 ]; then
             lutris_installed="true"
             lutris_flatpak="true"
@@ -942,13 +986,67 @@ lutris_detect() {
 
 # Restart lutris if necessary
 lutris_restart() {
+    lutris_detect
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
         if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-            debug_print continue "Restarting Lutris..."
-            pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+            # Detect which version of Lutris is running and restart it
+            if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "/usr/bin/lutris"; then
+                # Native Lutris is running
+                debug_print continue "Restarting native Lutris..."
+                pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+            fi
+            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "/app/bin/lutris"; then
+                # Flatpak Lutris is running
+                debug_print continue "Restarting flatpak Lutris..."
+                pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
+            fi
         fi
     fi
     lutris_needs_restart="false"
+}
+
+# Get an array of directories used by Lutris
+# Supports native install and flatpak
+# Array must be formatted in pairs of ("[type]" "[directory]")
+# Takes an argument to specify the type to return, ie "runner" or "dxvk"
+get_lutris_dirs() {
+    # Sanity check
+    if [ "$#" -lt 1 ]; then
+        debug_print exit "Script error: The get_lutris_dirs function expects one argument. Aborting."
+    fi
+
+    # Detect the type of Lutris install
+    lutris_detect
+
+    # Add lutris directories to an array
+    unset lutris_dirs
+    case "$1" in
+        "runner")
+            # Native Lutris install
+            if [ "$lutris_native" = "true" ]; then
+                lutris_dirs+=("native" "$runners_dir_native")
+            fi
+            # Flatpak lutris install
+            if [ "$lutris_flatpak" = "true" ]; then
+                lutris_dirs+=("flatpak" "$runners_dir_flatpak")
+            fi
+            ;;
+        "dxvk")
+            # Native Lutris install
+            if [ "$lutris_native" = "true" ]; then
+                lutris_dirs+=("native" "$dxvk_dir_native")
+            fi
+            # Flatpak lutris install
+            if [ "$lutris_flatpak" = "true" ]; then
+                lutris_dirs+=("flatpak" "$dxvk_dir_flatpak")
+            fi
+            ;;
+        *)
+            printf "lug-helper.sh: Unknown argument provided to get_lutris_dirs function. Aborting.\n" 1>&2
+            read -n 1 -s -p "Press any key..."
+            exit 0
+            ;;
+    esac
 }
 
 # Perform post-download actions, display messages or instructions
@@ -989,10 +1087,10 @@ post_download() {
     display_post_download_msg="false"
 }
 
-# Uninstall the selected item
+# Uninstall the selected item. Called by download_select_install()
+# Note: The array installed_items is expected to be set before calling this function
 download_delete() {
-    # This function expects an index number for the array
-    # installed_items to be passed in as an argument
+    # This function expects an index number for the array installed_items to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
     fi
@@ -1005,7 +1103,7 @@ download_delete() {
     fi
 }
 
-# List installed items for deletion
+# List installed items for deletion. Called by download_manage()
 download_select_delete() {
     # Configure the menu
     menu_text_zenity="Select the $download_type you want to remove:"
@@ -1013,19 +1111,31 @@ download_select_delete() {
     menu_text_height="65"
     goback="Return to the $download_type management menu"
     unset installed_items
+    unset installed_item_names
     unset menu_options
     unset menu_actions
-     
-    # Create an array containing all directories in the download_dir
-    for items_list in "$download_dir"/*; do
-        if [ -d "$items_list" ]; then
-            installed_items+=("$items_list")
-        fi
+
+    # Find all installed items in the download destinations
+    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+        # Loop through all download destinations
+        # Odd numbered elements will contain the download destination's path
+        for item in "${download_dirs[i]}"/*; do
+            if [ -d "$item" ]; then
+                if [ "${#download_dirs[@]}" -eq 2 ]; then
+                    # We're deleting from one location
+                    installed_item_names+=("$(basename "$item")")
+                else
+                    # We're deleting from multiple locations so label each one
+                    installed_item_names+=("$(basename "$item    [${download_dirs[i-1]}]")")
+                fi
+                installed_items+=("$item")
+            fi
+        done
     done
 
     # Create menu options for the installed items
     for (( i=0; i<"${#installed_items[@]}"; i++ )); do
-        menu_options+=("$(basename "${installed_items[i]}")")
+        menu_options+=("${installed_item_names[i]}")
         menu_actions+=("download_delete $i")
     done
 
@@ -1046,9 +1156,8 @@ download_select_delete() {
     menu
 }
 
-# Download and install the selected item
-# Note: The variables download_versions, contributor_url, and download_url_type
-# are expected to be set before calling this function
+# Download and install the selected item. Called by download_select_install()
+# Note: The variables download_versions, contributor_url, and download_url_type are expected to be set before calling this function
 download_install() {
     # This function expects an index number for the array
     # download_versions to be passed in as an argument
@@ -1076,15 +1185,9 @@ download_install() {
             download_name="$(basename "$download_file" .tar.zst)"
             ;;
         *)
-            debug_print exit "Unknown archive filetype in download_install function. Aborting."
+            debug_print exit "Script error: Unknown archive filetype in download_install function. Aborting."
             ;;
     esac
-
-    # Check if this file has already been installed
-    if [ -d "$download_dir/$download_name" ]; then
-        message info "The selected $download_type is already installed:\n\n$download_name"
-        return 0
-    fi
 
     # Get the selected download url
     # To add new sources, handle them here and in the
@@ -1163,14 +1266,25 @@ download_install() {
         # If the archive contains only one directory, install that directory
         # We rename it to the name of the archive in case it is different
         # so we can easily detect installed items in download_select_install()
-        debug_print continue "Installing $download_type into $download_dir/$download_name..."
-        if [ "$use_zenity" -eq 1 ]; then
-            # Use Zenity progress bar
-            mkdir -p "$download_dir" && cp -r "$tmp_dir/$download_name/$extracted_dir" "$download_dir/$download_name" | \
-                    zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-        else
-            mkdir -p "$download_dir" && cp -r "$tmp_dir/$download_name/$extracted_dir" "$download_dir/$download_name"
-        fi
+        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+            # Loop through all download destinations, installing to each one
+            # Odd numbered elements will contain the download destination's path
+            if [ -d "${download_dirs[i]}/$download_name" ]; then
+                # This item has already been installed. Delete it before reinstalling
+                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
+                rm -r "${download_dirs[i]}/$download_name"
+                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
+            else
+                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
+            fi
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_name/$extracted_dir" "${download_dirs[i]}/$download_name" | \
+                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
+            else
+                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_name/$extracted_dir" "${download_dirs[i]}/$download_name"
+            fi
+        done
 
         # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
@@ -1181,14 +1295,25 @@ download_install() {
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
-        debug_print continue "Installing $download_type into $download_dir/$download_name..."
-        if [ "$use_zenity" -eq 1 ]; then
-            # Use Zenity progress bar
-            mkdir -p "$download_dir/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"/"$download_name" | \
-                    zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-        else
-            mkdir -p "$download_dir/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "$download_dir"/"$download_name"
-        fi
+        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+            # Loop through all download destinations, installing to each one
+            # Odd numbered elements will contain the download destination's path
+            if [ -d "${download_dirs[i]}/$download_name" ]; then
+                # This item has already been installed. Delete it before reinstalling
+                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
+                rm -r "${download_dirs[i]}/$download_name"
+                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
+            else
+                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
+            fi
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "${download_dirs[i]}/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "${download_dirs[i]}"/"$download_name" | \
+                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
+            else
+                mkdir -p "${download_dirs[i]}/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "${download_dirs[i]}"/"$download_name"
+            fi
+        done
 
         # We need to restart Lutris for the download to be detected
         lutris_needs_restart="true"
@@ -1199,7 +1324,6 @@ download_install() {
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
-        exit 0
     fi
 
     # Cleanup tmp download
@@ -1208,7 +1332,7 @@ download_install() {
     rm -r "$tmp_dir/$download_name"
 }
 
-# List available items for download
+# List available items for download. Called by download_manage()
 download_select_install() {
     # This function expects an element number for the sources array
     # to be passed in as an argument
@@ -1267,7 +1391,7 @@ download_select_install() {
     goback="Return to the $download_type management menu"
     unset menu_options
     unset menu_actions
-    
+
     # Iterate through the versions, check if they are installed,
     # and add them to the menu options
     # To add new file extensions, handle them here and in
@@ -1298,12 +1422,44 @@ download_select_install() {
                 ;;
         esac
 
-        # Add the file names to the menu
-        if [ -d "$download_dir/$download_name" ]; then
-            menu_options+=("$download_name    [installed]")
+        # Create a list of locations where the file is already installed
+        unset installed_types
+        for (( j=0; j<"${#download_dirs[@]}"; j=j+2 )); do
+            # Loop through all download destinations to get installed types
+            # Even numbered elements will contain the download destination type (ie. native/flatpak)
+            if [ -d "${download_dirs[j+1]}/$download_name" ]; then
+                installed_types+=("${download_dirs[j]}")
+            fi
+        done
+
+        # Build the menu item
+        unset menu_option_text
+        if [ "${#download_dirs[@]}" -eq 2 ]; then
+            # We're only installing to one location
+            if [ -d "${download_dirs[1]}/$download_name" ]; then
+                menu_option_text="$download_name    [installed]"
+            else
+                # The file is not installed
+                menu_option_text="$download_name"
+            fi
         else
-            menu_options+=("$download_name")
+            # We're installing to multiple locations
+            if [ "${#installed_types[@]}" -gt 0 ]; then
+                # The file is already installed
+                menu_option_text="$download_name    [installed:"
+                for (( j=0; j<"${#installed_types[@]}"; j++ )); do
+                    # Add labels for each installed location
+                    menu_option_text="$menu_option_text ${installed_types[j]}"
+                done
+                # Complete the menu text
+                menu_option_text="$menu_option_text]"
+            else
+                # The file is not installed
+                menu_option_text="$download_name"
+            fi
         fi
+        # Add the file names to the menu
+        menu_options+=("$menu_option_text")
         menu_actions+=("download_install $i")
 
         # Increment the added items counter
@@ -1327,7 +1483,7 @@ download_select_install() {
     menu
 }
 
-# Manage downloads
+# Manage downloads. Called by a dedicated download type manage function, ie runner_manage() below
 #
 # This function expects the following variables to be set:
 #
@@ -1335,8 +1491,8 @@ download_select_install() {
 #   of items to download. It should be pointed to the appropriate
 #   array set at the top of the script using indirect expansion.
 #   See runner_sources at the top and runner_manage() below for examples.
-# - The string download_dir should contain the location the downloaded item
-#   will be installed to.
+# - The array download_dirs should contain the locations the downloaded item
+#   will be installed to. Must be formatted in pairs of ("[type]" "[directory]")
 # - The string "download_menu_heading" should contain the type of item
 #   being downloaded.  It will appear in the menu heading.
 # - The string "download_menu_description" should contain a description of
@@ -1346,21 +1502,11 @@ download_select_install() {
 # This function also expects one string argument containing the type of item to
 # be downloaded.  ie. runner or dxvk.
 #
-# See runner_manage below for a configuration example.
+# See runner_manage() below for a configuration example.
 download_manage() {
     # This function expects a string to be passed as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_manage function expects a string argument. Aborting."
-    fi
-    # Check if Lutris is installed
-    lutris_detect
-    if [ "$lutris_installed" = "false" ]; then
-        message warning "Lutris is required but does not appear to be installed."
-        return 0
-    fi
-    if [ ! -d "$download_dir" ]; then
-        message info "The following Lutris directory was not found.  Unable to continue.\n\n$download_dir"
-        return 0
     fi
 
     # Get the type of item we're downloading from the function arguments
@@ -1381,7 +1527,7 @@ download_manage() {
         unset menu_actions
 
         # Loop through the download_sources array and create a menu item
-        # for each one. Even numbered elements will contain the runner name
+        # for each one. Even numbered elements will contain the item name
         for (( i=0; i<"${#download_sources[@]}"; i=i+2 )); do
             # Set the options to be displayed in the menu
             menu_options+=("Install a $download_type from ${download_sources[i]}")
@@ -1416,7 +1562,28 @@ runner_manage() {
     # Use indirect expansion to point download_sources
     # to the runner_sources array set at the top of the script
     declare -n download_sources=runner_sources
-    download_dir="$runners_dir"
+
+    # Check if Lutris is installed and get relevant directories
+    get_lutris_dirs "runner"
+    if [ "$lutris_installed" = "false" ]; then
+        message warning "Lutris is required but does not appear to be installed."
+        return 0
+    fi
+    # Point download_dirs to the lutris_dirs array set by get_lutris_dirs
+    # Must be formatted in pairs of ("[type]" "[directory]")
+    declare -n download_dirs=lutris_dirs
+    # Verify the directories actually exist
+    missing_dir="false"
+    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+        if [ ! -d "${download_dirs[i]}" ]; then
+            message warning "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            debug_print continue "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            missing_dir="true"
+        fi
+    done
+    if [ "$missing_dir" = "true" ]; then
+        return 0
+    fi
 
     # Configure the text displayed in the menus
     download_menu_heading="Lutris Runners"
@@ -1451,7 +1618,28 @@ dxvk_manage() {
     # Use indirect expansion to point download_sources
     # to the dxvk_sources array set at the top of the script
     declare -n download_sources=dxvk_sources
-    download_dir="$dxvk_dir"
+
+    # Check if Lutris is installed and get relevant directories
+    get_lutris_dirs "dxvk"
+    if [ "$lutris_installed" = "false" ]; then
+        message warning "Lutris is required but does not appear to be installed."
+        return 0
+    fi
+    # Point download_dirs to the lutris_dirs array set by get_lutris_dirs
+    # Must be formatted in pairs of ("[type]" "[directory]")
+    declare -n download_dirs=lutris_dirs
+    # Verify the directories actually exist
+    missing_dir="false"
+    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+        if [ ! -d "${download_dirs[i]}" ]; then
+            message warning "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            debug_print continue "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            missing_dir="true"
+        fi
+    done
+    if [ "$missing_dir" = "true" ]; then
+        return 0
+    fi
 
     # Configure the text displayed in the menus
     download_menu_heading="Lutris DXVK Versions"
@@ -1477,7 +1665,9 @@ dxvk_manage() {
     download_manage "dxvk"
 }
 
-#-------------------------- end download functions -----------------------------#
+############################################################################
+######## end download functions ############################################
+############################################################################
 
 # Deploy Easy Anti-Cheat Workaround
 eac_workaround() {
@@ -1500,7 +1690,7 @@ eac_workaround() {
         else
             message info "The Easy Anti-Cheat workaround has already been applied, but may be commented out.\nNo changes have been made, please edit /etc/hosts manually."
         fi
-        return 1
+        return 0
     fi
 
     # Configure message variables
@@ -1548,7 +1738,36 @@ install_game() {
     fi
 
     if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
-        lutris --install "$install_script" &
+        # Detect which version of Lutris is installed
+        if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
+            # Both versions of Lutris are installed so ask the user
+            if message options "Flatpak" "Native" "This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?"; then
+                # Native version
+                install_version="native"
+            else
+                # Flatpak version
+                install_version="flatpak"
+            fi
+        elif [ "$lutris_native" = "true" ]; then
+            # Native version only
+            install_version="native"
+        elif [ "$lutris_flatpak" = "true" ]; then
+            # Flatpak version only
+            install_version="flatpak"
+        else
+            # We shouldn't get here
+            debug_print exit "Script error: Unable to detect Lutris version in install_game function. Aborting."
+        fi
+        
+        # Run the appropriate installer
+        if [ "$install_version" = "native" ]; then
+            lutris --install "$install_script" &
+        elif [ "$install_version" = "flatpak" ]; then
+            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
+        else
+            # We shouldn't get here
+            debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
+        fi
         message info "The installation will continue in Lutris"
     fi
 }
@@ -1696,7 +1915,7 @@ quit() {
 
 
 ############################################################################
-# MAIN
+######## MAIN ##############################################################
 ############################################################################
 
 # Check if Zenity is available
@@ -1707,6 +1926,22 @@ fi
 
 # Set defaults
 live_or_ptu="$live_dir"
+
+# Format some URLs for Zenity
+if [ "$use_zenity" -eq 1 ]; then
+    releases_url="<a href='$releases_url'>$releases_url</a>"
+    lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
+fi
+
+# Check if a newer verison of the script is available
+latest_version="$(get_latest_release "$repo")"
+
+# Sort the versions and check if the installed Helper is smaller
+if [ "$latest_version" != "$current_version" ] &&
+   [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
+
+    message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url"
+fi
 
 # If invoked with command line arguments, process them and exit
 if [ "$#" -gt 0 ]; then
@@ -1719,15 +1954,17 @@ if [ "$#" -gt 0 ]; then
 Usage: lug-helper <options>
   -p, --preflight-check     Run system optimization checks
   -i, --install             Install Star Citizen
+  -e, --eac                 Deploy Easy Anti-Cheat Workaround
   -m, --manage-runners      Install or remove Lutris runners
   -k, --manage-dxvk         Install or remove DXVK versions
   -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
-  -s, --delete-shaders      Delete Star Citizen shaders directory
+  -s, --delete-shaders      Delete Star Citizen shaders
   -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
   -t, --target=[live|ptu]   Target LIVE or PTU (default live)
   -g, --use-gui=[yes|no]    Use Zenity GUI if available (default yes)
   -r, --get-referral        Get a random LUG member's Star Citizen referral code
   -d, --show-directories    Show all Star Citizen and LUG Helper directories
+  -w, --show-wiki           Show the LUG Wiki
   -x, --reset-helper        Delete saved lug-helper configs
 "
                 exit 0
@@ -1737,6 +1974,9 @@ Usage: lug-helper <options>
                 ;;
             --install | -i )
                 cargs+=("install_game")
+                ;;
+            --eac | -e )
+                cargs+=("eac_workaround")
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
@@ -1785,6 +2025,9 @@ Usage: lug-helper <options>
             --show-directories | -d )
                 cargs+=("display_dirs")
                 ;;
+            --show-wiki | -w )
+                cargs+=("display_wiki")
+                ;;
             --reset-helper | -x )
                 cargs+=("reset_helper")
                 ;;
@@ -1799,27 +2042,11 @@ Usage: lug-helper <options>
 
     # Call the requested functions and exit
     if [ "${#cargs[@]}" -gt 0 ]; then
-        for (( i=0; i<"${#cargs[@]}"; i++ )); do
-            ${cargs[i]}
+        for (( x=0; x<"${#cargs[@]}"; x++ )); do
+            ${cargs[x]}
         done
         exit 0
     fi
-fi
-
-# Format some URLs for Zenity
-if [ "$use_zenity" -eq 1 ]; then
-    releases_url="<a href='$releases_url'>$releases_url</a>"
-    lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
-fi
-
-# Check if a newer verison of the script is available
-latest_version="$(get_latest_release "$repo")"
-
-# Sort the versions and check if the installed Helper is smaller
-if [ "$latest_version" != "$current_version" ] &&
-   [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
-
-    message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url"
 fi
 
 # Loop the main menu until the user selects quit
