@@ -915,12 +915,12 @@ lutris_restart() {
     if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
         if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
             # Detect which version of Lutris is running and restart it
-            if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "/usr/bin/lutris"; then
+            if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]usr/bin/lutris"; then
                 # Native Lutris is running
                 debug_print continue "Restarting native Lutris..."
                 pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
             fi
-            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "/app/bin/lutris"; then
+            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]app/bin/lutris"; then
                 # Flatpak Lutris is running
                 debug_print continue "Restarting flatpak Lutris..."
                 pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
