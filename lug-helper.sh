@@ -594,114 +594,6 @@ getdirs() {
     backup_path="$conf_dir/$conf_subdir"
 }
 
-# Display all directories currently used by this helper and Star Citizen
-display_dirs() {
-    unset dirs_list
-
-    # Helper configs and keybinds
-    if [ -d "$conf_dir/$conf_subdir" ]; then
-        dirs_list+=("\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds")
-    fi
-
-    # Wine prefix
-    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dirs_list+="\n\nWine prefix:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")"
-    fi
-
-    # Star Citizen installation
-    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
-        dirs_list+="\n\nStar Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")"
-    fi
-
-    # Star Citizen shaders path
-    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dirs_list+="\n\nStar Citizen shaders:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")/$appdata_path"
-    fi
-
-    # Lutris runners
-    if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
-        dirs_list+="\n\nLutris Runners:"
-        if [ -d "$runners_dir_native" ]; then
-            dirs_list+="\n$runners_dir_native"
-        fi
-        if [ -d "$runners_dir_flatpak" ]; then
-            dirs_list+="\n$runners_dir_flatpak"
-        fi
-    fi
-
-    # Lutris dxvk
-    if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
-        dirs_list+="\n\nLutris DXVK Versions:"
-        if [ -d "$dxvk_dir_native" ]; then
-            dirs_list+="\n$dxvk_dir_native"
-        fi
-        if [ -d "$dxvk_dir_flatpak" ]; then
-            dirs_list+="\n$dxvk_dir_flatpak"
-        fi
-    fi
-
-    # Format the info header
-    message_heading="These directories are currently being used by this Helper and Star Citizen"
-    if [ "$use_zenity" -eq 1 ]; then
-        message_heading="<b>$message_heading</b>"
-    fi
-
-    message info "$message_heading\n${dirs_list[@]}"
-}
-
-# Save exported keybinds, wipe the USER directory, and restore keybinds
-rm_userdir() {
-    # Prompt user to back up the current keybinds in the game
-    message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
-
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu
-        # or there was an error
-        return 0
-    fi
-
-    # Sanity check
-    if [ ! -d "$user_dir" ]; then
-        message warning "USER directory not found. There is nothing to delete!\n\n$user_dir"
-        return 0
-    fi
-
-    # Check for exported keybind files
-    if [ ! -d "$keybinds_dir" ] || [ -z "$(ls -A "$keybinds_dir")" ]; then
-        if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
-            exported=0
-        else
-            # User said no
-            return 0
-        fi
-    else
-        exported=1
-    fi
-
-    if message question "The following directory will be deleted:\n\n$user_dir\n\nDo you want to proceed?"; then
-        # Back up keybinds
-        if [ "$exported" -eq 1 ]; then
-            debug_print continue "Backing up keybinds to $backup_path/keybinds..."
-            mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
-        fi
-        
-        # Wipe the user directory
-        debug_print continue "Wiping $user_dir..."
-        rm -r "$user_dir"
-
-        # Restore custom keybinds
-        if [ "$exported" -eq 1 ]; then
-            debug_print continue "Restoring keybinds..."
-            mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
-            message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
-        fi
-
-        message info "Your Star Citizen USER directory has been cleaned up!"
-    fi
-}
-
 
 ############################################################################
 ######## begin preflight check functions ###################################
@@ -1702,6 +1594,285 @@ dxvk_manage() {
 ######## end download functions ############################################
 ############################################################################
 
+############################################################################
+######## begin maintenance functions #######################################
+############################################################################
+
+# Toggle between the LIVE and PTU game directories for all Helper functions
+set_version() {
+    if [ "$live_or_ptu" = "$live_dir" ]; then
+        live_or_ptu="$ptu_dir"
+        message info "The Helper will now target your Star Citizen PTU installation."
+    elif [ "$live_or_ptu" = "$ptu_dir" ]; then
+        live_or_ptu="$live_dir"
+        message info "The Helper will now target your Star Citizen LIVE installation."
+    else
+        debug_print continue "Unexpected game version provided.  Defaulting to the LIVE installation."
+        live_or_ptu="$live_dir"
+    fi
+}
+
+# Save exported keybinds, wipe the USER directory, and restore keybinds
+rm_userdir() {
+    # Prompt user to back up the current keybinds in the game
+    message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
+
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu
+        # or there was an error
+        return 0
+    fi
+
+    # Sanity check
+    if [ ! -d "$user_dir" ]; then
+        message warning "USER directory not found. There is nothing to delete!\n\n$user_dir"
+        return 0
+    fi
+
+    # Check for exported keybind files
+    if [ ! -d "$keybinds_dir" ] || [ -z "$(ls -A "$keybinds_dir")" ]; then
+        if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
+            exported=0
+        else
+            # User said no
+            return 0
+        fi
+    else
+        exported=1
+    fi
+
+    if message question "The following directory will be deleted:\n\n$user_dir\n\nDo you want to proceed?"; then
+        # Back up keybinds
+        if [ "$exported" -eq 1 ]; then
+            debug_print continue "Backing up keybinds to $backup_path/keybinds..."
+            mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
+        fi
+        
+        # Wipe the user directory
+        debug_print continue "Wiping $user_dir..."
+        rm -r "$user_dir"
+
+        # Restore custom keybinds
+        if [ "$exported" -eq 1 ]; then
+            debug_print continue "Restoring keybinds..."
+            mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
+            message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
+        fi
+
+        message info "Your Star Citizen USER directory has been cleaned up!"
+    fi
+}
+
+# Delete the shaders directory
+rm_shaders() {
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu, or error
+        return 0
+    fi
+
+    # Loop through all possible shader directories
+    for appdata_dir in "$shaders_dir"/*; do
+        if [ -d "$appdata_dir/$shaders_subdir" ]; then
+            # If a shaders directory is found, delete it
+            if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
+                debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
+                rm -r "$appdata_dir/$shaders_subdir"
+            fi
+        fi
+    done
+
+    message info "All shaders have been deleted"
+}
+
+# Delete DXVK cache
+rm_dxvkcache() {
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu
+        # or there was an error
+        return 0
+    fi
+
+    # Sanity check
+    if [ ! -f "$dxvk_cache" ]; then
+        message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
+        return 0
+    fi
+
+    # Delete the cache file
+    if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
+        debug_print continue "Deleting $dxvk_cache..."
+        rm "$dxvk_cache"
+        message info "Your DXVK cache has been deleted!"
+    fi
+}
+
+# Display all directories currently used by this helper and Star Citizen
+display_dirs() {
+    unset dirs_list
+
+    # Helper configs and keybinds
+    if [ -d "$conf_dir/$conf_subdir" ]; then
+        dirs_list+=("\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds")
+    fi
+
+    # Wine prefix
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        dirs_list+="\n\nWine prefix:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+    fi
+
+    # Star Citizen installation
+    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+        dirs_list+="\n\nStar Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")"
+    fi
+
+    # Star Citizen shaders path
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        dirs_list+="\n\nStar Citizen shaders:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")/$appdata_path"
+    fi
+
+    # Lutris runners
+    if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
+        dirs_list+="\n\nLutris Runners:"
+        if [ -d "$runners_dir_native" ]; then
+            dirs_list+="\n$runners_dir_native"
+        fi
+        if [ -d "$runners_dir_flatpak" ]; then
+            dirs_list+="\n$runners_dir_flatpak"
+        fi
+    fi
+
+    # Lutris dxvk
+    if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
+        dirs_list+="\n\nLutris DXVK Versions:"
+        if [ -d "$dxvk_dir_native" ]; then
+            dirs_list+="\n$dxvk_dir_native"
+        fi
+        if [ -d "$dxvk_dir_flatpak" ]; then
+            dirs_list+="\n$dxvk_dir_flatpak"
+        fi
+    fi
+
+    # Format the info header
+    message_heading="These directories are currently being used by this Helper and Star Citizen"
+    if [ "$use_zenity" -eq 1 ]; then
+        message_heading="<b>$message_heading</b>"
+    fi
+
+    message info "$message_heading\n${dirs_list[@]}"
+}
+
+# Display the LUG Wiki
+display_wiki() {
+    # Display a message containing the URL
+    message info "See the Wiki for our Quick-Start Guide, Manual Installation instructions,\nPerformance Tuning, and Common Issues and Solutions:\n\n$lug_wiki"
+}
+
+# Delete the helper's config directory
+reset_helper() {
+    # Delete the shader directory
+    if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
+        debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
+        rm "$conf_dir/$conf_subdir/"*.conf
+        message info "The Helper has been reset!"
+    fi
+}
+
+# Show maintenance/troubleshooting options
+maintenance_menu() {
+    # Loop the menu until the user selects quit
+    looping_menu="true"
+    while [ "$looping_menu" = "true" ]; do
+        # Configure the menu
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big></b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nYou may choose from the following options:"
+        menu_text_height="100"
+
+        # Configure the menu options
+        version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
+        userdir_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+        shaders_msg="Delete my shaders (Do this after each game update)"
+        vidcache_msg="Delete my DXVK cache"
+        dirs_msg="Display Helper and Star Citizen directories"
+        wiki_msg="Show the LUG Wiki"
+        reset_msg="Reset Helper configs"
+        quit_msg="Return to the main menu"
+        
+        # Set the options to be displayed in the menu
+        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$wiki_msg" "$reset_msg" "$quit_msg")
+        # Set the corresponding functions to be called for each of the options
+        menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "display_wiki" "reset_helper" "menu_loop_done")
+
+        # Calculate the total height the menu should be
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+       
+       # Set the label for the cancel button
+       cancel_label="Go Back"
+       
+        # Call the menu function.  It will use the options as configured above
+        menu
+    done
+}
+
+############################################################################
+######## end maintenance functions #########################################
+############################################################################
+
+
+# Install Star Citizen using Lutris
+install_game() {
+    # Check if Lutris is installed
+    lutris_detect
+    if [ "$lutris_installed" = "false" ]; then
+        message warning "Lutris is required but does not appear to be installed."
+        return 0
+    fi
+    # Check if the install script exists
+    if [ ! -f "$install_script" ]; then
+        message warning "Lutris install script not found.\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
+        return 0
+    fi
+
+    if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
+        # Detect which version of Lutris is installed
+        if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
+            # Both versions of Lutris are installed so ask the user
+            if message options "Flatpak" "Native" "This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?"; then
+                # Native version
+                install_version="native"
+            else
+                # Flatpak version
+                install_version="flatpak"
+            fi
+        elif [ "$lutris_native" = "true" ]; then
+            # Native version only
+            install_version="native"
+        elif [ "$lutris_flatpak" = "true" ]; then
+            # Flatpak version only
+            install_version="flatpak"
+        else
+            # We shouldn't get here
+            debug_print exit "Script error: Unable to detect Lutris version in install_game function. Aborting."
+        fi
+        
+        # Run the appropriate installer
+        if [ "$install_version" = "native" ]; then
+            lutris --install "$install_script" &
+        elif [ "$install_version" = "flatpak" ]; then
+            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
+        else
+            # We shouldn't get here
+            debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
+        fi
+        message info "The installation will continue in Lutris"
+    fi
+}
+
 # Deploy Easy Anti-Cheat Workaround
 eac_workaround() {
     # Get/set directory paths
@@ -1756,143 +1927,6 @@ eac_workaround() {
     fi
 }
 
-# Install Star Citizen using Lutris
-install_game() {
-    # Check if Lutris is installed
-    lutris_detect
-    if [ "$lutris_installed" = "false" ]; then
-        message warning "Lutris is required but does not appear to be installed."
-        return 0
-    fi
-    # Check if the install script exists
-    if [ ! -f "$install_script" ]; then
-        message warning "Lutris install script not found.\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
-        return 0
-    fi
-
-    if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
-        # Detect which version of Lutris is installed
-        if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
-            # Both versions of Lutris are installed so ask the user
-            if message options "Flatpak" "Native" "This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?"; then
-                # Native version
-                install_version="native"
-            else
-                # Flatpak version
-                install_version="flatpak"
-            fi
-        elif [ "$lutris_native" = "true" ]; then
-            # Native version only
-            install_version="native"
-        elif [ "$lutris_flatpak" = "true" ]; then
-            # Flatpak version only
-            install_version="flatpak"
-        else
-            # We shouldn't get here
-            debug_print exit "Script error: Unable to detect Lutris version in install_game function. Aborting."
-        fi
-        
-        # Run the appropriate installer
-        if [ "$install_version" = "native" ]; then
-            lutris --install "$install_script" &
-        elif [ "$install_version" = "flatpak" ]; then
-            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
-        else
-            # We shouldn't get here
-            debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
-        fi
-        message info "The installation will continue in Lutris"
-    fi
-}
-
-# Display the LUG Wiki
-display_wiki() {
-    # Display a message containing the URL
-    message info "See the Wiki for our Quick-Start Guide, Manual Installation instructions,\nPerformance Tuning, and Common Issues and Solutions:\n\n$lug_wiki"
-}
-
-# Delete the shaders directory
-rm_shaders() {
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu, or error
-        return 0
-    fi
-
-    # Loop through all possible shader directories
-    for appdata_dir in "$shaders_dir"/*; do
-        if [ -d "$appdata_dir/$shaders_subdir" ]; then
-            # If a shaders directory is found, delete it
-            if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
-                debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
-                rm -r "$appdata_dir/$shaders_subdir"
-            fi
-        fi
-    done
-
-    message info "All shaders have been deleted"
-}
-
-# Delete DXVK cache
-rm_dxvkcache() {
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu
-        # or there was an error
-        return 0
-    fi
-
-    # Sanity check
-    if [ ! -f "$dxvk_cache" ]; then
-        message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
-        return 0
-    fi
-
-    # Delete the cache file
-    if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $dxvk_cache..."
-        rm "$dxvk_cache"
-        message info "Your DXVK cache has been deleted!"
-    fi
-}
-
-# Show maintenance/troubleshooting options
-maintenance_menu() {
-    # Loop the menu until the user selects quit
-    looping_menu="true"
-    while [ "$looping_menu" = "true" ]; do
-        # Configure the menu
-        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big></b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Game Maintenance and Troubleshooting\n\nYou may choose from the following options:"
-        menu_text_height="100"
-
-        # Configure the menu options
-        version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
-        userdir_msg="Delete my Star Citizen USER folder and preserve my keybinds"
-        shaders_msg="Delete my shaders (Do this after each game update)"
-        vidcache_msg="Delete my DXVK cache"
-        dirs_msg="Display Helper and Star Citizen directories"
-        wiki_msg="Show the LUG Wiki"
-        reset_msg="Reset Helper configs"
-        quit_msg="Return to the main menu"
-        
-        # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$wiki_msg" "$reset_msg" "$quit_msg")
-        # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "display_wiki" "reset_helper" "menu_loop_done")
-
-        # Calculate the total height the menu should be
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-       
-       # Set the label for the cancel button
-       cancel_label="Go Back"
-       
-        # Call the menu function.  It will use the options as configured above
-        menu
-    done
-}
 
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
@@ -1903,30 +1937,6 @@ referral_randomizer() {
     random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
 
     message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
-}
-
-# Toggle between the LIVE and PTU game directories for all Helper functions
-set_version() {
-    if [ "$live_or_ptu" = "$live_dir" ]; then
-        live_or_ptu="$ptu_dir"
-        message info "The Helper will now target your Star Citizen PTU installation."
-    elif [ "$live_or_ptu" = "$ptu_dir" ]; then
-        live_or_ptu="$live_dir"
-        message info "The Helper will now target your Star Citizen LIVE installation."
-    else
-        debug_print continue "Unexpected game version provided.  Defaulting to the LIVE installation."
-        live_or_ptu="$live_dir"
-    fi
-}
-
-# Delete the helper's config directory
-reset_helper() {
-    # Delete the shader directory
-    if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
-        rm "$conf_dir/$conf_subdir/"*.conf
-        message info "The Helper has been reset!"
-    fi
 }
 
 # Get the latest release version of a repo. Expects "user/repo_name" as input
