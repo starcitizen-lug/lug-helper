@@ -1685,7 +1685,7 @@ rm_shaders() {
         fi
     done
 
-    message info "All shaders have been deleted"
+    message info "Shader operations completed"
 }
 
 # Delete DXVK cache
