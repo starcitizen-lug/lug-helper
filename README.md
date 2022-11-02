@@ -65,12 +65,12 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 ## Installation:
 
-From Source:
+**From Source:**
 1. Download it! https://github.com/starcitizen-lug/lug-helper/releases
 2. Extract it!
 3. Run it!
 
-Arch Linux: https://aur.archlinux.org/packages/lug-helper/
+**Arch Linux:** https://aur.archlinux.org/packages/lug-helper/
 
 _Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
 _Optional Dependencies: **zenity** (for GUI), **zstd** (to extract some runners)_  
