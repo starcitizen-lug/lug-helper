@@ -73,7 +73,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 **Arch Linux:** https://aur.archlinux.org/packages/lug-helper/
 
 _Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
-_Optional Dependencies: **zenity** (for GUI), **zstd** (to extract some runners)_  
+_Optional Dependencies: **zenity** (for GUI)_  
 
 ## Contributors:
 - https://github.com/Termuellinator
