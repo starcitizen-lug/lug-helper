@@ -1325,6 +1325,7 @@ download_select_install() {
                         glibc_message+="Flatpak glibc: $flatpak_glibc\n"
                         ;;
                     *)
+                        debug_print exit "Script error:  Unknown glibc_fail string in download_select_install() function. Aborting."
                         ;;
                 esac
             done
