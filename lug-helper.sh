@@ -1284,12 +1284,16 @@ download_select_install() {
     # For runners, check GlibC version against runner requirements
     if [ "$download_type" = "runner" ] && ( [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ] ); then
         required_glibc="2.33"
-        system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+        if [ -x "$(command -v ldd)" ]; then
+            system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+        else
+            system_glibc="0 (Not installed)"
+        fi
 
         # Sort the versions and check if the installed glibc is smaller
         if [ "$required_glibc" != "$system_glibc" ] &&
            [ "$system_glibc" = "$(printf "$system_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
-            message warning "Your glibc version is incompatible with the selected runner.\n\nSystem glibc: v$system_glibc\nMinimum required glibc: v$required_glibc"
+            message warning "Your glibc version is incompatible with the selected runner.\n\nSystem glibc: $system_glibc\nMinimum required glibc: $required_glibc"
             return 1
         fi
     fi
