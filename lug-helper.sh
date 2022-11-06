@@ -1767,6 +1767,7 @@ rm_dxvkcache() {
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
     unset dirs_list
+    lutris_detect
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
@@ -1791,10 +1792,10 @@ display_dirs() {
     # Lutris runners
     if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
         dirs_list+="\n\nLutris Runners:"
-        if [ -d "$runners_dir_native" ]; then
+        if [ -d "$runners_dir_native" ] && [ "$lutris_native" = "true" ]; then
             dirs_list+="\n$runners_dir_native"
         fi
-        if [ -d "$runners_dir_flatpak" ]; then
+        if [ -d "$runners_dir_flatpak" ] && [ "$lutris_flatpak" = "true" ]; then
             dirs_list+="\n$runners_dir_flatpak"
         fi
     fi
@@ -1802,10 +1803,10 @@ display_dirs() {
     # Lutris dxvk
     if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
         dirs_list+="\n\nLutris DXVK Versions:"
-        if [ -d "$dxvk_dir_native" ]; then
+        if [ -d "$dxvk_dir_native" ] && [ "$lutris_native" = "true" ]; then
             dirs_list+="\n$dxvk_dir_native"
         fi
-        if [ -d "$dxvk_dir_flatpak" ]; then
+        if [ -d "$dxvk_dir_flatpak" ] && [ "$lutris_flatpak" = "true" ]; then
             dirs_list+="\n$dxvk_dir_flatpak"
         fi
     fi
