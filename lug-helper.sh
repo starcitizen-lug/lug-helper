@@ -1283,18 +1283,65 @@ download_select_install() {
 
     # For runners, check GlibC version against runner requirements
     if [ "$download_type" = "runner" ] && ( [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ] ); then
+        unset glibc_fail
         required_glibc="2.33"
-        if [ -x "$(command -v ldd)" ]; then
-            system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
-        else
-            system_glibc="0 (Not installed)"
+
+        # Native lutris
+        if [ "$lutris_native" = "true" ]; then
+            if [ -x "$(command -v ldd)" ]; then
+                native_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+            else
+                native_glibc="0 (Not installed)"
+            fi
+
+            # Sort the versions and check if the installed glibc is smaller
+            if [ "$required_glibc" != "$native_glibc" ] &&
+            [ "$native_glibc" = "$(printf "$native_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
+                glibc_fail+=("Native")
+            fi
         fi
 
-        # Sort the versions and check if the installed glibc is smaller
-        if [ "$required_glibc" != "$system_glibc" ] &&
-           [ "$system_glibc" = "$(printf "$system_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
-            message warning "Your glibc version is incompatible with the selected runner.\n\nSystem glibc: $system_glibc\nMinimum required glibc: $required_glibc"
-            return 1
+        # Flatpak lutris
+        if [ "$lutris_flatpak" = "true" ]; then
+            flatpak_glibc="$(flatpak run --command="ldd" net.lutris.Lutris --version | awk '/ldd/{print $NF}')"
+
+            # Sort the versions and check if the installed glibc is smaller
+            if [ "$required_glibc" != "$flatpak_glibc" ] &&
+            [ "$flatpak_glibc" = "$(printf "$flatpak_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
+                glibc_fail+=("Flatpak")
+            fi
+        fi
+
+        # Display a warning message
+        if [ -n "$glibc_fail" ]; then
+            unset glibc_message
+            # Prepare the warning message
+            for (( i=0; i<"${#glibc_fail[@]}"; i++ )); do
+                case "${glibc_fail[i]}" in
+                    "Native")
+                        glibc_message+="System glibc: $native_glibc\n"
+                        ;;
+                    "Flatpak")
+                        glibc_message+="Flatpak glibc: $flatpak_glibc\n"
+                        ;;
+                    *)
+                        ;;
+                esac
+            done
+
+            message warning "Your glibc version is incompatible with the selected runner\n\n${glibc_message}Minimum required glibc: $required_glibc"
+
+            # Return if all installed versions of lutris fail the check
+            if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
+                # Both are installed
+                if [ "${#glibc_fail[@]}" -eq 2 ]; then
+                    # Both failed the check
+                    return 1
+                fi
+            else
+                # Only one is installed, but it failed the check
+                return 1
+            fi
         fi
     fi
 
