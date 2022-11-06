@@ -1770,7 +1770,7 @@ display_dirs() {
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
-        dirs_list+=("\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds")
+        dirs_list+="\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds"
     fi
 
     # Wine prefix
@@ -1816,7 +1816,7 @@ display_dirs() {
         message_heading="<b>$message_heading</b>"
     fi
 
-    message info "$message_heading\n${dirs_list[@]}"
+    message info "$message_heading\n$dirs_list"
 }
 
 # Display the LUG Wiki
