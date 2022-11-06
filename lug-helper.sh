@@ -1766,49 +1766,51 @@ rm_dxvkcache() {
 
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
-    unset dirs_list
+    dirs_list="\n"
     lutris_detect
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
-        dirs_list+="\n\nHelper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds"
+        dirs_list+="Helper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds\n\n"
     fi
 
     # Wine prefix
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dirs_list+="\n\nWine prefix:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+        dirs_list+="Wine prefix:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")\n\n"
     fi
 
     # Star Citizen installation
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
-        dirs_list+="\n\nStar Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")"
+        dirs_list+="Star Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")\n\n"
     fi
 
     # Star Citizen shaders path
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dirs_list+="\n\nStar Citizen shaders:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")/$appdata_path"
+        dirs_list+="Star Citizen shaders:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")/$appdata_path\n\n"
     fi
 
     # Lutris runners
     if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
-        dirs_list+="\n\nLutris Runners:"
+        dirs_list+="Lutris Runners:"
         if [ -d "$runners_dir_native" ] && [ "$lutris_native" = "true" ]; then
             dirs_list+="\n$runners_dir_native"
         fi
         if [ -d "$runners_dir_flatpak" ] && [ "$lutris_flatpak" = "true" ]; then
             dirs_list+="\n$runners_dir_flatpak"
         fi
+        dirs_list+="\n\n"
     fi
 
     # Lutris dxvk
     if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
-        dirs_list+="\n\nLutris DXVK Versions:"
+        dirs_list+="Lutris DXVK Versions:"
         if [ -d "$dxvk_dir_native" ] && [ "$lutris_native" = "true" ]; then
             dirs_list+="\n$dxvk_dir_native"
         fi
         if [ -d "$dxvk_dir_flatpak" ] && [ "$lutris_flatpak" = "true" ]; then
             dirs_list+="\n$dxvk_dir_flatpak"
         fi
+        dirs_list+="\n\n"
     fi
 
     # Format the info header
