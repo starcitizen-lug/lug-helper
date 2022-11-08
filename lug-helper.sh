@@ -157,7 +157,7 @@ max_download_items=20
 
 # Pixels to add for each Zenity menu option
 # used to dynamically determine the height of menus
-menu_option_height="25"
+menu_option_height="26"
 
 ######## Bundled Files #####################################################
 
@@ -1033,7 +1033,7 @@ download_select_delete() {
     # Configure the menu
     menu_text_zenity="Select the $download_type you want to remove:"
     menu_text_terminal="Select the $download_type you want to remove:"
-    menu_text_height="65"
+    menu_text_height="60"
     goback="Return to the $download_type management menu"
     unset installed_items
     unset installed_item_names
@@ -1364,7 +1364,7 @@ download_select_install() {
     # Configure the menu
     menu_text_zenity="Select the $download_type you want to install:"
     menu_text_terminal="Select the $download_type you want to install:"
-    menu_text_height="65"
+    menu_text_height="60"
     goback="Return to the $download_type management menu"
     unset menu_options
     unset menu_actions
