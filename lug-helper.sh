@@ -894,18 +894,14 @@ lutris_detect() {
 
     # Detect native lutris
     if [ -x "$(command -v lutris)" ]; then
-        # Native Lutris is installed
         lutris_installed="true"
         lutris_native="true"
     fi
 
     # Detect flatpak lutris
-    if [ -x "$(command -v flatpak)" ]; then
-        flatpak info net.lutris.Lutris >/dev/null 2>&1
-        if [ "$?" -eq 0 ]; then
+    if [ -x "$(command -v flatpak)" ] && flatpak list --app | grep -q Lutris; then
             lutris_installed="true"
             lutris_flatpak="true"
-        fi
     fi
 }
 
