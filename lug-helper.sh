@@ -97,6 +97,16 @@ helper_dir="$(realpath "$0" | xargs -0 dirname)"
 tmp_dir="$(mktemp -d --suffix=".lughelper")"
 trap 'rm -r "$tmp_dir"' EXIT
 
+# Set a maximum number of versions to display from each download url
+max_download_items=20
+
+# Pixels to add for each Zenity menu option
+# used to dynamically determine the height of menus
+menu_option_height="26"
+
+# winetricks minimum version
+winetricks_required="20210825"
+
 ######## Game Directories ##################################################
 
 # The game's base directory name
@@ -151,13 +161,6 @@ dxvk_sources=(
     "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
     "gnusenpai" "https://api.github.com/repos/gnusenpai/dxvk/releases"
 )
-
-# Set a maximum number of versions to display from each download url
-max_download_items=20
-
-# Pixels to add for each Zenity menu option
-# used to dynamically determine the height of menus
-menu_option_height="26"
 
 ######## Bundled Files #####################################################
 
@@ -778,6 +781,21 @@ wine_check() {
     fi
 }
 
+# Check the installed winetricks version
+winetricks_check() {
+    if [ -x "$(command -v winetricks)" ]; then
+        winetricks_current="$(winetricks --version | awk '{print $1}')"
+        if [ "$winetricks_required" != "$winetricks_current" ] &&
+           [ "$winetricks_current" = "$(printf "$winetricks_current\n$winetricks_required" | sort -V | head -n1)" ]; then
+            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
+        else
+            preflight_pass+=("Winetricks is installed and up to date.")  
+        fi
+    else
+        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
+    fi
+}
+
 # Check total system memory
 memory_check() {
     memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
@@ -819,6 +837,7 @@ preflight_check() {
     
     # Call the optimization functions to perform the checks
     wine_check
+    winetricks_check
     memory_check
     swap_check
     avx_check
