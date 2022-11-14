@@ -355,10 +355,7 @@ message() {
 #
 # How to call this function:
 #
-# Requires two arrays to be set: "menu_options" and "menu_actions"
-# two string variables: "menu_text_zenity" and "menu_text_terminal"
-# and one integer variable: "menu_height".
-#
+# Requires the following variables:
 # - The array "menu_options" should contain the strings of each option.
 # - The array "menu_actions" should contain function names to be called.
 # - The strings "menu_text_zenity" and "menu_text_terminal" should contain
@@ -366,6 +363,7 @@ message() {
 #   This text will be displayed above the menu options.
 #   Zenity supports Pango Markup for text formatting.
 # - The integer "menu_height" specifies the height of the zenity menu.
+# - The string "menu_type" should contain either "radiolist" or "checklist".
 # - The string "cancel_label" should contain the text of the cancel button.
 # 
 # The final element in each array is expected to be a quit option.
@@ -388,6 +386,8 @@ menu() {
         debug_print exit "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
     elif [ -z "$menu_height" ]; then
         debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+    elif [ "$menu_type" != "radiolist" ] && [ "$menu_type" != "checklist" ]; then
+        debug_print exit "Script error: Unknown menu_type in menu() function. Aborting."
     elif [ -z "$cancel_label" ]; then
         debug_print exit "Script error: The string 'cancel_label' was not set\nbefore calling the menu function. Aborting."
     fi
@@ -399,28 +399,66 @@ menu() {
         # ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
         for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
             if [ "$i" -eq 0 ]; then
-                # Select the first radio button by default
-                zen_options=("TRUE")
-                zen_options+=("${menu_options[i]}")
+                # Set the first element
+                if [ "$menu_type" = "radiolist" ]; then
+                    # Select the first radio button by default
+                    zen_options=("TRUE")
+                else
+                    # Don't select the first checklist item
+                    zen_options=("FALSE")
+                fi
             else
+                # Deselect all remaining items
                 zen_options+=("FALSE")
-                zen_options+=("${menu_options[i]}")
             fi
+            # Add the menu list item
+            zen_options+=("${menu_options[i]}")
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --radiolist --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon="$lug_logo" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --"$menu_type" --width="480" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon="$lug_logo" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
-        # Loop through the options array to match the chosen option
+        # Match up choice with an element in menu_options
         matched="false"
-        for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-            if [ "$choice" = "${menu_options[i]}" ]; then
-                # Execute the corresponding action
-                ${menu_actions[i]}
-                matched="true"
-                break
+        if [ "$menu_type" = "radiolist" ]; then
+            # Loop through the options array to match the chosen option
+            for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+                if [ "$choice" = "${menu_options[i]}" ]; then
+                    # Execute the corresponding action for a radiolist menu
+                    ${menu_actions[i]}
+                    matched="true"
+                    break
+                fi
+            done
+        elif [ "$menu_type" = "checklist" ]; then
+            # choice will be empty if no selection was made
+            # Unfortunately, it's also empty when the user presses cancel
+            # so we can't differentiate between those two states
+
+            # Convert choice string to array elements for checklists
+            ifsBAK="$IFS"
+            IFS='|' read -a choices <<< "$choice"
+            IFS="$ifsBAK"
+            
+            # Fetch the function to be called
+            function_call="$(echo "${menu_actions[0]}" | awk '{print $1}')"
+
+            # Loop through the options array to match the chosen option(s)
+            unset arguments_array
+            for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+                for (( j=0; j<"${#choices[@]}"; j++ )); do
+                    if [ "${choices[j]}" = "${menu_options[i]}" ]; then
+                        arguments_array+=("$(echo "${menu_actions[i]}" | awk '{print $2}')")
+                        matched="true"
+                    fi
+                done
+            done
+
+            # Call the function with all matched elements as arguments
+            if [ "$matched" = "true" ]; then
+                $function_call "${arguments_array[@]}"
             fi
-        done
+        fi
 
         # If no match was found, the user clicked cancel
         if [ "$matched" = "false" ]; then
@@ -1016,10 +1054,19 @@ download_delete() {
         debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
     fi
     
-    item_to_delete="$1"
-    if message question "Are you sure you want to delete the following ${download_type}?\n\n${installed_items[$item_to_delete]}"; then
-        rm -r "${installed_items[$item_to_delete]}"
-        debug_print continue "Deleted ${installed_items[$item_to_delete]}"
+    # Capture arguments and format a list of items
+    item_to_delete=("$@")
+    unset list_to_delete
+    for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
+        list_to_delete+="\n${installed_items[${item_to_delete[i]}]}"
+    done
+
+    if message question "Are you sure you want to delete the following ${download_type}(s)?\n$list_to_delete"; then
+        # Loop through the arguments
+        for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
+            rm -r "${installed_items[${item_to_delete[i]}]}"
+            debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
+        done
         lutris_needs_restart="true"
     fi
 }
@@ -1027,9 +1074,10 @@ download_delete() {
 # List installed items for deletion. Called by download_manage()
 download_select_delete() {
     # Configure the menu
-    menu_text_zenity="Select the $download_type you want to remove:"
+    menu_text_zenity="Select the $download_type(s) you want to remove:"
     menu_text_terminal="Select the $download_type you want to remove:"
     menu_text_height="60"
+    menu_type="checklist"
     goback="Return to the $download_type management menu"
     unset installed_items
     unset installed_item_names
@@ -1361,6 +1409,7 @@ download_select_install() {
     menu_text_zenity="Select the $download_type you want to install:"
     menu_text_terminal="Select the $download_type you want to install:"
     menu_text_height="60"
+    menu_type="radiolist"
     goback="Return to the $download_type management menu"
     unset menu_options
     unset menu_actions
@@ -1492,6 +1541,7 @@ download_manage() {
         menu_text_zenity="<b><big>Manage Your $download_menu_heading</big>\n\n$download_menu_description</b>\n\nYou may choose from the following options:"
         menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nYou may choose from the following options:"
         menu_text_height="$download_menu_height"
+        menu_type="radiolist"
 
         # Configure the menu options
         delete="Remove an installed $download_type"
@@ -1516,8 +1566,8 @@ download_manage() {
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
         
-       # Set the label for the cancel button
-       cancel_label="Go Back"
+        # Set the label for the cancel button
+        cancel_label="Go Back"
        
         # Call the menu function.  It will use the options as configured above
         menu
@@ -1843,6 +1893,7 @@ maintenance_menu() {
         menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big></b>\n\nYou may choose from the following options:"
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nYou may choose from the following options:"
         menu_text_height="100"
+        menu_type="radiolist"
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
@@ -2149,6 +2200,7 @@ while true; do
     menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis Helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
     menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis Helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
     menu_text_height="140"
+    menu_type="radiolist"
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
