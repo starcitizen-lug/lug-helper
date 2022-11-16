@@ -105,7 +105,7 @@ max_download_items=20
 menu_option_height="26"
 
 # winetricks minimum version
-winetricks_required="20210825"
+winetricks_required="20220411"
 
 ######## Game Directories ##################################################
 
