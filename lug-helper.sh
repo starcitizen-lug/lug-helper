@@ -2085,7 +2085,12 @@ quit() {
 # Check if Zenity is available
 use_zenity=0
 if [ -x "$(command -v zenity)" ]; then
-    use_zenity=1
+    if zenity --version >/dev/null; then
+        use_zenity=1
+    else
+        # Zenity is broken
+        debug_print continue "Zenity failed to start. Falling back to terminal menus"
+    fi
 fi
 
 # Set defaults
