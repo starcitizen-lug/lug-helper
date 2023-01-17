@@ -901,17 +901,8 @@ preflight_check() {
     filelimit_check
 
     # Populate info strings with the results and add formatting
-    if [ "${#preflight_pass[@]}" -gt 0 ]; then
-        preflight_pass_string="Passed Checks:"
-        for (( i=0; i<"${#preflight_pass[@]}"; i++ )); do
-            preflight_pass_string="$preflight_pass_string\n- ${preflight_pass[i]//\\n/\\n    }"
-        done
-        # Add extra newlines if there are also failures to report
-        if [ "${#preflight_fail[@]}" -gt 0 ]; then
-            preflight_pass_string="$preflight_pass_string\n\n"
-        fi
-    fi
     if [ "${#preflight_fail[@]}" -gt 0 ]; then
+        # Failed checks
         preflight_fail_string="Failed Checks:"
         for (( i=0; i<"${#preflight_fail[@]}"; i++ )); do
             if [ "$i" -eq 0 ]; then
@@ -920,8 +911,20 @@ preflight_check() {
                 preflight_fail_string="$preflight_fail_string\n\n- ${preflight_fail[i]//\\n/\\n    }"
             fi
         done
+        # Add extra newlines if there are also passes to report
+        if [ "${#preflight_pass[@]}" -gt 0 ]; then
+            preflight_fail_string="$preflight_fail_string\n\n"
+        fi
+    fi
+    if [ "${#preflight_pass[@]}" -gt 0 ]; then
+        # Passed checks
+        preflight_pass_string="Passed Checks:"
+        for (( i=0; i<"${#preflight_pass[@]}"; i++ )); do
+            preflight_pass_string="$preflight_pass_string\n- ${preflight_pass[i]//\\n/\\n    }"
+        done
     fi
     for (( i=0; i<"${#preflight_manual[@]}"; i++ )); do
+        # Instructions for manually fixing problems
         if [ "$i" -eq 0 ]; then
             preflight_manual_string="${preflight_manual[i]}"
         else
@@ -940,8 +943,8 @@ preflight_check() {
         message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
         if [ -z "$preflight_action_funcs" ]; then
-            message warning "$preflight_pass_string$preflight_fail_string"
-        elif message question "$preflight_pass_string$preflight_fail_string\n\nWould you like configuration issues to be fixed for you?"; then
+            message warning "$preflight_fail_string$preflight_pass_string"
+        elif message question "$preflight_fail_string$preflight_pass_string\n\nWould you like configuration issues to be fixed for you?"; then
             # Call functions to build fixes for any issues found
             for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
                 ${preflight_action_funcs[i]}
