@@ -107,6 +107,9 @@ menu_option_height="26"
 # winetricks minimum version
 winetricks_required="20220411"
 
+# lutris minimum version
+lutris_required="0.5.10.1"
+
 ######## Game Directories ##################################################
 
 # The game's base directory name
@@ -781,6 +784,58 @@ wine_check() {
     fi
 }
 
+# Detect if lutris is installed
+lutris_detect() {
+    lutris_installed="false"
+    lutris_native="false"
+    lutris_flatpak="false"
+
+    # Detect native lutris
+    if [ -x "$(command -v lutris)" ]; then
+        lutris_installed="true"
+        lutris_native="true"
+    fi
+
+    # Detect flatpak lutris
+    if [ -x "$(command -v flatpak)" ] && flatpak list --app | grep -q Lutris; then
+            lutris_installed="true"
+            lutris_flatpak="true"
+    fi
+}
+
+# Check the installed lutris version
+lutris_check() {
+    lutris_detect
+
+    if [ "$lutris_installed" = "true" ]; then
+        # Check the native lutris version number
+        if [ "$lutris_native" = "true" ]; then
+            lutris_current="$(lutris -v)"
+            if [ "$lutris_required" != "$lutris_current" ] &&
+               [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
+                preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
+            else
+                preflight_pass+=("Lutris is installed and up to date.")  
+            fi
+        fi
+
+        # Check the flatpak lutris version number
+        if [ "$lutris_flatpak" = "true" ]; then
+            lutris_current="$(flatpak run net.lutris.Lutris -v)"
+            if [ "$lutris_required" != "$lutris_current" ] &&
+               [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
+                preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
+            else
+                preflight_pass+=("Flatpak Lutris is installed and up to date.")  
+            fi
+        fi
+    else
+        preflight_fail+=("Lutris does not appear to be installed.\nFor manual installations, this may be ignored.")
+    fi
+
+
+}
+
 # Check the installed winetricks version
 winetricks_check() {
     if [ -x "$(command -v winetricks)" ]; then
@@ -836,6 +891,7 @@ preflight_check() {
     unset preflight_followup
     
     # Call the optimization functions to perform the checks
+    lutris_check
     wine_check
     winetricks_check
     memory_check
@@ -942,25 +998,6 @@ preflight_check() {
 ############################################################################
 ######## begin download functions ##########################################
 ############################################################################
-
-# Detect if lutris is installed
-lutris_detect() {
-    lutris_installed="false"
-    lutris_native="false"
-    lutris_flatpak="false"
-
-    # Detect native lutris
-    if [ -x "$(command -v lutris)" ]; then
-        lutris_installed="true"
-        lutris_native="true"
-    fi
-
-    # Detect flatpak lutris
-    if [ -x "$(command -v flatpak)" ] && flatpak list --app | grep -q Lutris; then
-            lutris_installed="true"
-            lutris_flatpak="true"
-    fi
-}
 
 # Restart lutris if necessary
 lutris_restart() {
