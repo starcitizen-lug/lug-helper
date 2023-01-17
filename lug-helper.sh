@@ -778,7 +778,7 @@ filelimit_check() {
 # Check if WINE is installed
 wine_check() {
     if [ -x "$(command -v wine)" ]; then
-        preflight_pass+=("Wine is installed on your system.")  
+        preflight_pass+=("Wine is installed on your system.")
     else
         preflight_fail+=("Wine does not appear to be installed.\nAt a minimum, wine dependencies must be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
     fi
@@ -815,7 +815,7 @@ lutris_check() {
                [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
                 preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
             else
-                preflight_pass+=("Lutris is installed and up to date.")  
+                preflight_pass+=("Lutris is installed and up to date.")
             fi
         fi
 
@@ -826,7 +826,7 @@ lutris_check() {
                [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
                 preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
             else
-                preflight_pass+=("Flatpak Lutris is installed and up to date.")  
+                preflight_pass+=("Flatpak Lutris is installed and up to date.")
             fi
         fi
     else
@@ -844,7 +844,7 @@ winetricks_check() {
            [ "$winetricks_current" = "$(printf "$winetricks_current\n$winetricks_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
         else
-            preflight_pass+=("Winetricks is installed and up to date.")  
+            preflight_pass+=("Winetricks is installed and up to date.")
         fi
     else
         preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
@@ -855,7 +855,7 @@ winetricks_check() {
 memory_check() {
     memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
     if [ ${memtotal%.*} -ge "15" ]; then
-        preflight_pass+=("Your system has $memtotal GB of memory.")  
+        preflight_pass+=("Your system has $memtotal GB of memory.")
     else
         preflight_fail+=("Your system has $memtotal GB of memory.\nWe recommend at least 16 GB to avoid crashes.")
     fi
@@ -864,7 +864,7 @@ memory_check() {
 # Check CPU for the required AVX extension
 avx_check() {
     if grep -q "avx" /proc/cpuinfo; then
-        preflight_pass+=("Your CPU supports the necessary AVX instruction set.")  
+        preflight_pass+=("Your CPU supports the necessary AVX instruction set.")
     else
         preflight_fail+=("Your CPU does not appear to support AVX instructions.\nThis requirement was added to Star Citizen in version 3.11")
     fi
@@ -873,7 +873,7 @@ avx_check() {
 # Check if swap is set up
 swap_check() {
     if cat /proc/swaps | grep -vq "Filename"; then
-        preflight_pass+=("You have swap space configured.")  
+        preflight_pass+=("You have swap space configured.")
     else
         preflight_fail+=("You don't appear to have swap space configured.\nWe recommend configuring an 8-16 GB swap file.")
     fi
