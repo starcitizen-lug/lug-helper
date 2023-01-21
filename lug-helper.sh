@@ -233,7 +233,7 @@ debug_print() {
 # Try to execute a supplied command as root
 # Expects one string argument
 try_exec() {
-    # This function expects one string arguments
+    # This function expects one string argument
     if [ "$#" -lt 1 ]; then
         printf "\nScript error:  The try_exec() function expects an argument. Aborting.\n"
         read -n 1 -s -p "Press any key..."
@@ -251,15 +251,19 @@ try_exec() {
             # User cancel or error
             retval=1
         fi
-    else
+    elif [ -x "$(command -v sudo)" ]; then
         sudo sh -c "$1"
 
         # Check the exit status
         statuscode="$?"
-        if [ "$statuscode" -eq 1 ] || [ "$statuscode" -eq 127 ]; then
-            # 1=sudo or sh error. 127=command not found
+        if [ "$statuscode" -eq 1 ]; then
+            # Error
             retval=1
         fi
+    else
+        # We don't know how to perform this operation with elevated privileges
+        printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with elevated privileges.\n"
+        retval=1
     fi
 
     return "$retval"
