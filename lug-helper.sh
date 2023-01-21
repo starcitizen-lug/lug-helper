@@ -262,7 +262,7 @@ try_exec() {
         fi
     else
         # We don't know how to perform this operation with elevated privileges
-        printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with elevated privileges.\n"
+        printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with the required privileges.\n"
         retval=1
     fi
 
