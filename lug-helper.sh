@@ -2080,7 +2080,7 @@ eac_workaround() {
         # Try to modify /etc/hosts as root
         try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
         if [ "$?" -eq 1 ]; then
-            message info "Something went wrong. Unable to modify /etc/hosts.\n\nReturning to main menu."
+            message info "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information.\n\nReturning to main menu."
             return 0
         fi
 
