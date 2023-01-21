@@ -257,7 +257,7 @@ try_exec() {
         # Check the exit status
         statuscode="$?"
         if [ "$statuscode" -eq 1 ] || [ "$statuscode" -eq 127 ]; then
-            # Error
+            # 1=sudo or sh error. 127=command not found
             retval=1
         fi
     fi
