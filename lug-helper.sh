@@ -245,16 +245,18 @@ try_exec() {
     if [ -x "$(command -v pkexec)" ]; then
         pkexec sh -c "$1"
 
-        # Check the return value
-        if [ "$?" -eq 126 ] || [ "$?" -eq 127 ]; then
+        # Check the exit status
+        statuscode="$?"
+        if [ "$statuscode" -eq 126 ] || [ "$statuscode" -eq 127 ]; then
             # User cancel or error
             retval=1
         fi
     else
         sudo sh -c "$1"
 
-        # Check the return value
-        if [ "$?" -eq 1 ]; then
+        # Check the exit status
+        statuscode="$?"
+        if [ "$statuscode" -eq 1 ] || [ "$statuscode" -eq 127 ]; then
             # Error
             retval=1
         fi
