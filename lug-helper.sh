@@ -813,33 +813,37 @@ lutris_detect() {
 lutris_check() {
     lutris_detect
 
-    if [ "$lutris_installed" = "true" ]; then
-        # Check the native lutris version number
-        if [ "$lutris_native" = "true" ]; then
-            lutris_current="$(lutris -v)"
-            if [ "$lutris_required" != "$lutris_current" ] &&
-               [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
-                preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
-            else
-                preflight_pass+=("Lutris is installed and up to date.")
-            fi
-        fi
-
-        # Check the flatpak lutris version number
-        if [ "$lutris_flatpak" = "true" ]; then
-            lutris_current="$(flatpak run net.lutris.Lutris -v)"
-            if [ "$lutris_required" != "$lutris_current" ] &&
-               [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
-                preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
-            else
-                preflight_pass+=("Flatpak Lutris is installed and up to date.")
-            fi
-        fi
-    else
+    if [ "$lutris_installed" = "false" ]; then
         preflight_fail+=("Lutris does not appear to be installed.\nFor manual installations, this may be ignored.")
+        return 1
     fi
 
+    if [ "$(pgrep -f lutris)" ]; then
+        preflight_fail+=("Unable to detect Lutris version info while it is running.\nVersion $lutris_required or newer is required.")
+        return 1
+    fi
 
+    # Check the native lutris version number
+    if [ "$lutris_native" = "true" ]; then
+        lutris_current="$(lutris -v)"
+        if [ "$lutris_required" != "$lutris_current" ] &&
+            [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
+            preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
+        else
+            preflight_pass+=("Lutris is installed and up to date.")
+        fi
+    fi
+
+    # Check the flatpak lutris version number
+    if [ "$lutris_flatpak" = "true" ]; then
+        lutris_current="$(flatpak run net.lutris.Lutris -v)"
+        if [ "$lutris_required" != "$lutris_current" ] &&
+            [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
+            preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
+        else
+            preflight_pass+=("Flatpak Lutris is installed and up to date.")
+        fi
+    fi
 }
 
 # Check the installed winetricks version
