@@ -1013,10 +1013,10 @@ preflight_check() {
 ######## begin download functions ##########################################
 ############################################################################
 
-# Restart lutris if necessary
+# Restart lutris if it is running
 lutris_restart() {
     lutris_detect
-    if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
+    if [ "$(pgrep -f lutris)" ]; then
         if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
             # Detect which version of Lutris is running and restart it
             if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]usr/bin/lutris"; then
@@ -1031,7 +1031,6 @@ lutris_restart() {
             fi
         fi
     fi
-    lutris_needs_restart="false"
 }
 
 # Get an array of directories used by Lutris
@@ -1082,10 +1081,20 @@ get_lutris_dirs() {
 # Expects the variables message_heading, post_download_msg_text,
 # post_download_msg_italics, and downloaded_item_name
 # Optional: post_download_msg_more_info and post_download_msg_link
+#
+# Post download message format:
+# A header is automatically displayed that reads: Download Complete
+# msg_text is displayed below the header
+# msg_italics is displayed below that in italics when zenity is in use
+# Then, the downloaded directory name is automatically displayed
+# Optional variables post_download_msg_more_info and
+# post_download_msg_link will be displayed if set
 post_download() {
     # Check if lutris needs to be restarted after making changes
-    lutris_restart
-    
+    if [ "$lutris_needs_restart" = "true" ]; then
+        lutris_restart
+    fi
+
     if [ "$display_post_download_msg" = "true" ]; then
         message_heading="Download Complete"
         
@@ -1110,10 +1119,10 @@ post_download() {
 
         # Display the info
         message info "$message_heading\n\n$post_download_msg_text\n$post_download_msg_italics\n\n$downloaded_item_name$post_download_msg_more_info$post_download_msg_link"
-    fi
 
-    # Reset
-    display_post_download_msg="false"
+        # Reset
+        display_post_download_msg="false"
+    fi
 }
 
 # Uninstall the selected item. Called by download_select_install()
@@ -1123,6 +1132,9 @@ download_delete() {
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
     fi
+
+    # Initialize success
+    download_action_success="false"
     
     # Capture arguments and format a list of items
     item_to_delete=("$@")
@@ -1137,7 +1149,8 @@ download_delete() {
             rm -r "${installed_items[${item_to_delete[i]}]}"
             debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
         done
-        lutris_needs_restart="true"
+        # Mark success for triggering post-deletion actions
+        download_action_success="true"
     fi
 }
 
@@ -1203,6 +1216,9 @@ download_install() {
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_install function expects a numerical argument. Aborting."
     fi
+
+    # Initialize success
+    download_action_success="false"
 
     # Get the filename including file extension
     download_file="${download_versions[$1]}"
@@ -1325,12 +1341,10 @@ download_install() {
             fi
         done
 
-        # We need to restart Lutris for the download to be detected
-        lutris_needs_restart="true"
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
-        # Trigger the post_download() function
-        display_post_download_msg="true"
+        # Mark success for triggering post-download actions
+        download_action_success="true"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
@@ -1354,12 +1368,10 @@ download_install() {
             fi
         done
 
-        # We need to restart Lutris for the download to be detected
-        lutris_needs_restart="true"
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
-        # Trigger the post_download() function
-        display_post_download_msg="true"
+        # Mark success for triggering post-download actions
+        download_action_success="true"
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
@@ -1641,16 +1653,23 @@ download_manage() {
        
         # Call the menu function.  It will use the options as configured above
         menu
+
         # Perform post-download actions and display messages or instructions
-        post_download
+        if [ "$download_action_success" = "true" ]; then
+            post_download
+
+            # Post download actions performed, so reset for the next download action
+            download_action_success="false"
+        fi
     done
 }
 
 # Configure the download_manage function for runners
 runner_manage() {
-    # Set some defaults
-    lutris_needs_restart="false"
-    display_post_download_msg="false"
+    # Lutris will need to be restarted after modifying runners
+    lutris_needs_restart="true"
+    # Display a post download message
+    display_post_download_msg="true"
 
     # Use indirect expansion to point download_sources
     # to the runner_sources array set at the top of the script
@@ -1704,9 +1723,10 @@ runner_manage() {
 
 # Configure the download_manage function for dxvks
 dxvk_manage() {
-    # Set some defaults
-    lutris_needs_restart="false"
-    display_post_download_msg="false"
+    # Lutris will need to be restarted after modifying dxvks
+    lutris_needs_restart="true"
+    # Display a post download message
+    display_post_download_msg="true"
 
     # Use indirect expansion to point download_sources
     # to the dxvk_sources array set at the top of the script
