@@ -818,6 +818,7 @@ lutris_check() {
         return 1
     fi
 
+    # TODO: This was reported and fixed. Verify and remove when v0.5.13 is released
     if [ "$(pgrep -f lutris)" ]; then
         preflight_fail+=("Unable to detect Lutris version info while it is running.\nVersion $lutris_required or newer is required.")
         return 1
