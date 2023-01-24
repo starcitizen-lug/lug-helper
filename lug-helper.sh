@@ -90,6 +90,15 @@ data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
 # .config subdirectory
 conf_subdir="starcitizen-lug"
 
+# Flatpak lutris directory
+lutris_flatpak_dir="$HOME/.var/app/net.lutris.Lutris"
+
+# Lutris native game configs directory
+lutris_native_conf_dir="$conf_dir/lutris/games"
+
+# Lutris flatpak game configs directory
+lutris_flatpak_conf_dir="$lutris_flatpak_dir/config/lutris/games"
+
 # Helper directory
 helper_dir="$(realpath "$0" | xargs -0 dirname)"
 
@@ -134,7 +143,7 @@ shaders_subdir="shaders"
 # Lutris native wine runners directory
 runners_dir_native="$data_dir/lutris/runners/wine"
 # Lutris flatpak wine runners directory
-runners_dir_flatpak="$HOME/.var/app/net.lutris.Lutris/data/lutris/runners/wine"
+runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 
 # URLs for downloading Lutris runners
 # Elements in this array must be added in quoted pairs of: "description" "url"
@@ -152,7 +161,7 @@ runner_sources=(
 # Lutris native dxvk directory
 dxvk_dir_native="$data_dir/lutris/runtime/dxvk"
 # Lutris flatpak dxvk directory
-dxvk_dir_flatpak="$HOME/.var/app/net.lutris.Lutris/data/lutris/runtime/dxvk"
+dxvk_dir_flatpak="$lutris_flatpak_dir/data/lutris/runtime/dxvk"
 
 # URLs for downloading dxvk versions
 # Elements in this array must be added in quoted pairs of: "description" "url"
@@ -1077,68 +1086,85 @@ get_lutris_dirs() {
     esac
 }
 
-# Perform post-download actions, display messages or instructions
-# Expects the variables message_heading, post_download_msg_text,
-# post_download_msg_italics, and downloaded_item_name
-# Optional: post_download_msg_more_info and post_download_msg_link
+# Perform post-download actions or display a message/instructions
 #
-# Post download message format:
+# Expects the following variables to be set: 
+# post_download_type ("none", "info", or "question")
+# post_download_msg
+# post_download_sed_string (for type question only)
+# downloaded_item_name (set in download_install function)
+# deleted_item_names (set in download_delete function)
+#
+# Details for post_download_sed_string:
+# This is the string sed will match against when editing Lutris yml configs
+# It will be used to detect the appropriate yml key and replace its value
+# with the name of the downloaded item. Example: "dxvk_version: "
+#
+# Message display format:
 # A header is automatically displayed that reads: Download Complete
-# msg_text is displayed below the header
-# msg_italics is displayed below that in italics when zenity is in use
-# Then, the downloaded directory name is automatically displayed
-# Optional variables post_download_msg_more_info and
-# post_download_msg_link will be displayed if set
+# post_download_msg is displayed below the header
 post_download() {
-    # Check if lutris needs to be restarted after making changes
-    if [ "$lutris_needs_restart" = "true" ]; then
-        lutris_restart
-    fi
-
-    if [ "$display_post_download_msg" = "true" ]; then
+     # Display appropriate post-install message
+    if [ "$download_action_success" = "installed" ]; then
         message_heading="Download Complete"
-        
-        # Format some variables for zenity
+        # Configure the message heading and format it for zenity
         if [ "$use_zenity" -eq 1 ]; then
             message_heading="<b>$message_heading</b>"
-            post_download_msg_italics="<i>$post_download_msg_italics</i>"
-            
-            # If we have a link to provide, format it as well
-            if [ -n "$post_download_msg_link" ]; then
-                post_download_msg_link="<a href='$post_download_msg_link'>$post_download_msg_link</a>"
+        fi
+        if [ "$post_download_type" = "info" ]; then
+            # Just displaying an informational message
+            message info "$message_heading\n\n$post_download_msg"
+        elif [ "$post_download_type" = "question" ]; then
+            # We have an action we want to perform
+            if message question "$message_heading\n\n$post_download_msg"; then
+                # Find all Star Citizen Lutris configs and replace the appropriate key
+                # to configure the downloaded item               
+                unset lutris_game_ymls
+                # Build an array of all Lutris Star Citizen yml files
+                while IFS= read -rd ''; do
+                    lutris_game_ymls+=("$REPLY")
+                done < <(grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
+
+                # Process each file
+                for (( i=0; i<"${#lutris_game_ymls[@]}"; i++ )); do
+                    # Replace the appropriate key:value line if it exists
+                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${post_download_sed_string}/s/${post_download_sed_string}.*/${post_download_sed_string}${downloaded_item_name}/}" "${lutris_game_ymls[i]}"
+
+                    # If it doesn't exist, add it at the start of the wine: grouping
+                    if ! grep -q "${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"; then
+                        # This assumes an indent of two spaces before the key:value pair
+                        sed -i -e '/^wine:/a\' -e "  ${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"
+                    fi
+                done
             fi
+        else
+            debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
         fi
+    elif [ "$download_action_success" = "deleted" ]; then
+        # Find all Star Citizen Lutris configs and delete the matching key:value line
+        for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
+            grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null | xargs -0 sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}"
+        done
+    fi
 
-        # Add newlines to the optional variables if set
-        if [ -n "$post_download_msg_more_info" ]; then
-            post_download_msg_more_info="\n\n$post_download_msg_more_info"
-        fi
-        if [ -n "$post_download_msg_link" ]; then
-            post_download_msg_link="\n$post_download_msg_link"
-        fi
-
-        # Display the info
-        message info "$message_heading\n\n$post_download_msg_text\n$post_download_msg_italics\n\n$downloaded_item_name$post_download_msg_more_info$post_download_msg_link"
-
-        # Reset
-        display_post_download_msg="false"
+    # Check if lutris needs to be restarted after making changes
+    if [ "$lutris_needs_restart" = "true" ] && [ -n "$download_action_success" ]; then
+        lutris_restart
     fi
 }
 
 # Uninstall the selected item. Called by download_select_install()
-# Note: The array installed_items is expected to be set before calling this function
+# Note: The arrays installed_items and installed_item_names are expected to be set before calling this function
 download_delete() {
     # This function expects an index number for the array installed_items to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
     fi
-
-    # Initialize success
-    download_action_success="false"
     
     # Capture arguments and format a list of items
     item_to_delete=("$@")
     unset list_to_delete
+    unset deleted_item_names
     for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
         list_to_delete+="\n${installed_items[${item_to_delete[i]}]}"
     done
@@ -1148,9 +1174,12 @@ download_delete() {
         for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
             rm -r "${installed_items[${item_to_delete[i]}]}"
             debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
+
+            # Store the names of deleted items for post_download() processing
+            deleted_item_names+=("${installed_item_names[${item_to_delete[i]}]}")
         done
         # Mark success for triggering post-deletion actions
-        download_action_success="true"
+        download_action_success="deleted"
     fi
 }
 
@@ -1216,9 +1245,6 @@ download_install() {
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_install function expects a numerical argument. Aborting."
     fi
-
-    # Initialize success
-    download_action_success="false"
 
     # Get the filename including file extension
     download_file="${download_versions[$1]}"
@@ -1344,7 +1370,7 @@ download_install() {
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
         # Mark success for triggering post-download actions
-        download_action_success="true"
+        download_action_success="installed"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
@@ -1371,7 +1397,7 @@ download_install() {
         # Store the final name of the downloaded directory
         downloaded_item_name="$download_name"
         # Mark success for triggering post-download actions
-        download_action_success="true"
+        download_action_success="installed"
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
@@ -1631,6 +1657,9 @@ download_manage() {
         unset menu_options
         unset menu_actions
 
+        # Initialize success
+        unset download_action_success
+
         # Loop through the download_sources array and create a menu item
         # for each one. Even numbered elements will contain the item name
         for (( i=0; i<"${#download_sources[@]}"; i=i+2 )); do
@@ -1655,11 +1684,8 @@ download_manage() {
         menu
 
         # Perform post-download actions and display messages or instructions
-        if [ "$download_action_success" = "true" ]; then
+        if [ -n "$download_action_success" ] && [ "$post_download_type" != "none" ]; then
             post_download
-
-            # Post download actions performed, so reset for the next download action
-            download_action_success="false"
         fi
     done
 }
@@ -1668,8 +1694,8 @@ download_manage() {
 runner_manage() {
     # Lutris will need to be restarted after modifying runners
     lutris_needs_restart="true"
-    # Display a post download message
-    display_post_download_msg="true"
+    # Display post download message as a question
+    post_download_type="question"
 
     # Use indirect expansion to point download_sources
     # to the runner_sources array set at the top of the script
@@ -1702,18 +1728,15 @@ runner_manage() {
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
     download_menu_height="140"
 
-    # Set the post download instructions
+    # Configure the post download message
     # Format:
     # A header is automatically displayed that reads: Download Complete
-    # msg_text is displayed below the header
-    # msg_italics is displayed below that in italics when zenity is in use
-    # Then, the downloaded directory name is automatically displayed
-    # Optional variables post_download_msg_more_info and
-    # post_download_msg_link will be displayed if set
-    post_download_msg_text="Select the following runner in Lutris from the dropdown menu under:"
-    post_download_msg_italics="Configure->Runner Options->Wine version"
-    post_download_msg_more_info=""
-    post_download_msg_link=""
+    # post_download_msg is displayed below the header
+    post_download_msg="Would you like to automatically configure Lutris\nto use the downloaded runner?"
+    # Set the string sed will match against when editing Lutris yml configs
+    # This will be used to detect the appropriate yml key and replace its value
+    # with the name of the downloaded item
+    post_download_sed_string="version: "
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -1725,8 +1748,8 @@ runner_manage() {
 dxvk_manage() {
     # Lutris will need to be restarted after modifying dxvks
     lutris_needs_restart="true"
-    # Display a post download message
-    display_post_download_msg="true"
+    # Display post download message as a question
+    post_download_type="question"
 
     # Use indirect expansion to point download_sources
     # to the dxvk_sources array set at the top of the script
@@ -1756,21 +1779,18 @@ dxvk_manage() {
 
     # Configure the text displayed in the menus
     download_menu_heading="Lutris DXVK Versions"
-    download_menu_description="The DXVK versions below may help reduce stuttering"
+    download_menu_description="The DXVK versions below may improve performance"
     download_menu_height="140"
 
-    # Set the post download instructions
+    # Configure the post download message
     # Format:
     # A header is automatically displayed that reads: Download Complete
-    # msg_text is displayed below the header
-    # msg_italics is displayed below that in italics when zenity is in use
-    # Then, the downloaded directory name is automatically displayed
-    # Optional variables post_download_msg_more_info and
-    # post_download_msg_link will be displayed if set
-    post_download_msg_text="Type the following DXVK name into your Lutris settings under:"
-    post_download_msg_italics="Configure->Runner Options->DXVK version"
-    post_download_msg_more_info="See our wiki for instructions on setting the DXVK_ASYNC environment variable in Lutris:"
-    post_download_msg_link="https://github.com/starcitizen-lug/information-howtos/wiki/Performance-Tuning#dxvk-async"
+    # post_download_msg is displayed below the header
+    post_download_msg="Would you like to automatically configure Lutris\nto use the downloaded DXVK?"
+    # Set the string sed will match against when editing Lutris yml configs
+    # This will be used to detect the appropriate yml key and replace its value
+    # with the name of the downloaded item
+    post_download_sed_string="dxvk_version: "
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
