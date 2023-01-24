@@ -1145,6 +1145,8 @@ post_download() {
         for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
             grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null | xargs -0 sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}"
         done
+    else
+        debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
     fi
 
     # Check if lutris needs to be restarted after making changes
