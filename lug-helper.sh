@@ -1085,7 +1085,8 @@ get_lutris_dirs() {
 # Perform post-download actions or display a message/instructions
 #
 # Expects the following variables to be set: 
-# post_download_type ("none", "info", or "question")
+# post_download_type ("info", or "configure-lutris")
+# post_download_msg_heading
 # post_download_msg
 # post_download_sed_string (for type question only)
 # downloaded_item_name (set in download_install function)
@@ -1100,19 +1101,20 @@ get_lutris_dirs() {
 # A header is automatically displayed that reads: Download Complete
 # post_download_msg is displayed below the header
 post_download() {
-     # Display appropriate post-install message
-    if [ "$download_action_success" = "installed" ]; then
-        message_heading="Download Complete"
-        # Configure the message heading and format it for zenity
-        if [ "$use_zenity" -eq 1 ]; then
-            message_heading="<b>$message_heading</b>"
-        fi
-        if [ "$post_download_type" = "info" ]; then
+    # Configure the message heading and format it for zenity
+    if [ "$use_zenity" -eq 1 ]; then
+        post_download_msg_heading="<b>$post_download_msg_heading</b>"
+    fi
+
+    # Display appropriate post-download message
+    if [ "$post_download_type" = "info" ]; then
             # Just displaying an informational message
-            message info "$message_heading\n\n$post_download_msg"
-        elif [ "$post_download_type" = "question" ]; then
-            # We have an action we want to perform
-            if message question "$message_heading\n\n$post_download_msg"; then
+            message info "$post_download_msg_heading\n\n$post_download_msg"
+    elif [ "$post_download_type" = "configure-lutris" ]; then
+        # We need to configure and restart Lutris
+        if [ "$download_action_success" = "installed" ]; then
+            # We are installing something for Lutris
+            if message question "$post_download_msg_heading\n\n$post_download_msg"; then
                 # Find all Star Citizen Lutris configs and replace the appropriate key
                 # to configure the downloaded item               
                 unset lutris_game_ymls
@@ -1132,30 +1134,29 @@ post_download() {
                         sed -i -e '/^wine:/a\' -e "  ${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"
                     fi
                 done
-            fi
 
-            # Check if lutris needs to be restarted after making changes
-            if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
-                # For installations, we ask the user if we can configure and restart Lutris in the post_download_msg
+                # Lutris needs to be restarted after making changes
+                if [ "$(pgrep -f lutris)" ]; then
+                    # For installations, we ask the user if we can configure and restart Lutris in the post_download_msg
+                    lutris_restart
+                fi
+            fi
+        elif [ "$download_action_success" = "deleted" ]; then
+            # Find all Star Citizen Lutris configs and delete the matching key:value line
+            for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
+                grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null | xargs -0 sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}"
+            done
+
+            # Lutris needs to be restarted after making changes
+            if [ "$(pgrep -f lutris)" ] && message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
+                # For deletions, we ask the user if it's okay to restart Lutris here
                 lutris_restart
             fi
         else
-            debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
-        fi
-    elif [ "$download_action_success" = "deleted" ]; then
-        # Find all Star Citizen Lutris configs and delete the matching key:value line
-        for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
-            grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null | xargs -0 sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}"
-        done
-
-        # Check if lutris needs to be restarted after making changes
-        if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ] &&
-           message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-            # For deletions, we ask the user if it's okay to restart Lutris here
-            lutris_restart
+            debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
         fi
     else
-        debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
+            debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
     fi
 }
 
@@ -1698,10 +1699,8 @@ download_manage() {
 
 # Configure the download_manage function for runners
 runner_manage() {
-    # Lutris will need to be restarted after modifying runners
-    lutris_needs_restart="true"
-    # We will get permission from the user to configure and restart Lutris
-    post_download_type="question"
+    # Lutris will need to be configured and restarted after modifying runners
+    post_download_type="configure-lutris"
 
     # Use indirect expansion to point download_sources
     # to the runner_sources array set at the top of the script
@@ -1738,6 +1737,7 @@ runner_manage() {
     # Format:
     # A header is automatically displayed that reads: Download Complete
     # post_download_msg is displayed below the header
+    post_download_msg_heading="Download Complete"
     post_download_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted to detect the changes."
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
@@ -1752,10 +1752,8 @@ runner_manage() {
 
 # Configure the download_manage function for dxvks
 dxvk_manage() {
-    # Lutris will need to be restarted after modifying dxvks
-    lutris_needs_restart="true"
-    # We will get permission from the user to configure and restart Lutris
-    post_download_type="question"
+    # Lutris will need to be configured and restarted after modifying dxvks
+    post_download_type="configure-lutris"
 
     # Use indirect expansion to point download_sources
     # to the dxvk_sources array set at the top of the script
@@ -1792,6 +1790,7 @@ dxvk_manage() {
     # Format:
     # A header is automatically displayed that reads: Download Complete
     # post_download_msg is displayed below the header
+    post_download_msg_heading="Download Complete"
     post_download_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted to detect the changes."
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
