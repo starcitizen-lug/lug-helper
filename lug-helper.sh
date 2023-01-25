@@ -1026,7 +1026,7 @@ preflight_check() {
 lutris_restart() {
     # Detect the installed versions of Lutris
     lutris_detect
-    if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]usr/bin/lutris"; then
+    if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -Eq "[/]usr/bin/lutris|[/]usr/games/lutris"; then
         # Native Lutris is running
         debug_print continue "Restarting native Lutris..."
         pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
