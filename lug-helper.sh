@@ -1022,23 +1022,19 @@ preflight_check() {
 ######## begin download functions ##########################################
 ############################################################################
 
-# Restart lutris if it is running
+# Detect which version of Lutris is running and restart it
 lutris_restart() {
+    # Detect the installed versions of Lutris
     lutris_detect
-    if [ "$(pgrep -f lutris)" ]; then
-        if message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-            # Detect which version of Lutris is running and restart it
-            if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]usr/bin/lutris"; then
-                # Native Lutris is running
-                debug_print continue "Restarting native Lutris..."
-                pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-            fi
-            if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]app/bin/lutris"; then
-                # Flatpak Lutris is running
-                debug_print continue "Restarting flatpak Lutris..."
-                pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
-            fi
-        fi
+    if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]usr/bin/lutris"; then
+        # Native Lutris is running
+        debug_print continue "Restarting native Lutris..."
+        pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+    fi
+    if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]app/bin/lutris"; then
+        # Flatpak Lutris is running
+        debug_print continue "Restarting flatpak Lutris..."
+        pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
     fi
 }
 
@@ -1137,6 +1133,12 @@ post_download() {
                     fi
                 done
             fi
+
+            # Check if lutris needs to be restarted after making changes
+            if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ]; then
+                # For installations, we ask the user if we can configure and restart Lutris in the post_download_msg
+                lutris_restart
+            fi
         else
             debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
         fi
@@ -1145,13 +1147,15 @@ post_download() {
         for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
             grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null | xargs -0 sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}"
         done
+
+        # Check if lutris needs to be restarted after making changes
+        if [ "$lutris_needs_restart" = "true" ] && [ "$(pgrep -f lutris)" ] &&
+           message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
+            # For deletions, we ask the user if it's okay to restart Lutris here
+            lutris_restart
+        fi
     else
         debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
-    fi
-
-    # Check if lutris needs to be restarted after making changes
-    if [ "$lutris_needs_restart" = "true" ] && [ -n "$download_action_success" ]; then
-        lutris_restart
     fi
 }
 
@@ -1696,7 +1700,7 @@ download_manage() {
 runner_manage() {
     # Lutris will need to be restarted after modifying runners
     lutris_needs_restart="true"
-    # Display post download message as a question
+    # We will get permission from the user to configure and restart Lutris
     post_download_type="question"
 
     # Use indirect expansion to point download_sources
@@ -1734,7 +1738,7 @@ runner_manage() {
     # Format:
     # A header is automatically displayed that reads: Download Complete
     # post_download_msg is displayed below the header
-    post_download_msg="Would you like to automatically configure Lutris\nto use the downloaded runner?"
+    post_download_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted to detect the changes."
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
     # with the name of the downloaded item
@@ -1750,7 +1754,7 @@ runner_manage() {
 dxvk_manage() {
     # Lutris will need to be restarted after modifying dxvks
     lutris_needs_restart="true"
-    # Display post download message as a question
+    # We will get permission from the user to configure and restart Lutris
     post_download_type="question"
 
     # Use indirect expansion to point download_sources
@@ -1788,7 +1792,7 @@ dxvk_manage() {
     # Format:
     # A header is automatically displayed that reads: Download Complete
     # post_download_msg is displayed below the header
-    post_download_msg="Would you like to automatically configure Lutris\nto use the downloaded DXVK?"
+    post_download_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted to detect the changes."
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
     # with the name of the downloaded item
