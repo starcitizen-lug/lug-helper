@@ -1112,18 +1112,17 @@ post_download() {
             message info "$post_download_msg_heading\n\n$post_download_msg"
     elif [ "$post_download_type" = "configure-lutris" ]; then
         # We need to configure and restart Lutris
+        unset lutris_game_ymls
+        # Build an array of all Lutris Star Citizen yml files
+        while IFS= read -rd ''; do
+            lutris_game_ymls+=("$REPLY")
+        done < <(grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
+
+        # We handle installs and deletions differently
         if [ "$download_action_success" = "installed" ]; then
             # We are installing something for Lutris
             if message question "$post_download_msg_heading\n\n$post_download_msg"; then
-                # Find all Star Citizen Lutris configs and replace the appropriate key
-                # to configure the downloaded item               
-                unset lutris_game_ymls
-                # Build an array of all Lutris Star Citizen yml files
-                while IFS= read -rd ''; do
-                    lutris_game_ymls+=("$REPLY")
-                done < <(grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
-
-                # Process each file
+                # Cylce through all Lutris config files for Star Citizen and configure the downloaded item
                 for (( i=0; i<"${#lutris_game_ymls[@]}"; i++ )); do
                     # Replace the appropriate key:value line if it exists
                     sed -Ei "/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${post_download_sed_string}/s/${post_download_sed_string}.*/${post_download_sed_string}${downloaded_item_name}/}" "${lutris_game_ymls[i]}"
@@ -1144,7 +1143,10 @@ post_download() {
         elif [ "$download_action_success" = "deleted" ]; then
             # Find all Star Citizen Lutris configs and delete the matching key:value line
             for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
-                grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null | xargs -0 sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}"
+                # Cylce through all Lutris config files for Star Citizen and remove the item
+                for (( j=0; j<"${#lutris_game_ymls[@]}"; j++ )); do
+                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}" "${lutris_game_ymls[j]}"
+                done
             done
 
             # Lutris needs to be restarted after making changes
