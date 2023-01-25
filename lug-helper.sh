@@ -1740,7 +1740,7 @@ runner_manage() {
     # A header is automatically displayed that reads: Download Complete
     # post_download_msg is displayed below the header
     post_download_msg_heading="Download Complete"
-    post_download_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted to detect the changes."
+    post_download_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted if necessary."
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
     # with the name of the downloaded item
@@ -1793,7 +1793,7 @@ dxvk_manage() {
     # A header is automatically displayed that reads: Download Complete
     # post_download_msg is displayed below the header
     post_download_msg_heading="Download Complete"
-    post_download_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted to detect the changes."
+    post_download_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted if necessary."
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
     # with the name of the downloaded item
