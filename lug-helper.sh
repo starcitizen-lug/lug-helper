@@ -160,9 +160,9 @@ runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 # The second is expected to contain the github api releases url
 # ie. "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 runner_sources=(
+    "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
     "/dev/null" "https://api.github.com/repos/gort818/wine-sc-lug/releases"
-    "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
 )
 
 ######## DXVK ##############################################################
@@ -178,9 +178,10 @@ dxvk_dir_flatpak="$lutris_flatpak_dir/data/lutris/runtime/dxvk"
 # The second is expected to contain the github api releases url
 # ie. "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
 dxvk_sources=(
+    "doitsujin (official dxvk)" "https://api.github.com/repos/doitsujin/dxvk/releases"
     "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
-    "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
     "gnusenpai" "https://api.github.com/repos/gnusenpai/dxvk/releases"
+    "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
 )
 
 ######## Bundled Files #####################################################
