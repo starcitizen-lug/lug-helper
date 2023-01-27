@@ -72,11 +72,20 @@ fi
 #    exit 1
 #fi
 if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ]; then
+    # coreutils
     # Print to stderr and also try warning the user through notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" 1>&2
     notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" --icon=dialog-warning
     exit 1
 fi
+if [ ! -x "$(command -v xargs)" ]; then
+    # findutils
+    # Print to stderr and also try warning the user through notify-send
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following findutils packages are installed:\n- xargs\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following findutils packages are installed:\n- xargs\n" --icon=dialog-warning
+    exit 1
+fi
+
 
 ######## Config ############################################################
 
