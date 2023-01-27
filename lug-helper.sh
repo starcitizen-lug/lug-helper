@@ -1059,10 +1059,10 @@ lutris_restart() {
     fi
 }
 
-# Get an array of directories used by Lutris
+# Create an array of directories used by Lutris
+# Array will be formatted in pairs of ("[type]" "[directory]")
 # Supports native install and flatpak
-# Array must be formatted in pairs of ("[type]" "[directory]")
-# Takes an argument to specify the type to return, ie "runner" or "dxvk"
+# Takes an argument to specify the type to return: "runner" or "dxvk"
 get_lutris_dirs() {
     # Sanity check
     if [ "$#" -lt 1 ]; then
@@ -1105,13 +1105,14 @@ get_lutris_dirs() {
 
 # Perform post-download actions or display a message/instructions
 #
-# Expects the following variables to be set: 
-# post_download_type ("info", or "configure-lutris")
-# post_download_msg_heading
-# post_download_msg
-# post_download_sed_string (for type question only)
-# downloaded_item_name (set in download_install function)
-# deleted_item_names (set in download_delete function)
+# The following variables are expected to be set before calling this function:
+# - post_download_type (string. "none", "info", or "configure-lutris")
+# - post_download_msg_heading (string)
+# - post_download_msg (string)
+# - post_download_sed_string (string. For type configure-lutris)
+# - download_action_success (string. Set automatically in install/delete functions)
+# - downloaded_item_name (string. For installs only. Set automatically in download_install function)
+# - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
 #
 # Details for post_download_sed_string:
 # This is the string sed will match against when editing Lutris yml configs
@@ -1122,6 +1123,17 @@ get_lutris_dirs() {
 # A header is automatically displayed that reads: Download Complete
 # post_download_msg is displayed below the header
 post_download() {
+    # Sanity checks
+    if [ -z "$post_download_type" ]; then
+        debug_print exit "Script error: The string 'post_download_type' was not set\nbefore calling the post_download function. Aborting."
+    elif [ -z "$post_download_msg_heading" ]; then
+        debug_print exit "Script error: The string 'post_download_msg_heading' was not set\nbefore calling the post_download function. Aborting."
+    elif [ -z "$post_download_msg" ]; then
+        debug_print exit "Script error: The string 'post_download_msg' was not set\nbefore calling the post_download function. Aborting."
+    elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
+        debug_print exit "Script error: The string 'post_download_sed_string' was not set\nbefore calling the post_download function. Aborting."
+    fi
+
     # Configure the message heading and format it for zenity
     if [ "$use_zenity" -eq 1 ]; then
         post_download_msg_heading="<b>$post_download_msg_heading</b>"
@@ -1183,14 +1195,28 @@ post_download() {
     fi
 }
 
-# Uninstall the selected item. Called by download_select_install()
-# Note: The arrays installed_items and installed_item_names are expected to be set before calling this function
+# Uninstall the selected item(s). Called by download_select_install()
+# Accepts array index numbers as an argument
+#
+# The following variables are expected to be set before calling this function:
+# - download_type (string) 
+# - installed_items (array) 
+# - installed_item_names (array)
 download_delete() {
-    # This function expects an index number for the array installed_items to be passed in as an argument
+    # This function expects at least one index number for the array installed_items to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
     fi
-    
+
+    # Sanity checks
+    if [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_delete function. Aborting."
+    elif [ "${#installed_items[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'installed_items' was not set\nbefore calling the download_delete function. Aborting."
+    elif [ "${#installed_item_names[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'installed_item_names' was not set\nbefore calling the download_delete function. Aborting."
+    fi
+
     # Capture arguments and format a list of items
     item_to_delete=("$@")
     unset list_to_delete
@@ -1214,7 +1240,18 @@ download_delete() {
 }
 
 # List installed items for deletion. Called by download_manage()
+#
+# The following variables are expected to be set before calling this function:
+# - download_type (string)
+# - download_dirs (array)
 download_select_delete() {
+    # Sanity checks
+    if [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_select_delete function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_delete function. Aborting."
+    fi
+
     # Configure the menu
     menu_text_zenity="Select the $download_type(s) you want to remove:"
     menu_text_terminal="Select the $download_type you want to remove:"
@@ -1268,12 +1305,31 @@ download_select_delete() {
 }
 
 # Download and install the selected item. Called by download_select_install()
-# Note: The variables download_versions, contributor_url, and download_url_type are expected to be set before calling this function
+#
+# The following variables are expected to be set before calling this function:
+# - download_versions (array)
+# - contributor_url (string)
+# - download_url_type (string)
+# - download_type (string)
+# - download_dirs (array)
 download_install() {
     # This function expects an index number for the array
     # download_versions to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_install function expects a numerical argument. Aborting."
+    fi
+
+    # Sanity checks
+    if [ "${#download_versions[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_versions' was not set\nbefore calling the download_install function. Aborting."
+    elif [ -z "$contributor_url" ]; then
+        debug_print exit "Script error: The string 'contributor_url' was not set\nbefore calling the download_install function. Aborting."
+    elif [ -z "$download_url_type" ]; then
+        debug_print exit "Script error: The string 'download_url_type' was not set\nbefore calling the download_install function. Aborting."
+    elif [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_install function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_install function. Aborting."
     fi
 
     # Get the filename including file extension
@@ -1440,11 +1496,25 @@ download_install() {
 }
 
 # List available items for download. Called by download_manage()
+#
+# The following variables are expected to be set before calling this function:
+# - download_sources (array)
+# - download_type (string)
+# - download_dirs (array)
 download_select_install() {
     # This function expects an element number for the sources array
     # to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_select_install function expects a numerical argument. Aborting."
+    fi
+
+    # Sanity checks
+    if [ "${#download_sources[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_sources' was not set\nbefore calling the download_select_install function. Aborting."
+    elif [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_select_install function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_install function. Aborting."
     fi
     
     # Store info from the selected contributor
@@ -1669,6 +1739,19 @@ download_manage() {
         debug_print exit "Script error:  The download_manage function expects a string argument. Aborting."
     fi
 
+    # Sanity checks
+    if [ -z "$download_sources" ]; then
+        debug_print exit "Script error: The string 'download_sources' was not set\nbefore calling the download_manage function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_manage function. Aborting."
+    elif [ -z "$download_menu_heading" ]; then
+        debug_print exit "Script error: The string 'download_menu_heading' was not set\nbefore calling the download_manage function. Aborting."
+    elif [ -z "$download_menu_description" ]; then
+        debug_print exit "Script error: The string 'download_menu_description' was not set\nbefore calling the download_manage function. Aborting."
+    elif [ -z "$download_menu_height" ]; then
+        debug_print exit "Script error: The string 'download_menu_height' was not set\nbefore calling the download_manage function. Aborting."
+    fi
+
     # Get the type of item we're downloading from the function arguments
     download_type="$1"
 
@@ -1723,6 +1806,7 @@ download_manage() {
 # Configure the download_manage function for runners
 runner_manage() {
     # Lutris will need to be configured and restarted after modifying runners
+    # Valid options are "none", "info", or "configure-lutris"
     post_download_type="configure-lutris"
 
     # Use indirect expansion to point download_sources
@@ -1775,6 +1859,7 @@ runner_manage() {
 # Configure the download_manage function for dxvks
 dxvk_manage() {
     # Lutris will need to be configured and restarted after modifying dxvks
+    # Valid options are "none", "info", or "configure-lutris"
     post_download_type="configure-lutris"
 
     # Use indirect expansion to point download_sources
