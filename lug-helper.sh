@@ -314,6 +314,12 @@ message() {
                 margs=("--warning" "--window-icon=\"$lug_logo\"" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
+            "error")
+                # error message
+                # call format: message error "text to display"
+                margs=("--error" "--window-icon=\"$lug_logo\"" "--text=")
+                shift 1   # drop the message type argument and shift up to the text
+                ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
@@ -351,6 +357,12 @@ message() {
                 # warning message
                 # call format: message warning "text to display"
                 clear
+                printf "\n$2\n\n"
+                read -n 1 -s -p "Press any key..."
+                ;;
+            "error")
+                # error message. Does not clear the screen
+                # call format: message error "text to display"
                 printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
                 ;;
@@ -538,7 +550,7 @@ menu_loop_done() {
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
-        message warning "Config directory not found. The Helper is unable to proceed.\n\n$conf_dir"
+        message error "Config directory not found. The Helper is unable to proceed.\n\n$conf_dir"
         return 1
     fi
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -571,7 +583,7 @@ getdirs() {
             if [ -z "$wine_prefix" ]; then
                 wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen WINE prefix directory" --filename="$HOME/Games/star-citizen" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
-                    message warning "An unexpected error has occurred. The Helper is unable to proceed."
+                    message error "An unexpected error has occurred. The Helper is unable to proceed."
                     return 1
                 elif [ -z "$wine_prefix" ]; then
                     # User clicked cancel
@@ -588,7 +600,7 @@ getdirs() {
                 else
                     while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/$install_path" 2>/dev/null)"; do
                         if [ "$?" -eq -1 ]; then
-                            message warning "An unexpected error has occurred. The Helper is unable to proceed."
+                            message error "An unexpected error has occurred. The Helper is unable to proceed."
                             return 1
                         elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
                             message warning "You must select the base game directory named '$sc_base_dir'\n\nie. [prefix]/drive_c/Program Files/Roberts Space Industries/StarCitizen"
@@ -992,7 +1004,7 @@ preflight_check() {
                 # Try to execute the actions as root
                 try_exec "$preflight_actions_string"
                 if [ "$?" -eq 1 ]; then
-                    message info "Authentication failed or there was an error.\nSee terminal for more information.\n\nReturning to main menu."
+                    message error "Authentication failed or there was an error.\nSee terminal for more information.\n\nReturning to main menu."
                     return 0
                 fi
             fi
@@ -1730,8 +1742,7 @@ runner_manage() {
     missing_dir="false"
     for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
         if [ ! -d "${download_dirs[i]}" ]; then
-            message warning "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
-            debug_print continue "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            message error "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
             missing_dir="true"
         fi
     done
@@ -1783,8 +1794,7 @@ dxvk_manage() {
     missing_dir="false"
     for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
         if [ ! -d "${download_dirs[i]}" ]; then
-            message warning "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
-            debug_print continue "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
+            message error "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
             missing_dir="true"
         fi
     done
@@ -2141,7 +2151,7 @@ eac_workaround() {
         # Try to modify /etc/hosts as root
         try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
         if [ "$?" -eq 1 ]; then
-            message info "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information.\n\nReturning to main menu."
+            message error "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information.\n\nReturning to main menu."
             return 0
         fi
 
