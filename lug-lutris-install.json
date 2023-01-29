@@ -70,11 +70,13 @@
           },
           {
             "execute": {
+              "description": "Creating game path",
               "command": "mkdir -p $GAMEDIR'/drive_c/Program Files/Roberts Space Industries/StarCitizen/'{LIVE,PTU}"
             }
           }
         ],
         "system": {
+          "prefer_system_libs": false,
           "env": {
             "DXVK_HUD": "0",
             "__GL_SHADER_DISK_CACHE": 1,
