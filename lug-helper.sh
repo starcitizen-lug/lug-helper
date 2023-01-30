@@ -646,7 +646,7 @@ getdirs() {
                         if [ ! -d "$game_path" ]; then
                             printf "That directory is invalid or does not exist. Please try again.\n\n"
                         elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
-                            printf "You must enter the full path to the directory named '$sc_base_dir'\n\n"
+                            printf "You must enter the full path to the directory named '%s'\n\n" "$sc_base_dir"
                         else
                             break
                         fi
@@ -859,7 +859,7 @@ lutris_check() {
     if [ "$lutris_native" = "true" ]; then
         lutris_current="$(lutris -v)"
         if [ "$lutris_required" != "$lutris_current" ] &&
-            [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
+            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
         else
             preflight_pass+=("Lutris is installed and up to date.")
@@ -870,7 +870,7 @@ lutris_check() {
     if [ "$lutris_flatpak" = "true" ]; then
         lutris_current="$(flatpak run net.lutris.Lutris -v)"
         if [ "$lutris_required" != "$lutris_current" ] &&
-            [ "$lutris_current" = "$(printf "$lutris_current\n$lutris_required" | sort -V | head -n1)" ]; then
+            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
         else
             preflight_pass+=("Flatpak Lutris is installed and up to date.")
@@ -883,7 +883,7 @@ winetricks_check() {
     if [ -x "$(command -v winetricks)" ]; then
         winetricks_current="$(winetricks --version | awk '{print $1}')"
         if [ "$winetricks_required" != "$winetricks_current" ] &&
-           [ "$winetricks_current" = "$(printf "$winetricks_current\n$winetricks_required" | sort -V | head -n1)" ]; then
+           [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
         else
             preflight_pass+=("Winetricks is installed and up to date.")
@@ -1549,7 +1549,7 @@ download_select_install() {
 
             # Sort the versions and check if the installed glibc is smaller
             if [ "$required_glibc" != "$native_glibc" ] &&
-            [ "$native_glibc" = "$(printf "$native_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
+            [ "$native_glibc" = "$(printf "%s\n%s" "$native_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
                 glibc_fail+=("Native")
             fi
         fi
@@ -1560,7 +1560,7 @@ download_select_install() {
 
             # Sort the versions and check if the installed glibc is smaller
             if [ "$required_glibc" != "$flatpak_glibc" ] &&
-            [ "$flatpak_glibc" = "$(printf "$flatpak_glibc\n$required_glibc" | sort -V | head -n1)" ]; then
+            [ "$flatpak_glibc" = "$(printf "%s\n%s" "$flatpak_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
                 glibc_fail+=("Flatpak")
             fi
         fi
@@ -2310,7 +2310,7 @@ latest_version="$(get_latest_release "$repo")"
 
 # Sort the versions and check if the installed Helper is smaller
 if [ "$latest_version" != "$current_version" ] &&
-   [ "$current_version" = "$(printf "$current_version\n$latest_version" | sort -V | head -n1)" ]; then
+   [ "$current_version" = "$(printf "%s\n%s" "$current_version" "$latest_version" | sort -V | head -n1)" ]; then
 
     message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url"
 fi
@@ -2372,7 +2372,7 @@ Usage: lug-helper <options>
                 elif [ "$live_or_ptu" = "ptu" ] || [ "$live_or_ptu" = "PTU" ]; then
                     live_or_ptu="$ptu_dir"
                 else
-                    printf "$0: Invalid option '$1'\n"
+                    printf "$0: Invalid option '%s'\n" "$1"
                     exit 0
                 fi
                 ;;
@@ -2386,7 +2386,7 @@ Usage: lug-helper <options>
                     elif [ "$use_zenity" = "no" ] || [ "$use_zenity" = "NO" ] || [ "$use_zenity" = "0" ]; then
                         use_zenity=0
                     else
-                        printf "$0: Invalid option '$1'\n"
+                        printf "$0: Invalid option '%s'\n" "$1"
                         exit 0
                     fi
                 fi
@@ -2404,7 +2404,7 @@ Usage: lug-helper <options>
                 cargs+=("reset_helper")
                 ;;
             * )
-                printf "$0: Invalid option '$1'\n"
+                printf "$0: Invalid option '%s'\n" "$1"
                 exit 0
                 ;;
         esac
