@@ -1388,11 +1388,11 @@ download_install() {
         if [ "$?" -eq 1 ]; then
             # User clicked cancel
             debug_print continue "Download aborted. Removing $tmp_dir/$download_file..."
-            rm "$tmp_dir/$download_file"
-            rm "$tmp_dir/lugpipe"
+            rm "${tmp_dir:?}/$download_file"
+            rm "${tmp_dir:?}/lugpipe"
             return 1
         fi
-        rm "$tmp_dir/lugpipe"
+        rm "${tmp_dir:?}/lugpipe"
     else
         # Standard curl progress bar
         (cd "$tmp_dir" && curl -LO "$download_url")
@@ -1440,7 +1440,7 @@ download_install() {
             if [ -d "${download_dirs[i]}/$download_name" ]; then
                 # This item has already been installed. Delete it before reinstalling
                 debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
-                rm -r "${download_dirs[i]}/$download_name"
+                rm -r "${download_dirs[i]:?}/$download_name"
                 debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
             else
                 debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
@@ -1467,7 +1467,7 @@ download_install() {
             if [ -d "${download_dirs[i]}/$download_name" ]; then
                 # This item has already been installed. Delete it before reinstalling
                 debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
-                rm -r "${download_dirs[i]}/$download_name"
+                rm -r "${download_dirs[i]:?}/$download_name"
                 debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
             else
                 debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
@@ -1492,8 +1492,8 @@ download_install() {
 
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_file..."
-    rm "$tmp_dir/$download_file"
-    rm -r "$tmp_dir/$download_name"
+    rm "${tmp_dir:?}/$download_file"
+    rm -r "${tmp_dir:?}/$download_name"
 }
 
 # List available items for download. Called by download_manage()
@@ -2000,7 +2000,7 @@ rm_shaders() {
             # If a shaders directory is found, delete it
             if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
                 debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
-                rm -r "$appdata_dir/$shaders_subdir"
+                rm -r "${appdata_dir:?}/$shaders_subdir"
             fi
         fi
     done
@@ -2101,7 +2101,7 @@ reset_helper() {
     # Delete the shader directory
     if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
         debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
-        rm "$conf_dir/$conf_subdir/"*.conf
+        rm "${conf_dir:?}/$conf_subdir/"*.conf
         message info "The Helper has been reset!"
     fi
 }
