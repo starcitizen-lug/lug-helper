@@ -1148,9 +1148,9 @@ post_download() {
         # We need to configure and restart Lutris
         unset lutris_game_ymls
         # Build an array of all Lutris Star Citizen yml files
-        while IFS= read -rd ''; do
-            lutris_game_ymls+=("$REPLY")
-        done < <(grep -RlZ --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
+        while IFS='' read -r line; do
+            lutris_game_ymls+=("$line")
+        done < <(grep -Rl --include="*.yml" "Roberts Space Industries/RSI Launcher/RSI Launcher.exe" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
 
         # We handle installs and deletions differently
         if [ "$download_action_success" = "installed" ]; then
@@ -1602,8 +1602,11 @@ download_select_install() {
     # Fetch a list of versions from the selected contributor
     # To add new sources, handle them here, in the if statement
     # just above, and the download_install function above
+    unset download_versions
     if [ "$download_url_type" = "github" ]; then
-        download_versions=($(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | xargs basename -a))
+        while IFS='' read -r line; do
+            download_versions+=("$line")
+        done < <(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | xargs basename -a)
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
