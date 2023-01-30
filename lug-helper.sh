@@ -984,7 +984,7 @@ preflight_check() {
         
         message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
-        if [ -z "$preflight_action_funcs" ]; then
+        if [ "${#preflight_action_funcs[@]}" -eq 0 ]; then
             message warning "$preflight_fail_string$preflight_pass_string"
         elif message question "$preflight_fail_string$preflight_pass_string\n\nWould you like configuration issues to be fixed for you?"; then
             # Call functions to build fixes for any issues found
@@ -1566,7 +1566,7 @@ download_select_install() {
         fi
 
         # Display a warning message
-        if [ -n "$glibc_fail" ]; then
+        if [ "${#glibc_fail[@]}" -gt 0 ]; then
             unset glibc_message
             # Prepare the warning message
             for (( i=0; i<"${#glibc_fail[@]}"; i++ )); do
