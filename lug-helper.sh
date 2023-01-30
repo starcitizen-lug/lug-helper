@@ -2214,16 +2214,6 @@ eac_workaround() {
     eac_dir="$wine_prefix/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat"
     eac_hosts="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
 
-    # Check if EAC workaround is already applied
-    if grep -q "$eac_hosts" /etc/hosts; then
-        if grep -q "^$eac_hosts" /etc/hosts; then
-            message info "The Easy Anti-Cheat workaround has already been applied.\nYou're all set!"
-        else
-            message info "The Easy Anti-Cheat workaround has already been applied, but may be commented out.\nNo changes have been made, please edit /etc/hosts manually."
-        fi
-        return 0
-    fi
-
     # Configure message variables
     eac_title="Easy Anti-Cheat Workaround"
     eac_hosts_formatted="$eac_hosts"
@@ -2234,14 +2224,44 @@ eac_workaround() {
         eac_dir_formatted="<i>$eac_dir_formatted</i>"
     fi
 
-    if message question "$eac_title\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted\n\nThe following directory will be deleted:\n$eac_dir_formatted\n\n\nTo revert these changes, delete the above line from\n/etc/hosts and relaunch the game\n\nDo you want to proceed?"; then
-        debug_print continue "Editing hosts file..."
+    apply_eac_hosts="false"
+    delete_eac_dir="false"
+    if grep -q "^$eac_hosts" /etc/hosts; then
+        # Hosts workaround is in place
+        # Check if we still need to delete the eac directory
+        if [ -d "$eac_dir" ]; then
+            delete_eac_dir="true"
+            eac_message="$eac_title\n\nYour /etc/hosts is already modified with the Easy Anti-Cheat workaround.\n\nThe following directory must still be deleted:\n$eac_dir_formatted"
+        fi
+    else
+        # Hosts workaround is needed
+        apply_eac_hosts="true"
+        eac_message="$eac_title\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted"
+        # Check if we also need to delete the eac directory
+        if [ -d "$eac_dir" ]; then
+            delete_eac_dir="true"
+            eac_message="$eac_message\n\nThe following directory will be deleted:\n$eac_dir_formatted"
+        fi
+    fi
+    # Finish up the message
+    eac_message="$eac_message\n\n\nTo revert these changes, delete the marked EAC workaround line\nin /etc/hosts and relaunch the game\n\nDo you want to proceed?"
 
-        # Try to modify /etc/hosts as root
-        try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
-        if [ "$?" -eq 1 ]; then
-            message error "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information.\n\nReturning to main menu."
-            return 0
+    # Check if the EAC workaround has already been fully applied
+    if [ "$apply_eac_hosts" = "false" ] && [ "$delete_eac_dir" = "false" ]; then
+        message info "The Easy Anti-Cheat workaround has already been applied.\nYou're all set!"
+        return 0
+    fi
+
+    if message question "$eac_message"; then
+        # Apply the hosts workaround if needed
+        if [ "$apply_eac_hosts" = "true" ]; then
+            debug_print continue "Editing hosts file..."
+            # Try to modify /etc/hosts as root
+            try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
+            if [ "$?" -eq 1 ]; then
+                message error "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information.\n\nReturning to main menu."
+                return 0
+            fi
         fi
 
         # Delete the EAC directory if it exists
