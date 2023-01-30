@@ -89,6 +89,7 @@
           "dxvk": true,
           "esync": true,
           "system_winetricks": false,
+          "dxvk_nvapi": false,
           "overrides": {
             "nvapi,nvapi64": "disabled",
             "libglesv2": "builtin"
