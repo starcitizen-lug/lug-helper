@@ -896,7 +896,7 @@ winetricks_check() {
 # Check total system memory
 memory_check() {
     memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
-    if [ ${memtotal%.*} -ge "15" ]; then
+    if [ "${memtotal%.*}" -ge "15" ]; then
         preflight_pass+=("Your system has $memtotal GB of memory.")
     else
         preflight_fail+=("Your system has $memtotal GB of memory.\nWe recommend at least 16 GB to avoid crashes.")
@@ -914,7 +914,7 @@ avx_check() {
 
 # Check if swap is set up
 swap_check() {
-    if cat /proc/swaps | grep -vq "Filename"; then
+    if grep -vq "Filename" /proc/swaps; then
         preflight_pass+=("You have swap space configured.")
     else
         preflight_fail+=("You don't appear to have swap space configured.\nWe recommend configuring an 8-16 GB swap file.")
@@ -1001,7 +1001,7 @@ preflight_check() {
             done
 
             # Execute the actions set by the functions
-            if [ ! -z "$preflight_actions_string" ]; then
+            if [ -n "$preflight_actions_string" ]; then
                 # Try to execute the actions as root
                 try_exec "$preflight_actions_string"
                 if [ "$?" -eq 1 ]; then
@@ -1029,7 +1029,7 @@ preflight_check() {
         else
             # User declined to automatically fix configuration issues
             # Show manual configuration options
-            if [ ! -z "$preflight_manual_string" ]; then
+            if [ -n "$preflight_manual_string" ]; then
                 message info "$preflight_manual_string"
             fi
         fi
@@ -1535,7 +1535,7 @@ download_select_install() {
     esac
 
     # For runners, check GlibC version against runner requirements
-    if [ "$download_type" = "runner" ] && ( [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ] ); then
+    if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ]; }; then
         unset glibc_fail
         required_glibc="2.33"
 
