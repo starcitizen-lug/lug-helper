@@ -1150,7 +1150,7 @@ post_download() {
         # Build an array of all Lutris Star Citizen yml files
         while IFS='' read -r line; do
             lutris_game_ymls+=("$line")
-        done < <(grep -Rl --include="*.yml" "Roberts Space Industries" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
+        done < <(grep -iRlE --include="*.yml" "Roberts Space Industries|starcitizen|star citizen|star-citizen" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
 
         # We handle installs and deletions differently
         if [ "$download_action_success" = "installed" ]; then
