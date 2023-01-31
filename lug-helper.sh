@@ -126,7 +126,7 @@ menu_option_height="26"
 winetricks_required="20220411"
 
 # lutris minimum version
-lutris_required="0.5.10.1"
+lutris_required="0.5.11"
 
 ######## Game Directories ##################################################
 
