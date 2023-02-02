@@ -94,7 +94,7 @@
             "nvapi,nvapi64": "disabled",
             "libglesv2": "builtin"
           },
-          "version": "lutris-GE-Proton7-36-x86_64"
+          "version": "lutris-GE-Proton7-35-x86_64"
         }
       }
     }
