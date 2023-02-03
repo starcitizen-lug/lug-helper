@@ -207,7 +207,7 @@ fi
 ######## Links #############################################################
 
 # LUG Wiki
-lug_wiki="https://github.com/starcitizen-lug/information-howtos/wiki"
+lug_wiki="https://starcitizen-lug.github.io/"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
