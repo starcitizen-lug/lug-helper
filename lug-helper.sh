@@ -2382,6 +2382,7 @@ Usage: lug-helper <options>
   -d, --show-directories    Show all Star Citizen and LUG Helper directories
   -w, --show-wiki           Show the LUG Wiki
   -x, --reset-helper        Delete saved lug-helper configs
+  -v, --version             Display version info and exit
 "
                 exit 0
                 ;;
@@ -2446,6 +2447,10 @@ Usage: lug-helper <options>
                 ;;
             --reset-helper | -x )
                 cargs+=("reset_helper")
+                ;;
+            --version | -v )
+                printf "LUG Helper %s\n" "$current_version"
+                exit 0
                 ;;
             * )
                 printf "$0: Invalid option '%s'\n" "$1"
