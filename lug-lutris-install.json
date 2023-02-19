@@ -72,7 +72,7 @@
           {
             "execute": {
               "description": "Creating game path",
-              "command": "mkdir -p $GAMEDIR'/drive_c/Program Files/Roberts Space Industries/StarCitizen/'{LIVE,PTU}"
+              "command": "mkdir -p \"$GAMEDIR/drive_c/Program Files/Roberts Space Industries/StarCitizen/\"{LIVE,PTU}"
             }
           }
         ],
