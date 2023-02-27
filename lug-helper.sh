@@ -2473,8 +2473,8 @@ fi
 # Loop the main menu until the user selects quit
 while true; do
     # Configure the menu
-    menu_text_zenity="<b><big>Welcome, fellow Penguin, to the Star Citizen LUG Helper!</big>\n\nThis Helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
-    menu_text_terminal="Welcome, fellow Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis Helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
+    menu_text_zenity="<b><big>Welcome, Space Penguin, to the Star Citizen LUG Helper!</big>\n\nThis Helper is designed to help optimize your system for Star Citizen</b>\n\nYou may choose from the following options:"
+    menu_text_terminal="Welcome, Space Penguin, to the Star Citizen Linux Users Group Helper!\n\nThis Helper is designed to help optimize your system for Star Citizen\nYou may choose from the following options:"
     menu_text_height="140"
     menu_type="radiolist"
 
