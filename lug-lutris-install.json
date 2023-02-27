@@ -13,7 +13,7 @@
       "runner": "wine",
       "slug": "starcitizen-lutris-install",
       "version": "LIVE/PTU",
-      "description": "Welcome to the Star Citizen installer maintained by the Star Citizen LUG!\r\nBefore continuing, please see our Quick Start Guide:\r\nhttps://github.com/starcitizen-lug/information-howtos/wiki\r\n\r\nFor help with the installer or to just hang out, we invite Linux Star Citizen players to join us: https://robertsspaceindustries.com/orgs/LUG/",
+      "description": "Welcome to the Star Citizen installer maintained by the Star Citizen LUG!\r\nBefore continuing, please see our Quick Start Guide:\r\nhttps://starcitizen-lug.github.io\r\n\r\nFor help with the installer or to just hang out, we invite Linux Star Citizen players to join us: https://robertsspaceindustries.com/orgs/LUG/",
       "notes": "Performance may be choppy for the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nIf you receive a Runtime Error you can continue using Star Citizen by dragging the dialog box to the side, but in-game VoIP and FoIP will cease to function until Star Citizen is restarted. Drop in to the LUG group's chat and forums; we have custom runners to work around this problem.\r\n\r\nPlease make sure you have all Wine dependencies properly installed or your game may crash during start-up. See our wiki linked above for more information and instructions.\r\n\r\nTo prevent crashes in areas with lots of geometry, the game needs a Linux resource limit named \"vm.max_map_count\" increased. If you are following our Quick Start Guide and using our LUG Helper, the Preflight Check will do this for you. To set it manually, execute:\r\n\r\nsudo sysctl -w vm.max_map_count=16777216\r\n\r\nConsult your distro's documentation on how to set this permanently or ask a LUG member.\r\n\r\nSee you in the 'verse!",
       "credits": "",
       "created_at": "2018-11-15T17:43:07.367000Z",
@@ -40,7 +40,7 @@
           "exe": "drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe",
           "prefix": "$GAMEDIR"
         },
-        "install_complete_text": "Installation Complete!\r\n\r\nPlease see our Quick Start Guide for instructions on deploying the necessary Easy Anti-Cheat workaround as well as other important configuration requirements:\r\n\r\nhttps://github.com/starcitizen-lug/information-howtos/wiki/Quick-Start-Guide",
+        "install_complete_text": "Installation Complete!\r\n\r\nPlease see our Wiki for important news and configuration requirements:\r\n\r\nhttps://starcitizen-lug.github.io",
         "installer": [
           {
             "task": {
