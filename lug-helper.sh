@@ -178,7 +178,7 @@ dxvk_dir_flatpak="$lutris_flatpak_dir/data/lutris/runtime/dxvk"
 # The second is expected to contain the github api releases url
 # ie. "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
 dxvk_sources=(
-    "doitsujin (official dxvk)" "https://api.github.com/repos/doitsujin/dxvk/releases"
+    "doitsujin (standard dxvk)" "https://api.github.com/repos/doitsujin/dxvk/releases"
     "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
     "gnusenpai" "https://api.github.com/repos/gnusenpai/dxvk/releases"
     "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
