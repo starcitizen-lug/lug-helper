@@ -2096,7 +2096,7 @@ display_dirs() {
 # Display the LUG Wiki
 display_wiki() {
     # Display a message containing the URL
-    message info "See the Wiki for our Quick-Start Guide, Manual Installation instructions,\nPerformance Tuning, and Common Issues and Solutions:\n\n$lug_wiki"
+    message info "See the Wiki for our Quick-Start Guide, Troubleshooting,\nand Performance Tuning Recommendations:\n\n$lug_wiki"
 }
 
 # Delete the helper's config directory
@@ -2115,9 +2115,9 @@ maintenance_menu() {
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
         # Configure the menu
-        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big></b>\n\nYou may choose from the following options:"
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nYou may choose from the following options:"
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nYou may choose from the following options:"
-        menu_text_height="100"
+        menu_text_height="140"
         menu_type="radiolist"
 
         # Configure the menu options
@@ -2126,14 +2126,13 @@ maintenance_menu() {
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
-        wiki_msg="Show the LUG Wiki"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
         
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$wiki_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "display_wiki" "reset_helper" "menu_loop_done")
+        menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
@@ -2294,7 +2293,6 @@ eac_workaround() {
         message info "Easy Anti-Cheat workaround has been deployed!"
     fi
 }
-
 
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
