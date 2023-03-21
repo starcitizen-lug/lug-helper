@@ -212,7 +212,7 @@ lug_wiki="https://starcitizen-lug.github.io"
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v2.5"
+current_version="v2.6"
 
 ############################################################################
 ############################################################################
