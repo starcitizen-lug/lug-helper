@@ -893,13 +893,29 @@ winetricks_check() {
     fi
 }
 
-# Check total system memory
+# Check system memory and swap space
 memory_check() {
-    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f \n", $2/1024/1024}' /proc/meminfo)"
-    if [ "${memtotal%.*}" -ge "15" ]; then
-        preflight_pass+=("Your system has $memtotal GB of memory.")
+    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f\n", $2/1024/1024}' /proc/meminfo)"
+    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf "%.1f\n", $2/1024/1024}' /proc/meminfo)"
+    if [ "${memtotal%.*}" -ge "40" ]; then
+        # 40GB or more of RAM
+        preflight_pass+=("Your system has ${memtotal}GB of memory.")
+    elif [ "${memtotal%.*}" -ge "31" ]; then
+        # 32GB or more of RAM, 16GB swap recommended
+        if [ "${swaptotal%.*}" -ge "15" ]; then
+            preflight_pass+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.")
+        else
+            preflight_fail+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.\nWe recommend at least 16GB swap to avoid crashes.")
+        fi
+    elif [ "${memtotal%.*}" -ge "15" ]; then
+        # 15GB or more of RAM, 24GB swap recommended
+        if [ "${swaptotal%.*}" -ge "23" ]; then
+            preflight_pass+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.")
+        else
+            preflight_fail+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.\nWe recommend at least 24GB swap to avoid crashes.")
+        fi
     else
-        preflight_fail+=("Your system has $memtotal GB of memory.\nWe recommend at least 16 GB to avoid crashes.")
+        preflight_fail+=("Your system has ${memtotal}GB of memory.\nWe recommend at least 16GB to avoid crashes.")
     fi
 }
 
@@ -909,15 +925,6 @@ avx_check() {
         preflight_pass+=("Your CPU supports the necessary AVX instruction set.")
     else
         preflight_fail+=("Your CPU does not appear to support AVX instructions.\nThis requirement was added to Star Citizen in version 3.11")
-    fi
-}
-
-# Check if swap is set up
-swap_check() {
-    if grep -vq "Filename" /proc/swaps; then
-        preflight_pass+=("You have swap space configured.")
-    else
-        preflight_fail+=("You don't appear to have swap space configured.\nWe recommend configuring an 8-16 GB swap file.")
     fi
 }
 
@@ -937,7 +944,6 @@ preflight_check() {
     wine_check
     winetricks_check
     memory_check
-    swap_check
     avx_check
     mapcount_check
     filelimit_check
