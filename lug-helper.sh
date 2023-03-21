@@ -908,7 +908,7 @@ memory_check() {
             preflight_fail+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.\nWe recommend at least 16GB swap to avoid crashes.")
         fi
     elif [ "${memtotal%.*}" -ge "15" ]; then
-        # 15GB or more of RAM, 24GB swap recommended
+        # 16GB or more of RAM, 24GB swap recommended
         if [ "${swaptotal%.*}" -ge "23" ]; then
             preflight_pass+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.")
         else
