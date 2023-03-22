@@ -901,9 +901,11 @@ winetricks_check() {
 
 # Check system memory and swap space
 memory_check() {
-    # Get totals in bytes
-    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2*1024}' /proc/meminfo)"
-    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf $2*1024}' /proc/meminfo)"
+    # Get totals in KB
+    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2}' /proc/meminfo)"
+    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf $2}' /proc/meminfo)"
+    memtotal="$(($memtotal * 1024))"
+    swaptotal="$(($swaptotal * 1024))"
     combtotal="$(($memtotal + $swaptotal))"
 
     # Convert to GiB
