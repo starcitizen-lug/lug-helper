@@ -71,11 +71,11 @@ fi
 #    notify-send "lug-helper" "The package 'zstd' was not found on this system. It is required for extracting some runner packages.\n" --icon=dialog-warning
 #    exit 1
 #fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v numfmt)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n" --icon=dialog-warning
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n- numfmt\n" --icon=dialog-warning
     exit 1
 fi
 if [ ! -x "$(command -v xargs)" ]; then
@@ -122,12 +122,6 @@ max_download_items=20
 # used to dynamically determine the height of menus
 menu_option_height="26"
 
-# winetricks minimum version
-winetricks_required="20220411"
-
-# lutris minimum version
-lutris_required="0.5.11"
-
 ######## Game Directories ##################################################
 
 # The game's base directory name
@@ -146,6 +140,26 @@ appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
 shaders_subdir="shaders"
 
 # Remaining directory paths are set at the end of the getdirs() function
+
+######## Bundled Files #####################################################
+
+# Use logo installed by a packaged version of this script if available
+# Otherwise, default to the logo in the same directory
+if [ -f "/usr/share/pixmaps/lug-logo.png" ]; then
+    lug_logo="/usr/share/pixmaps/lug-logo.png"
+elif [ -f "$helper_dir/lug-logo.png" ]; then
+    lug_logo="$helper_dir/lug-logo.png"
+else
+    lug_logo="info"
+fi
+
+# Use Lutris install script installed by a packaged version of this script if available
+# Otherwise, default to the json in the same directory
+if [ -f "/usr/share/lug-helper/lug-lutris-install.json" ]; then
+    install_script="/usr/share/lug-helper/lug-lutris-install.json"
+else
+    install_script="$helper_dir/lug-lutris-install.json"
+fi
 
 ######## Runners ###########################################################
 
@@ -184,25 +198,17 @@ dxvk_sources=(
     "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
 )
 
-######## Bundled Files #####################################################
+######## Requirements ######################################################
 
-# Use logo installed by a packaged version of this script if available
-# Otherwise, default to the logo in the same directory
-if [ -f "/usr/share/pixmaps/lug-logo.png" ]; then
-    lug_logo="/usr/share/pixmaps/lug-logo.png"
-elif [ -f "$helper_dir/lug-logo.png" ]; then
-    lug_logo="$helper_dir/lug-logo.png"
-else
-    lug_logo="info"
-fi
+# winetricks minimum version
+winetricks_required="20220411"
 
-# Use Lutris install script installed by a packaged version of this script if available
-# Otherwise, default to the json in the same directory
-if [ -f "/usr/share/lug-helper/lug-lutris-install.json" ]; then
-    install_script="/usr/share/lug-helper/lug-lutris-install.json"
-else
-    install_script="$helper_dir/lug-lutris-install.json"
-fi
+# lutris minimum version
+lutris_required="0.5.11"
+
+# Minimum amount of combined RAM + swap in GiB
+memory_required="16"
+memory_combined_required="40"
 
 ######## Links #############################################################
 
@@ -895,27 +901,29 @@ winetricks_check() {
 
 # Check system memory and swap space
 memory_check() {
-    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf "%.1f\n", $2/1024/1024}' /proc/meminfo)"
-    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf "%.1f\n", $2/1024/1024}' /proc/meminfo)"
-    if [ "${memtotal%.*}" -ge "40" ]; then
-        # 40GB or more of RAM
-        preflight_pass+=("Your system has ${memtotal}GB of memory.")
-    elif [ "${memtotal%.*}" -ge "31" ]; then
-        # 32GB or more of RAM, 8GB swap recommended
-        if [ "${swaptotal%.*}" -ge "7" ]; then
-            preflight_pass+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.")
-        else
-            preflight_fail+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.\nWe recommend at least 8GB swap to avoid crashes.")
-        fi
-    elif [ "${memtotal%.*}" -ge "15" ]; then
-        # 16GB or more of RAM, 24GB swap recommended
-        if [ "${swaptotal%.*}" -ge "23" ]; then
-            preflight_pass+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.")
-        else
-            preflight_fail+=("Your system has ${memtotal}GB memory and ${swaptotal}GB swap.\nWe recommend at least 24GB swap to avoid crashes.")
-        fi
+    # Get totals in bytes
+    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2*1024}' /proc/meminfo)"
+    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf $2*1024}' /proc/meminfo)"
+    combtotal="$(($memtotal + $swaptotal))"
+
+    # Convert to GiB
+    memtotal="$(numfmt --to=iec-i --suffix="B" "$memtotal")"
+    swaptotal="$(numfmt --to=iec-i --suffix="B" "$swaptotal")"
+    combtotal="$(numfmt --to=iec-i --suffix="B" "$combtotal")"
+
+    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$memory_required" ]; then
+        # Minimum requirements are not met
+        preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.")
+    elif [ "${memtotal::-3}" -ge "$memory_combined_required" ]; then
+        # System has sufficient RAM
+        preflight_pass+=("Your system has $memtotal of memory.")
+    elif [ "${combtotal::-3}" -ge "$memory_combined_required" ]; then
+        # System has sufficient combined RAM + swap
+        preflight_pass+=("Your system has $memtotal memory and $swaptotal swap.")
     else
-        preflight_fail+=("Your system has ${memtotal}GB of memory.\nWe recommend at least 16GB to avoid crashes.")
+        # Recommend swap
+        swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
+        preflight_fail+=("Your system has $memtotal memory and $swaptotal swap.\nWe recommend at least ${swap_recommended}GiB swap to avoid crashes.")
     fi
 }
 
