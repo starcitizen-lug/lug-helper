@@ -35,7 +35,7 @@
             "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.6.5.exe"
           },
           {
-            "prelaunch": "https://raw.githubusercontent.com/starcitizen-lug/lug-helper/master/sc-prelaunch.sh"
+            "prelaunch": "https://raw.githubusercontent.com/starcitizen-lug/lug-helper/master/lutris-sc-prelaunch.sh"
           }
         ],
         "game": {
@@ -95,7 +95,7 @@
             "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
             "__GL_THREADED_OPTIMIZATIONS": 1,
             "SteamGameId:": "starcitizen",
-            "prelaunch_command": "$GAMEDIR/sc-prelaunch.sh"
+            "prelaunch_command": "$GAMEDIR/lutris-sc-prelaunch.sh"
           },
           "prefer_system_libs": false
         },
