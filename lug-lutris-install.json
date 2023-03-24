@@ -103,12 +103,12 @@
           "dxvk": true,
           "esync": true,
           "fsync": true,
+          "dxvk_nvapi": false,
           "overrides": {
             "libglesv2": "builtin",
             "nvapi,nvapi64": "disabled"
           },
           "system_winetricks": false,
-          "dxvk_nvapi": false,
           "version": "lutris-GE-Proton7-41-x86_64"
         }
       }
