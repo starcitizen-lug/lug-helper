@@ -35,7 +35,7 @@
             "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.6.5.exe"
           },
           {
-            "prelaunch": "https://raw.githubusercontent.com/starcitizen-lug/lug-helper/master/lutris-sc-prelaunch.sh"
+            "prelaunch": "https://raw.githubusercontent.com/starcitizen-lug/lug-helper/43d2653fc6b750e83353cfd5c3f68859410b39d6/lutris-sc-prelaunch.sh"
           }
         ],
         "game": {
