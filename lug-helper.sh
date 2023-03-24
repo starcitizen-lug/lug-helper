@@ -2212,27 +2212,7 @@ install_game() {
             debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
         fi
 
-        # Prep EAC Workaround
-        eac_hosts="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
-        # Configure message variables
-        eac_hosts_formatted="$eac_hosts"
-        if [ "$use_zenity" -eq 1 ]; then
-            eac_hosts_formatted="<i>$eac_hosts_formatted</i>"
-        fi
-
-        # Deploy EAC Workaround if needed
-        if grep -q "^$eac_hosts" /etc/hosts; then
-           message info "The installation will continue in Lutris"
-        elif message question "The installation will continue in Lutris\n\nWould you like to deploy the Easy Anti-Cheat Workaround?\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted"; then
-            debug_print continue "Editing hosts file..."
-            # Try to modify /etc/hosts as root
-            try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
-            if [ "$?" -eq 1 ]; then
-                message error "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information."
-            else
-                message info "Easy Anti-Cheat workaround has been deployed!"
-            fi
-        fi
+        message info "The installation will continue in Lutris"
     fi
 }
 
