@@ -171,7 +171,7 @@ runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 # URLs for downloading Lutris runners
 # Elements in this array must be added in quoted pairs of: "description" "url"
 # The first string in the pair is expected to contain the runner description
-# The second is expected to contain the github api releases url
+# The second is expected to contain the api releases url
 # ie. "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 runner_sources=(
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
@@ -189,8 +189,9 @@ dxvk_dir_flatpak="$lutris_flatpak_dir/data/lutris/runtime/dxvk"
 # URLs for downloading dxvk versions
 # Elements in this array must be added in quoted pairs of: "description" "url"
 # The first string in the pair is expected to contain the runner description
-# The second is expected to contain the github api releases url
+# The second is expected to contain the api releases url
 # ie. "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
+# ie. "Ph42oN GPL+Async" "https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
 dxvk_sources=(
     "doitsujin (standard dxvk)" "https://api.github.com/repos/doitsujin/dxvk/releases"
     "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
@@ -1373,14 +1374,19 @@ download_install() {
             ;;
     esac
 
-    # Get the selected download url
+    # Set the search key we'll use to parse the api for the download url
     # To add new sources, handle them here and in the
     # download_select_install function below
     if [ "$download_url_type" = "github" ]; then
-        download_url="$(curl -s "$contributor_url" | grep "browser_download_url.*$download_file" | cut -d \" -f4)"
+        search_key="browser_download_url"
+    elif [ "$download_url_type" = "gitlab" ]; then
+        search_key="direct_asset_url"
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
+
+    # Get the selected download url
+    download_url="$(curl -s "$contributor_url" | grep -o "$search_key.*$download_file" | cut -d \" -f3)"
 
     # Sanity check
     if [ -z "$download_url" ]; then
@@ -1538,18 +1544,6 @@ download_select_install() {
     contributor_name="${download_sources[$1]}"
     contributor_url="${download_sources[$1+1]}"
 
-    # Check the provided contributor url to make sure we know how to handle it
-    # To add new sources, add them here and handle in the if statement
-    # just below and the download_install function above
-    case "$contributor_url" in
-        https://api.github.com*)
-            download_url_type="github"
-            ;;
-        *)
-            debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
-            ;;
-    esac
-
     # For runners, check GlibC version against runner requirements
     if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ]; }; then
         unset glibc_fail
@@ -1615,17 +1609,38 @@ download_select_install() {
         fi
     fi
 
-    # Fetch a list of versions from the selected contributor
+    # Check the provided contributor url to make sure we know how to handle it
+    # To add new sources, add them here and handle in the if statement
+    # just below and the download_install function above
+    case "$contributor_url" in
+        https://api.github.com/*)
+            download_url_type="github"
+            ;;
+        https://gitlab.com/api/v4/projects/*)
+            download_url_type="gitlab"
+            ;;
+        *)
+            debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
+            ;;
+    esac
+
+    # Set the search key we'll use to parse the api for the download url
     # To add new sources, handle them here, in the if statement
     # just above, and the download_install function above
-    unset download_versions
     if [ "$download_url_type" = "github" ]; then
-        while IFS='' read -r line; do
-            download_versions+=("$line")
-        done < <(curl -s "$contributor_url" | awk '/browser_download_url/ {print $2}' | xargs basename -a)
+        search_key="browser_download_url"
+    elif [ "$download_url_type" = "gitlab" ]; then
+        search_key="direct_asset_url"
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
+
+    # Fetch a list of versions from the selected contributor
+    unset download_versions
+    while IFS='' read -r line; do
+        download_versions+=("$line")
+    done < <(curl -s "$contributor_url" | grep -Po "$search_key.*?[^\\\](\",|\$)" | cut -d \" -f3 | xargs basename -a)
+    # Note: match from search_key until ", or EOL (Handles embedded commas and escaped quotes)
 
     # Sanity check
     if [ "${#download_versions[@]}" -eq 0 ]; then
