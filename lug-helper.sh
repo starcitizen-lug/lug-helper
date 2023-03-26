@@ -1379,14 +1379,16 @@ download_install() {
     # download_select_install function below
     if [ "$download_url_type" = "github" ]; then
         search_key="browser_download_url"
+        query_string="?per_page=$max_download_items"
     elif [ "$download_url_type" = "gitlab" ]; then
         search_key="direct_asset_url"
+        query_string="?per_page=$max_download_items"
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
 
     # Get the selected download url
-    download_url="$(curl -s "$contributor_url" | grep -o "$search_key.*$download_file" | cut -d \" -f3)"
+    download_url="$(curl -s "$contributor_url$query_string" | grep -o "$search_key.*$download_file" | cut -d \" -f3)"
 
     # Sanity check
     if [ -z "$download_url" ]; then
@@ -1629,8 +1631,10 @@ download_select_install() {
     # just above, and the download_install function above
     if [ "$download_url_type" = "github" ]; then
         search_key="browser_download_url"
+        query_string="?per_page=$max_download_items"
     elif [ "$download_url_type" = "gitlab" ]; then
         search_key="direct_asset_url"
+        query_string="?per_page=$max_download_items"
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
@@ -1639,7 +1643,7 @@ download_select_install() {
     unset download_versions
     while IFS='' read -r line; do
         download_versions+=("$line")
-    done < <(curl -s "$contributor_url" | grep -Po "$search_key.*?[^\\\](\",|\$)" | cut -d \" -f3 | xargs basename -a)
+    done < <(curl -s "$contributor_url$query_string" | grep -Po "$search_key.*?[^\\\](\",|\$)" | cut -d \" -f3 | xargs basename -a)
     # Note: match from search_key until ", or EOL (Handles embedded commas and escaped quotes)
 
     # Sanity check
