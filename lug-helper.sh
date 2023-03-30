@@ -1425,7 +1425,10 @@ download_install() {
 
     # Sanity check
     if [ ! -f "$tmp_dir/$download_file" ]; then
-        debug_print exit "Script error:  The requested $download_type file was not downloaded. Aborting"
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong and the requested $download_type file could not be downloaded!"
+        debug_print continue "Download failed! File not found: $tmp_dir/$download_file"
+        return 1
     fi  
 
     # Extract the archive to the tmp directory
