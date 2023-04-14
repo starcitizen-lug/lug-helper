@@ -82,7 +82,7 @@
             "__GL_SHADER_DISK_CACHE": 1,
             "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
             "__GL_THREADED_OPTIMIZATIONS": 1,
-            "SteamGameId:": "starcitizen",
+            "SteamGameId": "starcitizen",
             "prelaunch_command": "/usr/bin/sh -c 'if [ -d \"$WINEPREFIX/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat\" ]; then rm -rf \"$WINEPREFIX/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat\"; fi'"
           },
           "prefer_system_libs": false
