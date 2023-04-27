@@ -1636,6 +1636,11 @@ download_select_install() {
     if [ "$download_url_type" = "github" ]; then
         search_key="browser_download_url"
         query_string="?per_page=$max_download_items"
+        # For GE runners, add a few extra to max_download_items
+        # to provide extra room to filter out the game-specific builds below
+        if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
+            query_string="?per_page=$((max_download_items+5))"
+        fi
     elif [ "$download_url_type" = "gitlab" ]; then
         search_key="direct_asset_url"
         query_string="?per_page=$max_download_items"
@@ -1670,6 +1675,13 @@ download_select_install() {
     # To add new file extensions, handle them here and in
     # the download_install function above
     for (( i=0,num_download_items=0; i<"${#download_versions[@]}" && "$num_download_items"<"$max_download_items"; i++ )); do
+        # For GE runners, we want to filter out game-specific builds
+        # This assumes that all standard GE builds contain the word proton in their name
+        if [ "$download_url_type" = "github" ] && [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ] &&
+           printf '%s' "${download_versions[i]}" | grep -qive "proton"; then
+            continue;
+        fi
+
         # Get the file name minus the extension
         case "${download_versions[i]}" in
             *.sha*sum | *.ini | proton*)
