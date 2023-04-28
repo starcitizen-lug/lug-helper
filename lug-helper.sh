@@ -1679,7 +1679,7 @@ download_select_install() {
         # This assumes that all standard GE builds contain the word proton in their name
         if [ "$download_url_type" = "github" ] && [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ] &&
            printf '%s' "${download_versions[i]}" | grep -qive "proton"; then
-            continue;
+            continue
         fi
 
         # Get the file name minus the extension
