@@ -857,16 +857,12 @@ lutris_check() {
         return 1
     fi
 
-    # TODO: This was reported and fixed. Verify and remove when v0.5.13 is released
-    if [ "$(pgrep -f lutris)" ]; then
-        preflight_fail+=("Unable to detect Lutris version info while it is running.\nVersion $lutris_required or newer is required.")
-        return 1
-    fi
-
     # Check the native lutris version number
     if [ "$lutris_native" = "true" ]; then
         lutris_current="$(lutris -v | awk -F '-' '{print $2}')"
-        if [ "$lutris_required" != "$lutris_current" ] &&
+        if [ -z "$lutris_current" ]; then
+            preflight_fail+=("Unable to detect Lutris version info.\nVersion $lutris_required or newer is required.")
+        elif [ "$lutris_required" != "$lutris_current" ] &&
             [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
         else
@@ -877,7 +873,9 @@ lutris_check() {
     # Check the flatpak lutris version number
     if [ "$lutris_flatpak" = "true" ]; then
         lutris_current="$(flatpak run net.lutris.Lutris -v | awk -F '-' '{print $2}')"
-        if [ "$lutris_required" != "$lutris_current" ] &&
+        if [ -z "$lutris_current" ]; then
+            preflight_fail+=("Unable to detect Flatpak Lutris version info.\nVersion $lutris_required or newer is required.")
+        elif [ "$lutris_required" != "$lutris_current" ] &&
             [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
         else
