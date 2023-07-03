@@ -17,7 +17,7 @@
       "notes": "Performance may be choppy for the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nIf you receive a Runtime Error you can continue using Star Citizen by dragging the dialog box to the side, but in-game VoIP and FoIP will cease to function until Star Citizen is restarted. Drop in to the LUG group's chat and forums; we have custom runners to work around this problem.\r\n\r\nPlease make sure you have all Wine dependencies properly installed or your game may crash during start-up. See our wiki linked above for more information and instructions.\r\n\r\nTo prevent crashes in areas with lots of geometry, the game needs a Linux resource limit named \"vm.max_map_count\" increased. If you are following our Quick Start Guide and using our LUG Helper, the Preflight Check will do this for you. To set it manually, execute:\r\n\r\nsudo sysctl -w vm.max_map_count=16777216\r\n\r\nConsult your distro's documentation on how to set this permanently or ask a LUG member.\r\n\r\nSee you in the 'verse!",
       "credits": "",
       "created_at": "2023-03-24T06:40:19.908354Z",
-      "updated_at": "2023-04-14T00:19:06.586366Z",
+      "updated_at": "2023-07-03T01:53:34.512132Z",
       "draft": false,
       "published": true,
       "published_by": null,
@@ -32,7 +32,7 @@
       "script": {
         "files": [
           {
-            "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.6.5.exe"
+            "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.6.6.exe"
           }
         ],
         "game": {
@@ -96,8 +96,7 @@
             "libglesv2": "builtin",
             "nvapi,nvapi64": "disabled"
           },
-          "system_winetricks": false,
-          "version": "lutris-GE-Proton7-41-x86_64"
+          "system_winetricks": false
         }
       }
     }
