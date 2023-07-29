@@ -307,7 +307,7 @@ message() {
     if [ "$#" -lt 2 ]; then
         debug_print exit "Script error: The message function expects two arguments. Aborting."
     fi
-    
+
     # Use zenity messages if available
     if [ "$use_zenity" -eq 1 ]; then
         case "$1" in
@@ -416,7 +416,7 @@ message() {
 # - The integer "menu_height" specifies the height of the zenity menu.
 # - The string "menu_type" should contain either "radiolist" or "checklist".
 # - The string "cancel_label" should contain the text of the cancel button.
-# 
+#
 # The final element in each array is expected to be a quit option.
 #
 # IMPORTANT: The indices of the elements in "menu_actions"
@@ -490,7 +490,7 @@ menu() {
             ifsBAK="$IFS"
             IFS='|' read -a choices <<< "$choice"
             IFS="$ifsBAK"
-            
+
             # Fetch the function to be called
             function_call="$(echo "${menu_actions[0]}" | awk '{print $1}')"
 
@@ -603,7 +603,7 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-                if [ -d "$wine_prefix/$install_path" ] && 
+                if [ -d "$wine_prefix/$install_path" ] &&
                        message question "Is this your Star Citizen game directory?\n\n$wine_prefix/$install_path"; then
                     game_path="$wine_prefix/$install_path"
                 else
@@ -618,7 +618,7 @@ getdirs() {
                             break
                         fi
                     done
-                    
+
                     if [ -z "$game_path" ]; then
                         # User clicked cancel
                         message warning "Operation cancelled.\nNo changes have been made to your game."
@@ -644,7 +644,7 @@ getdirs() {
 
             # Get the game path
             if [ -z "$game_path" ]; then
-                if [ -d "$wine_prefix/$install_path" ] && 
+                if [ -d "$wine_prefix/$install_path" ] &&
                        message question "Is this your Star Citizen game directory?\n\n$wine_prefix/$install_path"; then
                     game_path="$wine_prefix/$install_path"
                 else
@@ -662,7 +662,7 @@ getdirs() {
                 fi
             fi
         fi
-        
+
         # Save the paths for later use
         echo "$wine_prefix" > "$conf_dir/$conf_subdir/$wine_conf"
         echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
@@ -715,7 +715,7 @@ mapcount_set() {
         preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
         preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
     fi
-    
+
     # Verify that the setting took effect
     preflight_followup+=("mapcount_confirm")
 }
@@ -948,7 +948,7 @@ preflight_check() {
     unset preflight_results
     unset preflight_manual
     unset preflight_followup
-    
+
     # Call the optimization functions to perform the checks
     lutris_check
     wine_check
@@ -997,7 +997,7 @@ preflight_check() {
         if [ "$use_zenity" -eq 1 ]; then
             message_heading="<b>$message_heading</b>"
         fi
-        
+
         message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
     else
         if [ "${#preflight_action_funcs[@]}" -eq 0 ]; then
@@ -1216,8 +1216,8 @@ post_download() {
 # Accepts array index numbers as an argument
 #
 # The following variables are expected to be set before calling this function:
-# - download_type (string) 
-# - installed_items (array) 
+# - download_type (string)
+# - installed_items (array)
 # - installed_item_names (array)
 download_delete() {
     # This function expects at least one index number for the array installed_items to be passed in as an argument
@@ -1427,7 +1427,7 @@ download_install() {
         message error "Something went wrong and the requested $download_type file could not be downloaded!"
         debug_print continue "Download failed! File not found: $tmp_dir/$download_file"
         return 1
-    fi  
+    fi
 
     # Extract the archive to the tmp directory
     debug_print continue "Extracting $download_type into $tmp_dir/$download_name..."
@@ -1543,7 +1543,7 @@ download_select_install() {
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
         debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_install function. Aborting."
     fi
-    
+
     # Store info from the selected contributor
     contributor_name="${download_sources[$1]}"
     contributor_url="${download_sources[$1+1]}"
@@ -1748,7 +1748,7 @@ download_select_install() {
         # Increment the added items counter
         num_download_items="$(($num_download_items+1))"
     done
-        
+
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
     menu_actions+=(":") # no-op
@@ -1758,10 +1758,10 @@ download_select_install() {
     if [ "$menu_height" -gt "400" ]; then
         menu_height="400"
     fi
-    
+
     # Set the label for the cancel button
     cancel_label="Go Back"
-       
+
     # Call the menu function.  It will use the options as configured above
     menu
 }
@@ -1834,7 +1834,7 @@ download_manage() {
             # Set the corresponding functions to be called for each of the options
             menu_actions+=("download_select_install $i")
         done
-        
+
         # Complete the menu by adding options to uninstall an item
         # or go back to the previous menu
         menu_options+=("$delete" "$back")
@@ -1842,10 +1842,10 @@ download_manage() {
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-        
+
         # Set the label for the cancel button
         cancel_label="Go Back"
-       
+
         # Call the menu function.  It will use the options as configured above
         menu
 
@@ -2021,7 +2021,7 @@ rm_userdir() {
             debug_print continue "Backing up keybinds to $backup_path/keybinds..."
             mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
         fi
-        
+
         # Wipe the user directory
         debug_print continue "Wiping $user_dir..."
         rm -r "$user_dir"
@@ -2177,7 +2177,7 @@ maintenance_menu() {
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
-        
+
         # Set the options to be displayed in the menu
         menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
@@ -2185,10 +2185,10 @@ maintenance_menu() {
 
         # Calculate the total height the menu should be
         menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-       
+
        # Set the label for the cancel button
        cancel_label="Go Back"
-       
+
         # Call the menu function.  It will use the options as configured above
         menu
     done
@@ -2234,7 +2234,7 @@ install_game() {
             # We shouldn't get here
             debug_print exit "Script error: Unable to detect Lutris version in install_game function. Aborting."
         fi
-        
+
         # Run the appropriate installer
         if [ "$install_version" = "native" ]; then
             lutris --install "$install_script" &
@@ -2341,7 +2341,7 @@ get_latest_release() {
     if [ "$#" -lt 1 ]; then
         debug_print exit "Script error: The get_latest_release function expects one argument. Aborting."
     fi
-    
+
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
         grep '"tag_name":' |                                            # Get tag line
         sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
@@ -2514,7 +2514,7 @@ while true; do
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
-    
+
     # Set the options to be displayed in the menu
     menu_options=("$preflight_msg" "$install_msg" "$eac_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
@@ -2522,10 +2522,10 @@ while true; do
 
     # Calculate the total height the menu should be
     menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    
+
     # Set the label for the cancel button
     cancel_label="Quit"
-    
+
     # Call the menu function.  It will use the options as configured above
     menu
 done
