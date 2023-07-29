@@ -2382,6 +2382,7 @@ live_or_ptu="$live_dir"
 if [ "$use_zenity" -eq 1 ]; then
     releases_url="<a href='$releases_url'>$releases_url</a>"
     lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
+    lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
 fi
 
 # Check if a newer verison of the script is available
@@ -2507,10 +2508,6 @@ fi
 
 # Detect if NixOS is being used and direct user to wiki
 if [ "$is_nixos" -eq 1 ]; then
-    # Detect if Zenity is being used and format the links
-    if [ "$use_zenity" -eq 1 ]; then
-        lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
-    fi
     message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos"
 fi
 
