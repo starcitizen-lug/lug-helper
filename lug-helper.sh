@@ -2165,7 +2165,7 @@ maintenance_menu() {
     while [ "$looping_menu" = "true" ]; do
         # Configure the menu
         menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Game Maintenance and Troubleshooting\n\nYou may choose from the following options:"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nYou may choose from the following options:"
         menu_text_height="140"
         menu_type="radiolist"
 
