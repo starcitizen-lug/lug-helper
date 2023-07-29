@@ -369,14 +369,12 @@ message() {
             "info")
                 # info message
                 # call format: message info "text to display"
-                clear
                 printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                clear
                 printf "\n$2\n\n"
                 read -n 1 -s -p "Press any key..."
                 ;;
@@ -389,7 +387,6 @@ message() {
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                clear
                 printf "$2\n"
                 while read -p "[y/n]: " yn; do
                     case "$yn" in
@@ -539,8 +536,8 @@ menu() {
             matched="false"
             for (( i=0; i<"${#menu_options[@]}"; i++ )); do
                 if [ "$choice" = "${menu_options[i]}" ]; then
+                    clear
                     # Execute the corresponding action
-                    printf "\n\n"
                     ${menu_actions[i]}
                     matched="true"
                     break
