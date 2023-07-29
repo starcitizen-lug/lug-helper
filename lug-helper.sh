@@ -46,6 +46,7 @@
 # Contributor: https://github.com/gort818
 # Contributor: https://github.com/victort
 # Contributor: https://github.com/Wrzlprnft
+# Contributor: https://github.com/LovingMelody
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 #
@@ -86,6 +87,12 @@ if [ ! -x "$(command -v xargs)" ]; then
     exit 1
 fi
 
+# Checks for NixOS for NixOS specific options
+if (grep '^NAME=NixOS' /etc/os-release -q 2> /dev/null ); then
+    is_nixos=1
+else
+    is_nixos=0
+fi
 
 ######## Config ############################################################
 
@@ -221,6 +228,10 @@ lug_wiki="https://starcitizen-lug.github.io"
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
 current_version="v2.8"
+
+# FIXME: Link
+# NixOS section in Wiki
+lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks"
 
 ############################################################################
 ############################################################################
@@ -2495,6 +2506,15 @@ Usage: lug-helper <options>
         done
         exit 0
     fi
+fi
+
+# Detect if NixOS is being used and direct user to wiki
+if [ "$is_nixos" -eq 1 ]; then
+    # Detect if Zenity is being used and format the links
+    if [ "$use_zenity" -eq 1 ]; then
+        lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
+    fi
+    message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos"
 fi
 
 # Loop the main menu until the user selects quit

@@ -82,4 +82,5 @@ _Optional Dependencies: **zenity** (for GUI)_
 - https://github.com/victort
 - https://github.com/Wrzlprnft
 - https://github.com/ananace
+- https://github.com/LovingMelody
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
