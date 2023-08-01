@@ -2420,7 +2420,7 @@ Usage: lug-helper <options>
   -s, --delete-shaders      Delete Star Citizen shaders
   -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
   -t, --target=[live|ptu]   Target LIVE or PTU (default live)
-  -g, --use-gui=[yes|no]    Use Zenity GUI if available (default yes)
+  -g, --no-gui              Use terminal menus instead of a Zenity GUI
   -r, --get-referral        Get a random LUG member's Star Citizen referral code
   -d, --show-directories    Show all Star Citizen and LUG Helper directories
   -w, --show-wiki           Show the LUG Wiki
@@ -2464,20 +2464,10 @@ Usage: lug-helper <options>
                     exit 0
                 fi
                 ;;
-            --use-gui=* | -g=* )
+            --no-gui | -g )
                 # If zenity is unavailable, it has already been set to 0
                 # and this setting has no effect
-                if [ -x "$(command -v zenity)" ]; then
-                    use_zenity="$(echo "$1" | cut -d'=' -f2)"
-                    if [ "$use_zenity" = "yes" ] || [ "$use_zenity" = "YES" ] || [ "$use_zenity" = "1" ]; then
-                        use_zenity=1
-                    elif [ "$use_zenity" = "no" ] || [ "$use_zenity" = "NO" ] || [ "$use_zenity" = "0" ]; then
-                        use_zenity=0
-                    else
-                        printf "$0: Invalid option '%s'\n" "$1"
-                        exit 0
-                    fi
-                fi
+                use_zenity=0
                 ;;
             --get-referral | -r )
                 cargs+=("referral_randomizer")
