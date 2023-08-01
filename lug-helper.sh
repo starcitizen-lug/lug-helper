@@ -152,8 +152,8 @@ shaders_subdir="shaders"
 
 # Use logo installed by a packaged version of this script if available
 # Otherwise, default to the logo in the same directory
-if [ -f "/usr/share/pixmaps/lug-logo.png" ]; then
-    lug_logo="/usr/share/pixmaps/lug-logo.png"
+if [ -f "$(dirname "$helper_dir")/share/pixmaps/lug-logo.png" ]; then
+    lug_logo="$(dirname "$helper_dir")/share/pixmaps/lug-logo.png"
 elif [ -f "$helper_dir/lug-logo.png" ]; then
     lug_logo="$helper_dir/lug-logo.png"
 else
@@ -162,8 +162,8 @@ fi
 
 # Use Lutris install script installed by a packaged version of this script if available
 # Otherwise, default to the json in the same directory
-if [ -f "/usr/share/lug-helper/lutris-sc-install.json" ]; then
-    install_script="/usr/share/lug-helper/lutris-sc-install.json"
+if [ -f "$(dirname "$helper_dir")/share/lug-helper/lutris-sc-install.json" ]; then
+    install_script="$(dirname "$helper_dir")/share/lug-helper/lutris-sc-install.json"
 else
     install_script="$helper_dir/lutris-sc-install.json"
 fi
