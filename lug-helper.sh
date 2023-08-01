@@ -2331,6 +2331,15 @@ eac_workaround() {
     fi
 }
 
+# Format some URLs for Zenity
+format_urls() {
+    if [ "$use_zenity" -eq 1 ]; then
+        releases_url="<a href='$releases_url'>$releases_url</a>"
+        lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
+        lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
+    fi
+}
+
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
     # Populate the referral codes array
@@ -2378,11 +2387,9 @@ fi
 # Set defaults
 live_or_ptu="$live_dir"
 
-# Format some URLs for Zenity
-if [ "$use_zenity" -eq 1 ]; then
-    releases_url="<a href='$releases_url'>$releases_url</a>"
-    lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
-    lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
+# Format some URLs for Zenity if the Helper was not invoked with command-line arguments (handle those separately below)
+if [ "$#" -eq 0 ]; then
+    format_urls
 fi
 
 # Check if a newer verison of the script is available
@@ -2496,6 +2503,9 @@ Usage: lug-helper <options>
         # Shift forward to the next argument and loop again
         shift
     done
+
+    # Format some URLs for Zenity
+    format_urls
 
     # Call the requested functions and exit
     if [ "${#cargs[@]}" -gt 0 ]; then
