@@ -1883,17 +1883,6 @@ runner_manage() {
     # Point download_dirs to the lutris_dirs array set by get_lutris_dirs
     # Must be formatted in pairs of ("[type]" "[directory]")
     declare -n download_dirs=lutris_dirs
-    # Verify the directories actually exist
-    missing_dir="false"
-    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-        if [ ! -d "${download_dirs[i]}" ]; then
-            message error "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
-            missing_dir="true"
-        fi
-    done
-    if [ "$missing_dir" = "true" ]; then
-        return 0
-    fi
 
     # Configure the text displayed in the menus
     download_menu_heading="Lutris Runners"
@@ -1936,17 +1925,6 @@ dxvk_manage() {
     # Point download_dirs to the lutris_dirs array set by get_lutris_dirs
     # Must be formatted in pairs of ("[type]" "[directory]")
     declare -n download_dirs=lutris_dirs
-    # Verify the directories actually exist
-    missing_dir="false"
-    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-        if [ ! -d "${download_dirs[i]}" ]; then
-            message error "The following Lutris directory was not found.  Unable to continue.\n\n${download_dirs[i]}"
-            missing_dir="true"
-        fi
-    done
-    if [ "$missing_dir" = "true" ]; then
-        return 0
-    fi
 
     # Configure the text displayed in the menus
     download_menu_heading="Lutris DXVK Versions"
