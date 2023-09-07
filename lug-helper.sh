@@ -229,9 +229,8 @@ repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
 current_version="v2.8"
 
-# FIXME: Link
 # NixOS section in Wiki
-lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks"
+lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
 
 ############################################################################
 ############################################################################
