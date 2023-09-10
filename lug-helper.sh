@@ -123,7 +123,7 @@ tmp_dir="$(mktemp -d --suffix=".lughelper")"
 trap 'rm -r "$tmp_dir"' EXIT
 
 # Set a maximum number of versions to display from each download url
-max_download_items=20
+max_download_items=25
 
 # Pixels to add for each Zenity menu option
 # used to dynamically determine the height of menus
@@ -1380,21 +1380,25 @@ download_install() {
             ;;
     esac
 
-    # Set the search key we'll use to parse the api for the download url
+    # Set the search keys we'll use to parse the api for the download url
     # To add new sources, handle them here and in the
     # download_select_install function below
     if [ "$download_url_type" = "github" ]; then
+        # Which json key are we looking for?
         search_key="browser_download_url"
+        # Add a query string to the url
         query_string="?per_page=$max_download_items"
     elif [ "$download_url_type" = "gitlab" ]; then
+        # Which json key are we looking for?
         search_key="direct_asset_url"
+        # Add a query string to the url
         query_string="?per_page=$max_download_items"
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
     fi
 
     # Get the selected download url
-    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+$download_file\"" | cut -d '"' -f4 | sed 's|/-/blob/|/-/raw/|')"
+    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_file" | cut -d '"' -f4 | sed 's|/-/blob/|/-/raw/|')"
 
     # Sanity check
     if [ -z "$download_url" ]; then
@@ -1635,19 +1639,30 @@ download_select_install() {
             ;;
     esac
 
-    # Set the search key we'll use to parse the api for the download url
+    # Set the search keys we'll use to parse the api for the download url
     # To add new sources, handle them here, in the if statement
     # just above, and the download_install function above
     if [ "$download_url_type" = "github" ]; then
+        # Which json key are we looking for?
         search_key="browser_download_url"
-        query_string="?per_page=$max_download_items"
-        # For GE runners, add a few extra to max_download_items
-        # to provide extra room to filter out the game-specific builds below
+        # Optional: Only match urls containing a keyword
+        match_url_keyword=""
+        # For GE runners, only match filenames containing Proton
         if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
-            query_string="?per_page=$((max_download_items+5))"
+            match_file_keyword="Proton"
+        else
+            match_file_keyword=""
         fi
+        # Add a query string to the url
+        query_string="?per_page=$max_download_items"
     elif [ "$download_url_type" = "gitlab" ]; then
+        # Which json key are we looking for?
         search_key="direct_asset_url"
+        # Only match urls containing a keyword
+        match_url_keyword="releases"
+        # Optional: Only match filenames containing a keyword
+        match_file_keyword=""
+        # Add a query string to the url
         query_string="?per_page=$max_download_items"
     else
         debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
@@ -1657,8 +1672,8 @@ download_select_install() {
     unset download_versions
     while IFS='' read -r line; do
         download_versions+=("$line")
-    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | cut -d '"' -f4 | xargs basename -a)
-    # Note: match from search_key until ", or EOL (Handles embedded commas and escaped quotes)
+    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep "$match_file_keyword")
+    # Note: match from search_key until " or EOL (Handles embedded commas and escaped quotes). Cut out quotes and gitlab's extraneous query strings.
 
     # Sanity check
     if [ "${#download_versions[@]}" -eq 0 ]; then
@@ -1680,12 +1695,6 @@ download_select_install() {
     # To add new file extensions, handle them here and in
     # the download_install function above
     for (( i=0,num_download_items=0; i<"${#download_versions[@]}" && "$num_download_items"<"$max_download_items"; i++ )); do
-        # For GE runners, we want to filter out game-specific builds
-        # This assumes that all standard GE builds contain the word proton in their name
-        if [ "$download_url_type" = "github" ] && [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ] &&
-           printf '%s' "${download_versions[i]}" | grep -qive "proton"; then
-            continue
-        fi
 
         # Get the file name minus the extension
         case "${download_versions[i]}" in
