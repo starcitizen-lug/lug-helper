@@ -94,7 +94,8 @@
           "dxvk_nvapi": false,
           "overrides": {
             "libglesv2": "builtin",
-            "nvapi,nvapi64": "disabled"
+            "nvapi,nvapi64": "disabled",
+            "powershell.exe": "disabled"
           },
           "system_winetricks": false
         }
