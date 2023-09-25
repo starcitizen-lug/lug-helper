@@ -52,7 +52,7 @@
           },
           {
             "task": {
-              "app": "--force arial vcrun2019 win10",
+              "app": "arial vcrun2019 win10",
               "arch": "win64",
               "description": "Installing dlls",
               "name": "winetricks",
