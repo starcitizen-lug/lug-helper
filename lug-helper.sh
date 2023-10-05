@@ -1059,6 +1059,14 @@ preflight_check() {
     fi
 }
 
+get_menu_text_height() {
+    # Get the screen resolution and set higher menu_text_height if screen resolution is higher than 720p
+    let "Yaxis=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2 | head -1)"
+    if [[ "$Yaxis" -gt "720" ]]; then
+        menu_text_height="400"
+    fi
+}
+
 ############################################################################
 ######## end preflight check functions #####################################
 ############################################################################
@@ -1280,6 +1288,9 @@ download_select_delete() {
     menu_text_zenity="Select the $download_type(s) you want to remove:"
     menu_text_terminal="Select the $download_type you want to remove:"
     menu_text_height="60"
+
+    get_menu_text_height
+
     menu_type="checklist"
     goback="Return to the $download_type management menu"
     unset installed_items
@@ -1685,6 +1696,9 @@ download_select_install() {
     menu_text_zenity="Select the $download_type you want to install:"
     menu_text_terminal="Select the $download_type you want to install:"
     menu_text_height="60"
+
+    get_menu_text_height
+
     menu_type="radiolist"
     goback="Return to the $download_type management menu"
     unset menu_options
@@ -1832,6 +1846,8 @@ download_manage() {
         menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nYou may choose from the following options:"
         menu_text_height="$download_menu_height"
         menu_type="radiolist"
+
+        get_menu_text_height
 
         # Configure the menu options
         delete="Remove an installed $download_type"
@@ -2162,6 +2178,8 @@ maintenance_menu() {
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nYou may choose from the following options:"
         menu_text_height="140"
         menu_type="radiolist"
+
+        get_menu_text_height
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
@@ -2502,14 +2520,10 @@ while true; do
     # Configure the menu
     menu_text_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>\n\nYou may choose from the following options:"
     menu_text_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group\nYou may choose from the following options:"
-    menu_text_height="140"
     menu_type="radiolist"
+    menu_text_height="140"
 
-    # Get the screen resolution and set higher menu_text_height if screen resolution is higher than 720p
-    let "Yaxis=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2 | head -1)"
-    if [[ "$Yaxis" -gt "720" ]]; then
-        menu_text_height="400"
-    fi
+    get_menu_text_height
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
