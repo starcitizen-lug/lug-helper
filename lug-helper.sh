@@ -2505,6 +2505,12 @@ while true; do
     menu_text_height="140"
     menu_type="radiolist"
 
+    # Get the screen resolution and set higher menu_text_height if screen resolution is higher than 720p
+    let "Yaxis=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2 | head -1)"
+    if [[ "$Yaxis" -gt "720" ]]; then
+        menu_text_height="400"
+    fi
+
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     install_msg="Install Star Citizen"
