@@ -1398,7 +1398,7 @@ download_install() {
     fi
 
     # Get the selected download url
-    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_file" | cut -d '"' -f4 | sed 's|/-/blob/|/-/raw/|')"
+    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_file" | cut -d '"' -f4 | cut -d '?' -f1 | sed 's|/-/blob/|/-/raw/|')"
 
     # Sanity check
     if [ -z "$download_url" ]; then
