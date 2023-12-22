@@ -1083,8 +1083,8 @@ get_menu_text_height() {
             # If using Wayland and major zenity version is less than target_major_version and minor version is less or equal to legacy_minor_version
             menu_text_height="140"
         elif [ "$minor_version" -gt $legacy_minor_version ]; then
-        # If using Wayland and major zenity version is less than target_major_version and minor version is greater than to legacy_minor_version
-        menu_text_height="400"
+            # If using Wayland and major zenity version is less than target_major_version and minor version is greater than to legacy_minor_version
+            menu_text_height="400"
         fi
     elif [ "$XDG_SESSION_TYPE" = "wayland" ] && [ "$major_version" -ge $target_major_version ]; then
         # If using Wayland and major zenity version is greater or equal to target_major_version
