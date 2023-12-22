@@ -1059,6 +1059,43 @@ preflight_check() {
     fi
 }
 
+get_menu_text_height() {
+    zenity_version=$(zenity --version 2>/dev/null)
+    major_version=$(echo "$zenity_version" | sed -E 's/^([0-9]+)\..*$/\1/')
+    minor_version=$(echo "$zenity_version" | sed -E 's/^[0-9]+\.([0-9]+)\..*$/\1/')
+    target_major_version=4
+    legacy_minor_version=44
+
+    # Check if running under Xorg or Wayland and if zenity major version loger than latest major zenity version
+    if [ "$XDG_SESSION_TYPE" = "x11" ] && [ "$major_version" -lt $target_major_version ]; then
+        if [ "$minor_version" -le $legacy_minor_version ]; then
+            # If using Xorg and major zenity major version is less than target_major_version and minor version is less or equal to legacy_minor_version
+            menu_text_height="140"
+        elif [ "$minor_version" -gt $legacy_minor_version ]; then
+            # If using Xorg and major zenity version is less than target_major_version and minor version is greater than to legacy_minor_version
+            menu_text_height="400"
+        fi
+    elif [ "$XDG_SESSION_TYPE" = "x11" ] && [ "$major_version" -ge $target_major_version ]; then
+        # If using Xorg and major zenity version is greater or equal to target_major_version
+        menu_text_height="400"
+    elif [ "$XDG_SESSION_TYPE" = "wayland" ] && [ "$major_version" -lt $target_major_version ]; then
+        if [ "$minor_version" -le $legacy_minor_version ]; then
+            # If using Wayland and major zenity version is less than target_major_version and minor version is less or equal to legacy_minor_version
+            menu_text_height="140"
+        elif [ "$minor_version" -gt $legacy_minor_version ]; then
+        # If using Wayland and major zenity version is less than target_major_version and minor version is greater than to legacy_minor_version
+        menu_text_height="400"
+        fi
+    elif [ "$XDG_SESSION_TYPE" = "wayland" ] && [ "$major_version" -ge $target_major_version ]; then
+        # If using Wayland and major zenity version is greater or equal to target_major_version
+        menu_text_height="400"
+    else
+        message info "Unknown display server environment."
+        # set default fixed height here
+        menu_text_height="140"
+    fi
+}
+
 ############################################################################
 ######## end preflight check functions #####################################
 ############################################################################
@@ -1280,6 +1317,7 @@ download_select_delete() {
     menu_text_zenity="Select the $download_type(s) you want to remove:"
     menu_text_terminal="Select the $download_type you want to remove:"
     menu_text_height="60"
+    get_menu_text_height
     menu_type="checklist"
     goback="Return to the $download_type management menu"
     unset installed_items
@@ -1685,6 +1723,7 @@ download_select_install() {
     menu_text_zenity="Select the $download_type you want to install:"
     menu_text_terminal="Select the $download_type you want to install:"
     menu_text_height="60"
+    get_menu_text_height
     menu_type="radiolist"
     goback="Return to the $download_type management menu"
     unset menu_options
@@ -1832,6 +1871,8 @@ download_manage() {
         menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nYou may choose from the following options:"
         menu_text_height="$download_menu_height"
         menu_type="radiolist"
+
+        get_menu_text_height
 
         # Configure the menu options
         delete="Remove an installed $download_type"
@@ -2161,6 +2202,7 @@ maintenance_menu() {
         menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nYou may choose from the following options:"
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nYou may choose from the following options:"
         menu_text_height="140"
+        get_menu_text_height
         menu_type="radiolist"
 
         # Configure the menu options
@@ -2503,6 +2545,7 @@ while true; do
     menu_text_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>\n\nYou may choose from the following options:"
     menu_text_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group\nYou may choose from the following options:"
     menu_text_height="140"
+    get_menu_text_height
     menu_type="radiolist"
 
     # Configure the menu options
