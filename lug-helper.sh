@@ -125,10 +125,6 @@ trap 'rm -r "$tmp_dir"' EXIT
 # Set a maximum number of versions to display from each download url
 max_download_items=25
 
-# Pixels to add for each Zenity menu option
-# used to dynamically determine the height of menus
-menu_option_height="26"
-
 ######## Game Directories ##################################################
 
 # The game's base directory name
@@ -1316,9 +1312,14 @@ download_select_delete() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    if [ "$menu_height" -gt "400" ]; then
-        menu_height="400"
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+    # Cap menu height
+    if [ "$menu_height" -gt "$menu_height_max" ]; then
+        menu_height="$menu_height_max"
     fi
 
     # Set the label for the cancel button
@@ -1770,9 +1771,14 @@ download_select_install() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    if [ "$menu_height" -gt "400" ]; then
-        menu_height="400"
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+    # Cap menu height
+    if [ "$menu_height" -gt "$menu_height_max" ]; then
+        menu_height="$menu_height_max"
     fi
 
     # Set the label for the cancel button
@@ -1857,7 +1863,11 @@ download_manage() {
         menu_actions+=("download_select_delete" "menu_loop_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+        # menu_option_height = pixels per menu option
+        # #menu_options[@] = number of menu options
+        # menu_text_height = height of the title/description text
+        # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
 
         # Set the label for the cancel button
         cancel_label="Go Back"
@@ -2178,7 +2188,11 @@ maintenance_menu() {
         menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+        # menu_option_height = pixels per menu option
+        # #menu_options[@] = number of menu options
+        # menu_text_height = height of the title/description text
+        # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
 
        # Set the label for the cancel button
        cancel_label="Go Back"
@@ -2359,11 +2373,27 @@ quit() {
 ######## MAIN ##############################################################
 ############################################################################
 
-# Check if Zenity is available
+# Zenity availability/version check
 use_zenity=0
 if [ -x "$(command -v zenity)" ]; then
     if zenity --version >/dev/null; then
         use_zenity=1
+        zenity_version="$(zenity --version)"
+
+        # Zenity 4.0.0 uses libadwaita, which changes fonts/sizing
+        # Add pixels to each menu option depending on the version of zenity in use
+        # used to dynamically determine the height of menus
+        # menu_text_height_zenity4 = Add extra pixels to the menu title/description height for libadwaita bigness
+        if [ "$zenity_version" != "4.0.0" ] && 
+            [ "$zenity_version" = "$(printf "%s\n%s" "$zenity_version" "4.0.0" | sort -V | head -n1)" ]; then
+            menu_option_height="26"
+            menu_text_height_zenity4="0"
+            menu_height_max="400"
+        else
+            menu_option_height="45"
+            menu_text_height_zenity4="90"
+            menu_height_max="800"
+        fi
     else
         # Zenity is broken
         debug_print continue "Zenity failed to start. Falling back to terminal menus"
@@ -2521,7 +2551,11 @@ while true; do
     menu_actions=("preflight_check" "install_game" "eac_workaround" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
 
     # Set the label for the cancel button
     cancel_label="Quit"
