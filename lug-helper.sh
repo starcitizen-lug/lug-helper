@@ -2388,10 +2388,12 @@ if [ -x "$(command -v zenity)" ]; then
         # menu_text_height_zenity4 = Add extra pixels to the menu title/description height for libadwaita bigness
         if [ "$zenity_version" != "4.0.0" ] && 
             [ "$zenity_version" = "$(printf "%s\n%s" "$zenity_version" "4.0.0" | sort -V | head -n1)" ]; then
+            # zenity 3.x menu sizing
             menu_option_height="26"
             menu_text_height_zenity4="0"
             menu_height_max="400"
         else
+            # zenity 4.x+ menu sizing
             menu_option_height="45"
             menu_text_height_zenity4="90"
             menu_height_max="800"
