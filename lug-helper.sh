@@ -1648,12 +1648,12 @@ download_select_install() {
         search_key="browser_download_url"
         # Optional: Only match urls containing a keyword
         match_url_keyword=""
-        # For GE runners, filter out game-specific builds by keyword
+        # Optional: Filter out game-specific builds by keyword
         # Format for grep extended regex (ie: "word1|word2|word3")
         if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
             filter_keywords="lol|diablo"
         else
-            filter_keywords=""
+            filter_keywords="oh hi there. this is just placeholder text. how are you today?"
         fi
         # Add a query string to the url
         query_string="?per_page=$max_download_items"
@@ -1662,8 +1662,9 @@ download_select_install() {
         search_key="direct_asset_url"
         # Only match urls containing a keyword
         match_url_keyword="releases"
-        # Optional: Only match filenames containing a keyword
-        filter_keywords=""
+        # Optional: Filter out game-specific builds by keyword
+        # Format for grep extended regex (ie: "word1|word2|word3")
+        filter_keywords="oh hi there. this is just placeholder text. how are you today?"
         # Add a query string to the url
         query_string="?per_page=$max_download_items"
     else
