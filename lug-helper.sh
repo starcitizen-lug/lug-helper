@@ -2377,6 +2377,10 @@ quit() {
 
 # Zenity availability/version check
 use_zenity=0
+# Initialize some variables
+menu_option_height="0"
+menu_text_height_zenity4="0"
+menu_height_max="0"
 if [ -x "$(command -v zenity)" ]; then
     if zenity --version >/dev/null; then
         use_zenity=1
