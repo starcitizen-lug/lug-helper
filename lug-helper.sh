@@ -1648,11 +1648,12 @@ download_select_install() {
         search_key="browser_download_url"
         # Optional: Only match urls containing a keyword
         match_url_keyword=""
-        # For GE runners, only match filenames containing Proton
+        # For GE runners, filter out game-specific builds by keyword
+        # Format for grep extended regex (ie: "word1|word2|word3")
         if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
-            match_file_keyword="Proton"
+            filter_keywords="lol|diablo"
         else
-            match_file_keyword=""
+            filter_keywords=""
         fi
         # Add a query string to the url
         query_string="?per_page=$max_download_items"
@@ -1662,7 +1663,7 @@ download_select_install() {
         # Only match urls containing a keyword
         match_url_keyword="releases"
         # Optional: Only match filenames containing a keyword
-        match_file_keyword=""
+        filter_keywords=""
         # Add a query string to the url
         query_string="?per_page=$max_download_items"
     else
@@ -1673,7 +1674,7 @@ download_select_install() {
     unset download_versions
     while IFS='' read -r line; do
         download_versions+=("$line")
-    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep "$match_file_keyword")
+    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep -viE "$filter_keywords")
     # Note: match from search_key until " or EOL (Handles embedded commas and escaped quotes). Cut out quotes and gitlab's extraneous query strings.
 
     # Sanity check
