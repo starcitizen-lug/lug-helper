@@ -125,10 +125,6 @@ trap 'rm -r "$tmp_dir"' EXIT
 # Set a maximum number of versions to display from each download url
 max_download_items=25
 
-# Pixels to add for each Zenity menu option
-# used to dynamically determine the height of menus
-menu_option_height="26"
-
 ######## Game Directories ##################################################
 
 # The game's base directory name
@@ -227,7 +223,7 @@ lug_wiki="https://starcitizen-lug.github.io"
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v2.11"
+current_version="v2.12"
 
 # NixOS section in Wiki
 lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
@@ -1316,9 +1312,14 @@ download_select_delete() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    if [ "$menu_height" -gt "400" ]; then
-        menu_height="400"
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+    # Cap menu height
+    if [ "$menu_height" -gt "$menu_height_max" ]; then
+        menu_height="$menu_height_max"
     fi
 
     # Set the label for the cancel button
@@ -1647,11 +1648,12 @@ download_select_install() {
         search_key="browser_download_url"
         # Optional: Only match urls containing a keyword
         match_url_keyword=""
-        # For GE runners, only match filenames containing Proton
+        # Optional: Filter out game-specific builds by keyword
+        # Format for grep extended regex (ie: "word1|word2|word3")
         if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
-            match_file_keyword="Proton"
+            filter_keywords="lol|diablo"
         else
-            match_file_keyword=""
+            filter_keywords="oh hi there. this is just placeholder text. how are you today?"
         fi
         # Add a query string to the url
         query_string="?per_page=$max_download_items"
@@ -1660,8 +1662,9 @@ download_select_install() {
         search_key="direct_asset_url"
         # Only match urls containing a keyword
         match_url_keyword="releases"
-        # Optional: Only match filenames containing a keyword
-        match_file_keyword=""
+        # Optional: Filter out game-specific builds by keyword
+        # Format for grep extended regex (ie: "word1|word2|word3")
+        filter_keywords="oh hi there. this is just placeholder text. how are you today?"
         # Add a query string to the url
         query_string="?per_page=$max_download_items"
     else
@@ -1672,7 +1675,7 @@ download_select_install() {
     unset download_versions
     while IFS='' read -r line; do
         download_versions+=("$line")
-    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep "$match_file_keyword")
+    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep -viE "$filter_keywords")
     # Note: match from search_key until " or EOL (Handles embedded commas and escaped quotes). Cut out quotes and gitlab's extraneous query strings.
 
     # Sanity check
@@ -1770,9 +1773,14 @@ download_select_install() {
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
-    if [ "$menu_height" -gt "400" ]; then
-        menu_height="400"
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+    # Cap menu height
+    if [ "$menu_height" -gt "$menu_height_max" ]; then
+        menu_height="$menu_height_max"
     fi
 
     # Set the label for the cancel button
@@ -1857,7 +1865,11 @@ download_manage() {
         menu_actions+=("download_select_delete" "menu_loop_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+        # menu_option_height = pixels per menu option
+        # #menu_options[@] = number of menu options
+        # menu_text_height = height of the title/description text
+        # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
 
         # Set the label for the cancel button
         cancel_label="Go Back"
@@ -2178,7 +2190,11 @@ maintenance_menu() {
         menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+        # menu_option_height = pixels per menu option
+        # #menu_options[@] = number of menu options
+        # menu_text_height = height of the title/description text
+        # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
 
        # Set the label for the cancel button
        cancel_label="Go Back"
@@ -2359,11 +2375,33 @@ quit() {
 ######## MAIN ##############################################################
 ############################################################################
 
-# Check if Zenity is available
+# Zenity availability/version check
 use_zenity=0
+# Initialize some variables
+menu_option_height="0"
+menu_text_height_zenity4="0"
+menu_height_max="0"
 if [ -x "$(command -v zenity)" ]; then
     if zenity --version >/dev/null; then
         use_zenity=1
+        zenity_version="$(zenity --version)"
+
+        # Zenity 4.0.0 uses libadwaita, which changes fonts/sizing
+        # Add pixels to each menu option depending on the version of zenity in use
+        # used to dynamically determine the height of menus
+        # menu_text_height_zenity4 = Add extra pixels to the menu title/description height for libadwaita bigness
+        if [ "$zenity_version" != "4.0.0" ] && 
+            [ "$zenity_version" = "$(printf "%s\n%s" "$zenity_version" "4.0.0" | sort -V | head -n1)" ]; then
+            # zenity 3.x menu sizing
+            menu_option_height="26"
+            menu_text_height_zenity4="0"
+            menu_height_max="400"
+        else
+            # zenity 4.x+ menu sizing
+            menu_option_height="45"
+            menu_text_height_zenity4="90"
+            menu_height_max="800"
+        fi
     else
         # Zenity is broken
         debug_print continue "Zenity failed to start. Falling back to terminal menus"
@@ -2521,7 +2559,11 @@ while true; do
     menu_actions=("preflight_check" "install_game" "eac_workaround" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height))"
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
 
     # Set the label for the cancel button
     cancel_label="Quit"
