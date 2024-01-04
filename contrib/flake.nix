@@ -23,7 +23,8 @@
     lug-helper = pkgs:
       pkgs.stdenv.mkDerivation rec {
         name = "lug-helper";
-        src = ./.;
+        src = ./..;
+        version = self.shortRev or "dirty";
         buildInputs = with pkgs; [bash coreutils findutils];
         nativeBuildInputs = with pkgs; [makeWrapper];
         installPhase = with pkgs; ''
