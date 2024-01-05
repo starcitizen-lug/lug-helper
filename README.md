@@ -21,7 +21,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
     - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
 
 `Install Star Citizen`
-- Launches Lutris and uses the bundled json to install Star Citizen
+- Launches Lutris and installs Star Citizen
 
 `Deploy Easy Anti-Cheat Workaround`
 - Applies the workaround to /etc/hosts and deletes the necessary EAC files
