@@ -2470,7 +2470,7 @@ Usage: lug-helper <options>
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
   -s, --delete-shaders          Delete Star Citizen shaders
   -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
-  -t, --target=[live|ptu|eptu]  Target LIVE/PTU/EPTU (default: live)
+  -t, --target [live|ptu|eptu]  Target LIVE/PTU/EPTU (default: live)
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
   -r, --get-referral            Get a random LUG member's referral code
   -d, --show-directories        Show all Star Citizen and Helper directories
@@ -2504,18 +2504,20 @@ Usage: lug-helper <options>
             --delete-dxvk-cache | -c )
                 cargs+=("rm_dxvkcache")
                 ;;
-            --target=* | -t=* )
-                game_version="$(echo "$1" | cut -d'=' -f2)"
+            --target | -t )
+                game_version="$2"
                 if [ "$game_version" = "live" ] || [ "$game_version" = "LIVE" ]; then
                     game_version="$live_dir"
                 elif [ "$game_version" = "ptu" ] || [ "$game_version" = "PTU" ]; then
                     game_version="$ptu_dir"
-                elif [ "$game_version" = "eptu" ] || [ "$game_version" = "ePTU" ]; then
+                elif [ "$game_version" = "eptu" ] || [ "$game_version" = "EPTU" ]; then
                     game_version="$eptu_dir"
                 else
-                    printf "$0: Invalid option '%s'\n" "$1"
+                    printf "$0: Invalid argument '%s'\n" "$game_version"
                     exit 0
                 fi
+                # Shift forward one argument
+                shift
                 ;;
             --no-gui | -g )
                 # If zenity is unavailable, it has already been set to 0
