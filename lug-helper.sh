@@ -132,9 +132,10 @@ sc_base_dir="StarCitizen"
 # The default install location within a WINE prefix:
 install_path="drive_c/Program Files/Roberts Space Industries/$sc_base_dir"
 
-# The names of the live/ptu directories
+# The names of the live/ptu/eptu directories
 live_dir="LIVE"
 ptu_dir="PTU"
+eptu_dir="EPTU"
 
 # Location in the WINE prefix where shaders are stored
 appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
@@ -672,16 +673,16 @@ getdirs() {
     fi
 
     ######## Set remaining directory paths #####################################
-    # $live_or_ptu is set in the set_version() function
+    # $game_version is set in the version_menu() function
     ############################################################################
     # The game's user directory
-    user_dir="$game_path/$live_or_ptu/USER/Client/0"
+    user_dir="$game_path/$game_version/USER/Client/0"
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # Shaders directory
     shaders_dir="$wine_prefix/$appdata_path"
     # dxvk cache file
-    dxvk_cache="$game_path/$live_or_ptu/StarCitizen.dxvk-cache"
+    dxvk_cache="$game_path/$game_version/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
     backup_path="$conf_dir/$conf_subdir"
 }
@@ -1976,18 +1977,44 @@ dxvk_manage() {
 ######## begin maintenance functions #######################################
 ############################################################################
 
-# Toggle between the LIVE and PTU game directories for all Helper functions
+# Set the game version to target for all Helper functions
+# Accepts a string as an argument
 set_version() {
-    if [ "$live_or_ptu" = "$live_dir" ]; then
-        live_or_ptu="$ptu_dir"
-        message info "The Helper will now target your Star Citizen PTU installation."
-    elif [ "$live_or_ptu" = "$ptu_dir" ]; then
-        live_or_ptu="$live_dir"
-        message info "The Helper will now target your Star Citizen LIVE installation."
-    else
-        debug_print continue "Unexpected game version provided.  Defaulting to the LIVE installation."
-        live_or_ptu="$live_dir"
+    # This function expects a string to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The set_version function expects an argument. Aborting."
     fi
+
+    # Set the game version from the passed argument
+    game_version="$1"
+}
+
+# Display a menu to select the game version (LIVE/PTU/EPTU) to target for all Helper functions
+version_menu(){
+    # Configure the menu
+    menu_text_zenity="Select the game version the Helper will target:"
+    menu_text_terminal="Select the game version the Helper will target:"
+    menu_text_height="60"
+    menu_type="radiolist"
+    goback="Cancel"
+
+    # Set the options to be displayed in the menu
+    menu_options=("LIVE" "PTU" "EPTU" "$goback")
+    # Set the corresponding functions to be called for each of the options
+    menu_actions=("set_version $live_dir" "set_version $ptu_dir" "set_version $eptu_dir" ":")
+
+    # Calculate the total height the menu should be
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+
+    # Set the label for the cancel button
+    cancel_label="Cancel"
+
+    # Call the menu function.  It will use the options as configured above
+    menu
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -2176,7 +2203,7 @@ maintenance_menu() {
         menu_type="radiolist"
 
         # Configure the menu options
-        version_msg="Switch the Helper between LIVE and PTU  (Currently: $live_or_ptu)"
+        version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
         userdir_msg="Delete my Star Citizen USER folder and preserve my keybinds"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
@@ -2187,7 +2214,7 @@ maintenance_menu() {
         # Set the options to be displayed in the menu
         menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("set_version" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2409,7 +2436,7 @@ if [ -x "$(command -v zenity)" ]; then
 fi
 
 # Set defaults
-live_or_ptu="$live_dir"
+game_version="$live_dir"
 
 # Format some URLs for Zenity if the Helper was not invoked with command-line arguments (handle those separately below)
 if [ "$#" -eq 0 ]; then
@@ -2435,21 +2462,21 @@ if [ "$#" -gt 0 ]; then
             --help | -h )
                 printf "Star Citizen Linux Users Group Helper Script
 Usage: lug-helper <options>
-  -p, --preflight-check     Run system optimization checks
-  -i, --install             Install Star Citizen
-  -e, --eac                 Deploy Easy Anti-Cheat Workaround
-  -m, --manage-runners      Install or remove Lutris runners
-  -k, --manage-dxvk         Install or remove DXVK versions
-  -u, --delete-user-folder  Delete Star Citizen USER folder, preserving keybinds
-  -s, --delete-shaders      Delete Star Citizen shaders
-  -c, --delete-dxvk-cache   Delete Star Citizen dxvk cache file
-  -t, --target=[live|ptu]   Target LIVE or PTU (default live)
-  -g, --no-gui              Use terminal menus instead of a Zenity GUI
-  -r, --get-referral        Get a random LUG member's Star Citizen referral code
-  -d, --show-directories    Show all Star Citizen and LUG Helper directories
-  -w, --show-wiki           Show the LUG Wiki
-  -x, --reset-helper        Delete saved lug-helper configs
-  -v, --version             Display version info and exit
+  -p, --preflight-check         Run system optimization checks
+  -i, --install                 Install Star Citizen
+  -e, --eac                     Deploy Easy Anti-Cheat Workaround
+  -m, --manage-runners          Install or remove Lutris runners
+  -k, --manage-dxvk             Install or remove DXVK versions
+  -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
+  -s, --delete-shaders          Delete Star Citizen shaders
+  -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
+  -t, --target=[live|ptu|eptu]  Target LIVE/PTU/EPTU (default: live)
+  -g, --no-gui                  Use terminal menus instead of a Zenity GUI
+  -r, --get-referral            Get a random LUG member's referral code
+  -d, --show-directories        Show all Star Citizen and Helper directories
+  -w, --show-wiki               Show the LUG Wiki
+  -x, --reset-helper            Delete saved lug-helper configs
+  -v, --version                 Display version info and exit
 "
                 exit 0
                 ;;
@@ -2478,11 +2505,13 @@ Usage: lug-helper <options>
                 cargs+=("rm_dxvkcache")
                 ;;
             --target=* | -t=* )
-                live_or_ptu="$(echo "$1" | cut -d'=' -f2)"
-                if [ "$live_or_ptu" = "live" ] || [ "$live_or_ptu" = "LIVE" ]; then
-                    live_or_ptu="$live_dir"
-                elif [ "$live_or_ptu" = "ptu" ] || [ "$live_or_ptu" = "PTU" ]; then
-                    live_or_ptu="$ptu_dir"
+                game_version="$(echo "$1" | cut -d'=' -f2)"
+                if [ "$game_version" = "live" ] || [ "$game_version" = "LIVE" ]; then
+                    game_version="$live_dir"
+                elif [ "$game_version" = "ptu" ] || [ "$game_version" = "PTU" ]; then
+                    game_version="$ptu_dir"
+                elif [ "$game_version" = "eptu" ] || [ "$game_version" = "ePTU" ]; then
+                    game_version="$eptu_dir"
                 else
                     printf "$0: Invalid option '%s'\n" "$1"
                     exit 0
