@@ -119,7 +119,7 @@ lutris_flatpak_conf_dir="$lutris_flatpak_dir/config/lutris/games"
 helper_dir="$(realpath "$0" | xargs -0 dirname)"
 
 # Temporary directory
-tmp_dir="$(mktemp -d --suffix=".lughelper")"
+tmp_dir="$(mktemp -d -t "lughelper.XXXXXXXXXX")"
 trap 'rm -r "$tmp_dir"' EXIT
 
 # Set a maximum number of versions to display from each download url
