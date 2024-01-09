@@ -46,8 +46,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Delete my DXVK cache`
   - A troubleshooting step that sometimes helps fix various issues and crashes.
 
-`Deploy Global Easy Anti-Cheat Workaround`
-- Applies the workaround to /etc/hosts and deletes the necessary EAC files
+- `Deploy Global Easy Anti-Cheat Workaround`
+  - Applies the workaround to /etc/hosts and deletes the necessary EAC files
 
 - `Display Helper and Star Citizen directories`
   - Show all the directories currently in use by both the Helper and Star Citizen.
