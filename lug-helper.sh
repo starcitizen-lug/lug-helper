@@ -2676,8 +2676,8 @@ if [ "$is_nixos" -eq 1 ]; then
 fi
 
 # Set up the main menu heading
-menu_heading_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>"
-menu_heading_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group"
+menu_heading_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>\n"$lug_wiki""
+menu_heading_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group\n"$lug_wiki""
 
 # First run
 firstrun_message="It looks like this is your first time running the Helper\n\nWould you like to run the Preflight Check and install the game?"
@@ -2700,7 +2700,7 @@ while true; do
     # Configure the menu
     menu_text_zenity="$menu_heading_zenity\n\nYou may choose from the following options:"
     menu_text_terminal="$menu_heading_terminal\nYou may choose from the following options:"
-    menu_text_height="140"
+    menu_text_height="150"
     menu_type="radiolist"
 
     # Configure the menu options
