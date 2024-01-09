@@ -1,0 +1,104 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 37253,
+      "game_id": 17622,
+      "game_slug": "star-citizen",
+      "name": "Star Citizen",
+      "year": 2016,
+      "user": "GloriousEggroll",
+      "runner": "wine",
+      "slug": "star-citizen-liveptu",
+      "version": "LIVE/PTU",
+      "description": "Welcome to the Star Citizen installer maintained by the Star Citizen LUG!\r\nBefore continuing, please see our Quick Start Guide:\r\nhttps://starcitizen-lug.github.io\r\n\r\nFor help with the installer or to just hang out, we invite Linux Star Citizen players to join us:\r\nhttps://robertsspaceindustries.com/orgs/LUG/",
+      "notes": "Performance may be choppy for the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nPlease make sure you have all Wine dependencies properly installed or your game may crash during start up. To prevent crashes in areas with lots of geometry, the game needs a resource limit named \"vm.max_map_count\" increased. See our wiki's Quick Start Guide for more information and instructions.\r\n\r\nSee you in the 'verse!",
+      "credits": "",
+      "created_at": "2023-03-24T06:40:19.908354Z",
+      "updated_at": "2024-01-05T16:52:37.863257Z",
+      "draft": false,
+      "published": true,
+      "published_by": null,
+      "rating": "",
+      "is_playable": null,
+      "steamid": null,
+      "gogid": null,
+      "gogslug": "",
+      "humbleid": "",
+      "humblestoreid": "",
+      "humblestoreid_real": "",
+      "script": {
+        "files": [
+          {
+            "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.6.10.exe"
+          }
+        ],
+        "game": {
+          "args": "--locale=$INPUT_LOCALE",
+          "exe": "$GAMEDIR/drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe",
+          "prefix": "$GAMEDIR"
+        },
+        "install_complete_text": "Installation Complete!\r\n\r\nPlease see our Wiki for important news and configuration requirements:\r\n\r\nhttps://starcitizen-lug.github.io",
+        "installer": [
+          {
+            "task": {
+              "arch": "win64",
+              "description": "Creating Wine prefix",
+              "name": "create_prefix",
+              "prefix": "$GAMEDIR"
+            }
+          },
+          {
+            "task": {
+              "app": "arial vcrun2019 win10",
+              "arch": "win64",
+              "description": "Installing dlls",
+              "name": "winetricks",
+              "prefix": "$GAMEDIR"
+            }
+          },
+          {
+            "task": {
+              "arch": "win64",
+              "args": "/S",
+              "description": "Installing client",
+              "executable": "client",
+              "name": "wineexec",
+              "prefix": "$GAMEDIR"
+            }
+          },
+          {
+            "execute": {
+              "command": "mkdir -p \"$GAMEDIR/drive_c/Program Files/Roberts Space Industries/StarCitizen/\"{LIVE,PTU,EPTU,TECH-PREVIEW}",
+              "description": "Creating game path"
+            }
+          }
+        ],
+        "system": {
+          "env": {
+            "DXVK_HUD": 0,
+            "__GL_SHADER_DISK_CACHE": 1,
+            "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
+            "SteamGameId": "starcitizen"
+          },
+          "prelaunch_command": "/usr/bin/sh -c 'if [ -d \"$WINEPREFIX/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat\" ]; then rm -rf \"$WINEPREFIX/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat\"; fi'",
+          "prefer_system_libs": false
+        },
+        "wine": {
+          "dxvk": true,
+          "esync": true,
+          "fsync": true,
+          "dxvk_nvapi": false,
+          "overrides": {
+            "libglesv2": "builtin",
+            "nvapi,nvapi64": "disabled",
+            "powershell.exe": "disabled"
+          },
+          "system_winetricks": false
+        }
+      }
+    }
+  ]
+}
