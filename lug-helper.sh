@@ -98,6 +98,7 @@ fi
 
 wine_conf="winedir.conf"
 game_conf="gamedir.conf"
+firstrun_conf="firstrun.conf"
 
 # Use XDG base directories if defined
 conf_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -378,7 +379,7 @@ message() {
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                printf "$2\n"
+                printf "\n$2\n"
                 while read -p "[y/n]: " yn; do
                     case "$yn" in
                         [Yy]*)
@@ -2350,7 +2351,7 @@ install_game() {
 EOT
     fi
 
-    if message question "Before proceeding, please refer to our Quick Start Guide:\n\n$lug_wiki\n\nAre you ready to continue?"; then
+    if message question "Installing Star Citizen...\n\nBefore proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"; then
         # Detect which version of Lutris is installed
         if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
             # Both versions of Lutris are installed so ask the user
@@ -2535,6 +2536,14 @@ if [ -x "$(command -v zenity)" ]; then
     fi
 fi
 
+# Check if this is the user's first run of the Helper
+if [ -f "$conf_dir/$conf_subdir/$firstrun_conf" ]; then
+    is_firstrun="$(cat "$conf_dir/$conf_subdir/$firstrun_conf")"
+fi
+if [ "$is_firstrun" != "false" ]; then
+    is_firstrun="true"
+fi
+
 # Set defaults
 game_version="$live_dir"
 
@@ -2666,11 +2675,31 @@ if [ "$is_nixos" -eq 1 ]; then
     message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos"
 fi
 
+# Set up the main menu heading
+menu_heading_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>"
+menu_heading_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group"
+
+# First run
+firstrun_message="It looks like this is your first time running the Helper\n\nWould you like to run the Preflight Check and install the game?"
+if [ "$use_zenity" -eq 1 ]; then
+    firstrun_message="$menu_heading_zenity\n\n$firstrun_message"
+else
+    firstrun_message="$menu_heading_terminal\n\n$firstrun_message"
+fi
+if [ "$is_firstrun" = "true" ]; then
+    if message question "$firstrun_message"; then
+        preflight_check
+        install_game
+    fi
+    # Store the first run state for subsequent launches
+    echo "false" > "$conf_dir/$conf_subdir/$firstrun_conf"
+fi
+
 # Loop the main menu until the user selects quit
 while true; do
     # Configure the menu
-    menu_text_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>\n\nYou may choose from the following options:"
-    menu_text_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group\nYou may choose from the following options:"
+    menu_text_zenity="$menu_heading_zenity\n\nYou may choose from the following options:"
+    menu_text_terminal="$menu_heading_terminal\nYou may choose from the following options:"
     menu_text_height="140"
     menu_type="radiolist"
 
