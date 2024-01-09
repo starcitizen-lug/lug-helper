@@ -2593,6 +2593,9 @@ if [ "$is_firstrun" = "true" ]; then
         install_game
     fi
     # Store the first run state for subsequent launches
+    if [ ! -d "$conf_dir/$conf_subdir" ]; then
+        mkdir -p "$conf_dir/$conf_subdir"
+    fi
     echo "false" > "$conf_dir/$conf_subdir/$firstrun_conf"
 fi
 
