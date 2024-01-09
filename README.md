@@ -23,9 +23,6 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Install Star Citizen`
 - Launches Lutris and installs Star Citizen
 
-`Deploy Easy Anti-Cheat Workaround`
-- Applies the workaround to /etc/hosts and deletes the necessary EAC files
-
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
 
@@ -33,8 +30,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - Quickly install and delete DXVK versions for Lutris
 
 `Maintenance and Troubleshooting`
-- `Switch the helper between LIVE and PTU`
-  - Toggle between targeting LIVE or PTU for all of the above options.  Defaults to LIVE on each run.
+- `Switch the helper between LIVE/PTU/EPTU`
+  - Target the LIVE, PTU, or EPTU installation for all operations.  Defaults to LIVE on each run.
 
 - `Delete my Star Citizen USER folder and preserve my keybinds`
   - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
@@ -48,6 +45,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 - `Delete my DXVK cache`
   - A troubleshooting step that sometimes helps fix various issues and crashes.
+
+`Deploy Global Easy Anti-Cheat Workaround`
+- Applies the workaround to /etc/hosts and deletes the necessary EAC files
 
 - `Display Helper and Star Citizen directories`
   - Show all the directories currently in use by both the Helper and Star Citizen.
