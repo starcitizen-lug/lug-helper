@@ -2203,14 +2203,15 @@ maintenance_menu() {
         userdir_msg="Delete my Star Citizen USER folder and preserve my keybinds"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
+        eac_msg="Deploy Global Easy Anti-Cheat Workaround"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$eac_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "eac_workaround" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2706,7 +2707,6 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     install_msg="Install Star Citizen"
-    eac_msg="Deploy Easy Anti-Cheat Workaround"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -2714,9 +2714,9 @@ while true; do
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg" "$eac_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game" "eac_workaround" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
