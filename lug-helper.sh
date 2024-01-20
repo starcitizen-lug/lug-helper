@@ -50,6 +50,7 @@
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 #
+# Copyright (C) 2020-2024 https://github.com/the-sane
 # License: GPLv3.0
 ############################################################################
 
