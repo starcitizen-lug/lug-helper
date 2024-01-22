@@ -868,7 +868,7 @@ lutris_check() {
 
     # Check the native lutris version number
     if [ "$lutris_native" = "true" ]; then
-        lutris_current="$(lutris -v | awk -F '-' '{print $2}')"
+        lutris_current="$(lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
         if [ -z "$lutris_current" ]; then
             preflight_fail+=("Unable to detect Lutris version info.\nVersion $lutris_required or newer is required.")
         elif [ "$lutris_required" != "$lutris_current" ] &&
@@ -881,7 +881,7 @@ lutris_check() {
 
     # Check the flatpak lutris version number
     if [ "$lutris_flatpak" = "true" ]; then
-        lutris_current="$(flatpak run net.lutris.Lutris -v | awk -F '-' '{print $2}')"
+        lutris_current="$(flatpak run net.lutris.Lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
         if [ -z "$lutris_current" ]; then
             preflight_fail+=("Unable to detect Flatpak Lutris version info.\nVersion $lutris_required or newer is required.")
         elif [ "$lutris_required" != "$lutris_current" ] &&
