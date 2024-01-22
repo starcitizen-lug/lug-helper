@@ -917,10 +917,10 @@ memory_check() {
     swaptotal="$(($swaptotal * 1024))"
     combtotal="$(($memtotal + $swaptotal))"
 
-    # Convert to GiB
-    memtotal="$(numfmt --to=iec-i --suffix="B" "$memtotal")"
-    swaptotal="$(numfmt --to=iec-i --suffix="B" "$swaptotal")"
-    combtotal="$(numfmt --to=iec-i --suffix="B" "$combtotal")"
+    # Convert to whole number GiB
+    memtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$memtotal")"
+    swaptotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$swaptotal")"
+    combtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$combtotal")"
 
     if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$memory_required" ]; then
         # Minimum requirements are not met
