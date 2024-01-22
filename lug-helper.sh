@@ -368,7 +368,10 @@ message() {
                 # info message
                 # call format: message info "text to display"
                 printf "\n$2\n\n"
-                read -n 1 -s -p "Press any key..."
+                if [ "$cmd_line" != "true" ]; then
+                    # Don't pause if we've been invoked via command line arguments
+                    read -n 1 -s -p "Press any key..."
+                fi
                 ;;
             "warning")
                 # warning message
@@ -2565,6 +2568,7 @@ Usage: lug-helper <options>
 
     # Call the requested functions and exit
     if [ "${#cargs[@]}" -gt 0 ]; then
+        cmd_line="true"
         for (( x=0; x<"${#cargs[@]}"; x++ )); do
             ${cargs[x]}
         done
