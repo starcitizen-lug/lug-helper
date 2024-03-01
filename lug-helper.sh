@@ -182,7 +182,6 @@ runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 runner_sources=(
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
-    "/dev/null" "https://api.github.com/repos/gort818/wine-sc-lug/releases"
 )
 
 ######## DXVK ##############################################################
@@ -200,10 +199,7 @@ dxvk_dir_flatpak="$lutris_flatpak_dir/data/lutris/runtime/dxvk"
 # ie. "Ph42oN GPL+Async" "https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
 dxvk_sources=(
     "doitsujin (standard dxvk)" "https://api.github.com/repos/doitsujin/dxvk/releases"
-    "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
     "Ph42oN GPL+Async" "https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
-    "gnusenpai" "https://api.github.com/repos/gnusenpai/dxvk/releases"
-    "/dev/null" "https://api.github.com/repos/gort818/dxvk/releases"
 )
 
 ######## Requirements ######################################################
