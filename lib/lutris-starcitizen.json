@@ -83,7 +83,7 @@
             "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
             "EOS_USE_ANTICHEATCLIENTNULL": "1"
           },
-          "prefer_system_libs": false
+          "prefer_system_libs": true
         },
         "wine": {
           "dxvk": true,
