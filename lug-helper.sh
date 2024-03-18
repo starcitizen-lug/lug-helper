@@ -222,7 +222,7 @@ lug_wiki="https://starcitizen-lug.github.io"
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v2.15"
+current_version="v2.16"
 
 # NixOS section in Wiki
 lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
