@@ -144,7 +144,10 @@ eptu_dir="EPTU"
 appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
 
 # The shaders subdirectory name
-shaders_subdir="shaders"
+shaders_subdirs=(
+    "Shaders"
+    "VulkanShaderCache"
+)
 
 # Remaining directory paths are set at the end of the getdirs() function
 
@@ -679,11 +682,13 @@ getdirs() {
     # $game_version is set in the version_menu() function
     ############################################################################
     # The game's user directory
-    user_dir="$game_path/$game_version/USER/Client/0"
+    user_dir="$game_path/$game_version/user/client/0"
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
-    # Shaders directory
-    shaders_dir="$wine_prefix/$appdata_path"
+    # game data mask
+    game_data_mask="sc-alpha-*"
+    # Custom Characters
+    custom_characters_dir="$user_dir/CustomCharacters"
     # dxvk cache file
     dxvk_cache="$game_path/$game_version/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
@@ -2023,7 +2028,7 @@ version_menu(){
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 rm_userdir() {
     # Prompt user to back up the current keybinds in the game
-    message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nGo on; I'll wait."
+    message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds and characters from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nTo export your character, go to the character creator from the main menu and save it with a name.\n\nGo on; I'll wait."
 
     # Get/Set directory paths
     getdirs
@@ -2035,38 +2040,63 @@ rm_userdir() {
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-        message warning "USER directory not found. There is nothing to delete!\n\n$user_dir"
+        message warning "user directory not found. There is nothing to delete!\n\n$user_dir"
         return 0
     fi
 
     # Check for exported keybind files
     if [ ! -d "$keybinds_dir" ] || [ -z "$(ls -A "$keybinds_dir")" ]; then
         if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
-            exported=0
+            keybinds_exported=0
         else
             # User said no
             return 0
         fi
     else
-        exported=1
+        keybinds_exported=1
+    fi
+
+    # Check for exported custom character files
+    if [ ! -d "$custom_characters_dir" ] || [ -z "$(ls -A "$custom_characters_dir")" ]; then
+        if message question "Warning: No exported characters found.\nContinuing will erase your existing characters!\n\nDo you want to continue anyway?"; then
+            characters_exported=0
+        else
+            # User said no
+            return 0
+        fi
+    else
+        characters_exported=1
     fi
 
     if message question "The following directory will be deleted:\n\n$user_dir\n\nDo you want to proceed?"; then
         # Back up keybinds
-        if [ "$exported" -eq 1 ]; then
+        if [ "$keybinds_exported" -eq 1 ]; then
             debug_print continue "Backing up keybinds to $backup_path/keybinds..."
             mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
         fi
 
+        #Back up characters
+        if [ "$characters_exported" -eq 1 ]; then
+            debug_print continue "Backing up characters to $backup_path/custom_characters..."
+            mkdir -p "$backup_path/custom_characters" && cp -r "$custom_characters_dir/." "$backup_path/custom_characters/"
+        fi
+
         # Wipe the user directory
         debug_print continue "Wiping $user_dir..."
-        rm -r "$user_dir"
+        rm -r --interactive=never "$user_dir"
 
         # Restore custom keybinds
-        if [ "$exported" -eq 1 ]; then
+        if [ "$keybinds_exported" -eq 1 ]; then
             debug_print continue "Restoring keybinds..."
             mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
             message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
+        fi
+
+        # Restore custom characters
+        if [ "$characters_exported" -eq 1 ]; then
+            debug_print continue "Restoring custom characters..."
+            mkdir -p "$custom_characters_dir" && cp -r "$backup_path/custom_characters/." "$custom_characters_dir/"
+            message info "To re-import your character, select it in-game from the list."
         fi
 
         message info "Your Star Citizen USER directory has been cleaned up!"
@@ -2083,14 +2113,20 @@ rm_shaders() {
     fi
 
     # Loop through all possible shader directories
-    for appdata_dir in "$shaders_dir"/*; do
-        if [ -d "$appdata_dir/$shaders_subdir" ]; then
-            # If a shaders directory is found, delete it
-            if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
-                debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
-                rm -r "${appdata_dir:?}/$shaders_subdir"
+    for appdata_dir in "$wine_prefix/$appdata_path"/$game_data_mask; do
+        debug_print continue "appdata_dir is $appdata_dir"
+        # Loop through the shaders subdir array
+        for shaders_subdir in "${shaders_subdirs[@]}"; do
+            if [ -d "$appdata_dir/$shaders_subdir" ]; then
+                # If a shaders directory is found, delete it
+                if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
+                    debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
+                    rm -r --interactive=never "${appdata_dir:?}/$shaders_subdir"
+                fi
+            else
+                debug_print continue "skipping $appdata_dir/$shaders_subdir"
             fi
-        fi
+        done
     done
 
     message info "Shader operations completed"
@@ -2207,7 +2243,7 @@ maintenance_menu() {
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
-        userdir_msg="Delete my Star Citizen USER folder and preserve my keybinds"
+        userdir_msg="Delete my user folder and preserve my keybinds and characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
         eac_msg="Deploy Global Easy Anti-Cheat Workaround"
