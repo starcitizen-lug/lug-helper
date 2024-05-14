@@ -182,6 +182,7 @@ runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 runner_sources=(
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
+    "Kron4ek" "https://api.github.com/repos/Kron4ek/Wine-Builds/releases"
 )
 
 ######## DXVK ##############################################################
@@ -1703,7 +1704,7 @@ download_select_install() {
 
         # Get the file name minus the extension
         case "${download_versions[i]}" in
-            *.sha*sum | *.ini | proton*)
+            *.sha*sum | *.ini | proton* | *.txt)
                 # Ignore hashes, configs, and proton downloads
                 continue
                 ;;
