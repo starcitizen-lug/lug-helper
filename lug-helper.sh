@@ -47,6 +47,7 @@
 # Contributor: https://github.com/victort
 # Contributor: https://github.com/Wrzlprnft
 # Contributor: https://github.com/LovingMelody
+# Contributor: https://github.com/mactan-sc
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 #
@@ -223,7 +224,7 @@ lug_wiki="https://starcitizen-lug.github.io"
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v2.16"
+current_version="v2.17"
 
 # NixOS section in Wiki
 lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
