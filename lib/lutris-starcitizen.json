@@ -84,7 +84,9 @@
           "esync": true,
           "fsync": true,
           "dxvk_nvapi": false,
-          "overrides": { },
+          "overrides": {
+            "powershell.exe": "disabled"
+          },
           "system_winetricks": false
         }
       }
