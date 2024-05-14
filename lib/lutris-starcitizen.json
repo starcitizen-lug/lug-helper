@@ -17,7 +17,7 @@
       "notes": "Performance may be choppy for the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nPlease make sure you have all Wine dependencies properly installed or your game may crash during start up. To prevent crashes in areas with lots of geometry, the game needs a resource limit named \"vm.max_map_count\" increased. See our wiki's Quick Start Guide for more information and instructions.\r\n\r\nSee you in the 'verse!",
       "credits": "",
       "created_at": "2023-03-24T06:40:19.908354Z",
-      "updated_at": "2024-03-01T17:38:13.536835Z",
+      "updated_at": "2024-04-17T02:40:32.946333Z",
       "draft": false,
       "published": true,
       "published_by": null,
@@ -36,7 +36,6 @@
           }
         ],
         "game": {
-          "args": "--locale=$INPUT_LOCALE",
           "exe": "$GAMEDIR/drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe",
           "prefix": "$GAMEDIR"
         },
@@ -47,15 +46,6 @@
               "arch": "win64",
               "description": "Creating Wine prefix",
               "name": "create_prefix",
-              "prefix": "$GAMEDIR"
-            }
-          },
-          {
-            "task": {
-              "app": "arial vcrun2019 win10",
-              "arch": "win64",
-              "description": "Installing dlls",
-              "name": "winetricks",
               "prefix": "$GAMEDIR"
             }
           },
@@ -81,7 +71,11 @@
             "DXVK_HUD": 0,
             "__GL_SHADER_DISK_CACHE": 1,
             "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
-            "EOS_USE_ANTICHEATCLIENTNULL": "1"
+            "EOS_USE_ANTICHEATCLIENTNULL": 1,
+            "WINE_HIDE_NVIDIA_GPU": 1,
+            "dual_color_blend_by_location": "true",
+            "GAMEID": "umu-starcitizen",
+            "STORE": "none"
           },
           "prefer_system_libs": true
         },
@@ -91,8 +85,6 @@
           "fsync": true,
           "dxvk_nvapi": false,
           "overrides": {
-            "libglesv2": "builtin",
-            "nvapi,nvapi64": "disabled",
             "powershell.exe": "disabled"
           },
           "system_winetricks": false
