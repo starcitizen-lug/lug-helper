@@ -2246,15 +2246,14 @@ maintenance_menu() {
         userdir_msg="Delete my user folder and preserve my keybinds and characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
-        eac_msg="Deploy Global Easy Anti-Cheat Workaround"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$eac_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "eac_workaround" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2314,89 +2313,15 @@ install_game() {
 
         # Run the appropriate installer
         if [ "$install_version" = "native" ]; then
-            lutris --install "$install_script" &
+            lutris && lutris --install "$install_script" &
         elif [ "$install_version" = "flatpak" ]; then
-            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
+            flatpak run net.lutris.Lutris && flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
         else
             # We shouldn't get here
             debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
         fi
 
         message info "The installation will continue in Lutris"
-    fi
-}
-
-# Deploy Easy Anti-Cheat Workaround
-eac_workaround() {
-    # Get/set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu
-        # or there was an error
-        return 0
-    fi
-
-    # Set the EAC directory path and hosts modification
-    eac_dir="$wine_prefix/drive_c/users/$USER/AppData/Roaming/EasyAntiCheat"
-    eac_hosts="127.0.0.1 modules-cdn.eac-prod.on.epicgames.com"
-
-    # Configure message variables
-    eac_title="Easy Anti-Cheat Workaround"
-    eac_hosts_formatted="$eac_hosts"
-    eac_dir_formatted="$eac_dir"
-    if [ "$use_zenity" -eq 1 ]; then
-        eac_title="<b>$eac_title</b>"
-        eac_hosts_formatted="<i>$eac_hosts_formatted</i>"
-        eac_dir_formatted="<i>$eac_dir_formatted</i>"
-    fi
-
-    apply_eac_hosts="false"
-    delete_eac_dir="false"
-    if grep -q "^$eac_hosts" /etc/hosts; then
-        # Hosts workaround is in place
-        # Check if we still need to delete the eac directory
-        if [ -d "$eac_dir" ]; then
-            delete_eac_dir="true"
-            eac_message="$eac_title\n\nYour /etc/hosts is already modified with the Easy Anti-Cheat workaround.\n\nThe following directory must still be deleted:\n$eac_dir_formatted"
-        fi
-    else
-        # Hosts workaround is needed
-        apply_eac_hosts="true"
-        eac_message="$eac_title\n\nThe following entry will be added to /etc/hosts:\n$eac_hosts_formatted"
-        # Check if we also need to delete the eac directory
-        if [ -d "$eac_dir" ]; then
-            delete_eac_dir="true"
-            eac_message="$eac_message\n\nThe following directory will be deleted:\n$eac_dir_formatted"
-        fi
-    fi
-    # Finish up the message
-    eac_message="$eac_message\n\n\nTo revert these changes, delete the marked EAC workaround line\nin /etc/hosts and relaunch the game\n\nDo you want to proceed?"
-
-    # Check if the EAC workaround has already been fully applied
-    if [ "$apply_eac_hosts" = "false" ] && [ "$delete_eac_dir" = "false" ]; then
-        message info "The Easy Anti-Cheat workaround has already been applied.\nYou're all set!"
-        return 0
-    fi
-
-    if message question "$eac_message"; then
-        # Apply the hosts workaround if needed
-        if [ "$apply_eac_hosts" = "true" ]; then
-            debug_print continue "Editing hosts file..."
-            # Try to modify /etc/hosts as root
-            try_exec "printf '\n$eac_hosts #Star Citizen EAC workaround\n' >> /etc/hosts"
-            if [ "$?" -eq 1 ]; then
-                message error "Authentication failed or there was an error modifying /etc/hosts.\nSee terminal for more information.\n\nReturning to main menu."
-                return 0
-            fi
-        fi
-
-        # Delete the EAC directory if it exists
-        if [ -d "$eac_dir" ]; then
-            debug_print continue "Deleting $eac_dir..."
-            rm -r "$eac_dir"
-        fi
-
-        message info "Easy Anti-Cheat workaround has been deployed!"
     fi
 }
 
@@ -2512,7 +2437,6 @@ if [ "$#" -gt 0 ]; then
 Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
   -i, --install                 Install Star Citizen
-  -e, --eac                     Deploy Easy Anti-Cheat Workaround
   -m, --manage-runners          Install or remove Lutris runners
   -k, --manage-dxvk             Install or remove DXVK versions
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
@@ -2533,9 +2457,6 @@ Usage: lug-helper <options>
                 ;;
             --install | -i )
                 cargs+=("install_game")
-                ;;
-            --eac | -e )
-                cargs+=("eac_workaround")
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
