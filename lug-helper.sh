@@ -686,7 +686,7 @@ getdirs() {
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # game data mask
-    game_data_mask="sc-alpha-*"
+    appdata_dir_mask="sc-alpha-*"
     # Custom Characters
     custom_characters_dir="$user_dir/CustomCharacters"
     # dxvk cache file
@@ -2077,8 +2077,8 @@ rm_userdir() {
 
         #Back up characters
         if [ "$characters_exported" -eq 1 ]; then
-            debug_print continue "Backing up characters to $backup_path/custom_characters..."
-            mkdir -p "$backup_path/custom_characters" && cp -r "$custom_characters_dir/." "$backup_path/custom_characters/"
+            debug_print continue "Backing up characters to $backup_path/CustomCharacters..."
+            mkdir -p "$backup_path/CustomCharacters" && cp -r "$custom_characters_dir/." "$backup_path/CustomCharacters/"
         fi
 
         # Wipe the user directory
@@ -2095,7 +2095,7 @@ rm_userdir() {
         # Restore custom characters
         if [ "$characters_exported" -eq 1 ]; then
             debug_print continue "Restoring custom characters..."
-            mkdir -p "$custom_characters_dir" && cp -r "$backup_path/custom_characters/." "$custom_characters_dir/"
+            mkdir -p "$custom_characters_dir" && cp -r "$backup_path/CustomCharacters/." "$custom_characters_dir/"
             message info "To re-import your character, select it in-game from the list."
         fi
 
@@ -2113,8 +2113,7 @@ rm_shaders() {
     fi
 
     # Loop through all possible shader directories
-    for appdata_dir in "$wine_prefix/$appdata_path"/$game_data_mask; do
-        debug_print continue "appdata_dir is $appdata_dir"
+    for appdata_dir in "$wine_prefix/$appdata_path"/$appdata_dir_mask; do
         # Loop through the shaders subdir array
         for shaders_subdir in "${shaders_subdirs[@]}"; do
             if [ -d "$appdata_dir/$shaders_subdir" ]; then
@@ -2313,9 +2312,9 @@ install_game() {
 
         # Run the appropriate installer
         if [ "$install_version" = "native" ]; then
-            lutris && lutris --install "$install_script" &
+            lutris --install "$install_script" &
         elif [ "$install_version" = "flatpak" ]; then
-            flatpak run net.lutris.Lutris && flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
+            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
         else
             # We shouldn't get here
             debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
