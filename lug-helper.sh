@@ -682,7 +682,12 @@ getdirs() {
     # $game_version is set in the version_menu() function
     ############################################################################
     # The game's user directory
-    user_dir="$game_path/$game_version/user/client/0"
+    if [ -d "$game_path/$game_version/USER/Client" ]; then
+        # Backwards compatibility for older installs
+        user_dir="$game_path/$game_version/USER/Client/0"
+    else
+        user_dir="$game_path/$game_version/user/client/0"
+    fi
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
     # game data mask
