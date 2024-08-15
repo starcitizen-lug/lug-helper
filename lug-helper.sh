@@ -690,8 +690,7 @@ getdirs() {
     fi
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
-    # game data mask
-    appdata_dir_mask="sc-alpha-*"
+
     # Custom Characters
     custom_characters_dir="$user_dir/CustomCharacters"
     # dxvk cache file
@@ -2118,7 +2117,7 @@ rm_shaders() {
     fi
 
     # Loop through all possible shader directories
-    for appdata_dir in "$wine_prefix/$appdata_path"/$appdata_dir_mask; do
+    for appdata_dir in "$wine_prefix/$appdata_path"/*; do
         # Loop through the shaders subdir array
         for shaders_subdir in "${shaders_subdirs[@]}"; do
             if [ -d "$appdata_dir/$shaders_subdir" ]; then
