@@ -145,6 +145,7 @@ appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
 
 # The shaders subdirectory name
 shaders_subdirs=(
+    "shaders"
     "Shaders"
     "VulkanShaderCache"
 )
