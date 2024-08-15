@@ -2033,7 +2033,7 @@ version_menu(){
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 rm_userdir() {
     # Prompt user to back up the current keybinds in the game
-    message info "Before proceeding, please be sure you have exported\nyour Star Citizen keybinds and characters from within the game.\n\nTo do this, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nTo export your character, go to the character creator from the main menu and save it with a name.\n\nGo on; I'll wait."
+    message info "Before proceeding, please be sure you have exported your Star Citizen keybinds and characters from within the game.\n\nTo export keybinds, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nTo export your character, go to the character creator from the main menu and save it with a name.\n\nGo on; I'll wait."
 
     # Get/Set directory paths
     getdirs
@@ -2247,7 +2247,7 @@ maintenance_menu() {
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
-        userdir_msg="Delete my user folder and preserve my keybinds and characters"
+        userdir_msg="Delete my user folder and preserve keybinds/characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
