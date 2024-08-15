@@ -42,6 +42,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 - `Delete my shaders`
   - It is recommended to delete your shaders directory after each game update.
+  - You will be prompted to confirm each directory before deletion, so you may choose which game version shaders you want cleared out.
 
 - `Delete my DXVK cache`
   - A troubleshooting step that sometimes helps fix various issues and crashes.
