@@ -2126,8 +2126,6 @@ rm_shaders() {
                     debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
                     rm -r --interactive=never "${appdata_dir:?}/$shaders_subdir"
                 fi
-            else
-                debug_print continue "skipping $appdata_dir/$shaders_subdir"
             fi
         done
     done
