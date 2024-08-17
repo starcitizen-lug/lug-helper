@@ -2062,9 +2062,9 @@ rm_userdir() {
         keybinds_exported=1
     fi
 
-    # Check for exported custom character files
+    # Check for saved custom character files
     if [ ! -d "$custom_characters_dir" ] || [ -z "$(ls -A "$custom_characters_dir")" ]; then
-        if message question "Warning: No exported characters found.\nContinuing will erase your existing characters!\n\nDo you want to continue anyway?"; then
+        if message question "Warning: No saved characters found.\nContinuing will erase your existing character!\n\nDo you want to continue anyway?"; then
             characters_exported=0
         else
             # User said no
@@ -2095,17 +2095,15 @@ rm_userdir() {
         if [ "$keybinds_exported" -eq 1 ]; then
             debug_print continue "Restoring keybinds..."
             mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
-            message info "To re-import your keybinds, select it in-game from the list:\nOptions->Keybindings->Control Profiles"
         fi
 
         # Restore custom characters
         if [ "$characters_exported" -eq 1 ]; then
             debug_print continue "Restoring custom characters..."
             mkdir -p "$custom_characters_dir" && cp -r "$backup_path/CustomCharacters/." "$custom_characters_dir/"
-            message info "To re-import your character, select it in-game from the list."
         fi
 
-        message info "Your Star Citizen USER directory has been cleaned up!"
+        message info "Your Star Citizen USER directory has been cleaned up!\n\nExported keybinds can be re-imported in-game from:\nOptions->Keybindings->Control Profiles\n\nSaved characters can be selected in the character creator."
     fi
 }
 
