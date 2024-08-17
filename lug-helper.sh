@@ -123,7 +123,7 @@ helper_dir="$(realpath "$0" | xargs -0 dirname)"
 
 # Temporary directory
 tmp_dir="$(mktemp -d -t "lughelper.XXXXXXXXXX")"
-trap 'rm -r "$tmp_dir"' EXIT
+trap 'rm -r --interactive=never "$tmp_dir"' EXIT
 
 # Set a maximum number of versions to display from each download url
 max_download_items=25
@@ -1263,7 +1263,7 @@ download_delete() {
     if message question "Are you sure you want to delete the following ${download_type}(s)?\n$list_to_delete"; then
         # Loop through the arguments
         for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
-            rm -r "${installed_items[${item_to_delete[i]}]}"
+            rm -r --interactive=never "${installed_items[${item_to_delete[i]}]}"
             debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
 
             # Store the names of deleted items for post_download() processing
@@ -1438,11 +1438,11 @@ download_install() {
         if [ "$?" -eq 1 ]; then
             # User clicked cancel
             debug_print continue "Download aborted. Removing $tmp_dir/$download_file..."
-            rm "${tmp_dir:?}/$download_file"
-            rm "${tmp_dir:?}/lugpipe"
+            rm --interactive=never "${tmp_dir:?}/$download_file"
+            rm --interactive=never "${tmp_dir:?}/lugpipe"
             return 1
         fi
-        rm "${tmp_dir:?}/lugpipe"
+        rm --interactive=never "${tmp_dir:?}/lugpipe"
     else
         # Standard curl progress bar
         (cd "$tmp_dir" && curl -LO "$download_url")
@@ -1493,7 +1493,7 @@ download_install() {
             if [ -d "${download_dirs[i]}/$download_name" ]; then
                 # This item has already been installed. Delete it before reinstalling
                 debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
-                rm -r "${download_dirs[i]:?}/$download_name"
+                rm -r --interactive=never "${download_dirs[i]:?}/$download_name"
                 debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
             else
                 debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
@@ -1520,7 +1520,7 @@ download_install() {
             if [ -d "${download_dirs[i]}/$download_name" ]; then
                 # This item has already been installed. Delete it before reinstalling
                 debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
-                rm -r "${download_dirs[i]:?}/$download_name"
+                rm -r --interactive=never "${download_dirs[i]:?}/$download_name"
                 debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
             else
                 debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
@@ -1545,7 +1545,7 @@ download_install() {
 
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_file..."
-    rm "${tmp_dir:?}/$download_file"
+    rm --interactive=never "${tmp_dir:?}/$download_file"
     rm -r "${tmp_dir:?}/$download_name"
 }
 
@@ -2154,7 +2154,7 @@ rm_dxvkcache() {
     # Delete the cache file
     if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
         debug_print continue "Deleting $dxvk_cache..."
-        rm "$dxvk_cache"
+        rm --interactive=never "$dxvk_cache"
         message info "Your DXVK cache has been deleted!"
     fi
 }
@@ -2228,7 +2228,7 @@ reset_helper() {
     # Delete the shader directory
     if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
         debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
-        rm "${conf_dir:?}/$conf_subdir/"*.conf
+        rm --interactive=never "${conf_dir:?}/$conf_subdir/"*.conf
         message info "The Helper has been reset!"
     fi
 }
