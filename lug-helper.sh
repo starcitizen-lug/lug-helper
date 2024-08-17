@@ -691,9 +691,9 @@ getdirs() {
     fi
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
-    # Shaders
+    # Shaders directory
     shaders_dir="$wine_prefix/$appdata_path"
-    # Custom characters
+    # Custom characters directory
     custom_characters_dir="$user_dir/CustomCharacters"
     # dxvk cache file
     dxvk_cache="$game_path/$game_version/StarCitizen.dxvk-cache"
