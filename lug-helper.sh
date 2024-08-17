@@ -2103,7 +2103,7 @@ rm_userdir() {
             mkdir -p "$custom_characters_dir" && cp -r "$backup_path/CustomCharacters/." "$custom_characters_dir/"
         fi
 
-        message info "Your Star Citizen USER directory has been cleaned up!\n\nExported keybinds can be re-imported in-game from:\nOptions->Keybindings->Control Profiles\n\nSaved characters can be selected in the character creator."
+        message info "Your Star Citizen USER directory has been cleaned up!\n\nExported keybinds can be re-imported in-game from:\nOptions->Keybindings->Control Profiles\n\nSaved characters can be selected in the character creator"
     fi
 }
 
