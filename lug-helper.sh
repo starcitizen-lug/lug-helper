@@ -185,9 +185,9 @@ runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 # The second is expected to contain the api releases url
 # ie. "RawFox" "https://api.github.com/repos/rawfoxDE/raw-wine/releases"
 runner_sources=(
+    "Kron4ek" "https://api.github.com/repos/Kron4ek/Wine-Builds/releases"
     "GloriousEggroll" "https://api.github.com/repos/GloriousEggroll/wine-ge-custom/releases"
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
-    "Kron4ek" "https://api.github.com/repos/Kron4ek/Wine-Builds/releases"
 )
 
 ######## DXVK ##############################################################
