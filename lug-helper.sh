@@ -726,8 +726,8 @@ mapcount_once() {
 mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         # Newer versions of sysctl
-        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/20-starcitizen-max_map_count.conf && sysctl --system')
-        preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/20-starcitizen-max_map_count.conf")
+        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --system')
+        preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
     else
         # Older versions of sysctl
         preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
@@ -762,7 +762,7 @@ mapcount_check() {
         # Add info for manually changing the setting
         if [ -d "/etc/sysctl.d" ]; then
             # Newer versions of sysctl
-            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/20-starcitizen-max_map_count.conf' and reload with 'sudo sysctl --system'\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/99-starcitizen-max_map_count.conf' and reload with 'sudo sysctl --system'\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
         else
             # Older versions of sysctl
             preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.conf' and reload with 'sudo sysctl -p':\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
@@ -790,8 +790,8 @@ filelimit_set() {
     if [ -f "/etc/systemd/system.conf" ]; then
         # Using systemd
         # Append to the file
-        preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/20-starcitizen-filelimit.conf && systemctl daemon-reexec')
-        preflight_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/20-starcitizen-filelimit.conf")
+        preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/99-starcitizen-filelimit.conf && systemctl daemon-reexec')
+        preflight_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf")
     elif [ -f "/etc/security/limits.conf" ]; then
         # Using limits.conf
         # Insert before the last line in the file
@@ -823,7 +823,7 @@ filelimit_check() {
         # Add info for manually changing the settings
         if [ -f "/etc/systemd/system.conf" ]; then
             # Using systemd
-            preflight_manual+=("To change your open file descriptors limit, add the following to\n'/etc/systemd/system.conf.d/20-starcitizen-filelimit.conf':\n\n[Manager]\nDefaultLimitNOFILE=524288")
+            preflight_manual+=("To change your open file descriptors limit, add the following to\n'/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf':\n\n[Manager]\nDefaultLimitNOFILE=524288")
         elif [ -f "/etc/security/limits.conf" ]; then
             # Using limits.conf
             preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/security/limits.conf':\n    * hard nofile 524288")
