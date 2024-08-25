@@ -17,7 +17,7 @@
       "notes": "Performance may be choppy for the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nPlease make sure you have all Wine dependencies properly installed or your game may crash during start up. To prevent crashes in areas with lots of geometry, the game needs a resource limit named \"vm.max_map_count\" increased. See our wiki's Quick Start Guide for more information and instructions.\r\n\r\nSee you in the 'verse!",
       "credits": "",
       "created_at": "2023-03-24T06:40:19.908354Z",
-      "updated_at": "2024-05-14T22:52:47.975292Z",
+      "updated_at": "2024-08-25T14:33:22.916001Z",
       "draft": false,
       "published": true,
       "published_by": null,
@@ -32,14 +32,14 @@
       "script": {
         "files": [
           {
-            "client": "https://install.robertsspaceindustries.com/star-citizen/RSI-Setup-1.6.10.exe"
+            "client": "https://install.robertsspaceindustries.com/rel/2/RSI%20Launcher-Setup-2.0.2.exe"
           }
         ],
         "game": {
           "exe": "$GAMEDIR/drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe",
           "prefix": "$GAMEDIR"
         },
-        "install_complete_text": "Installation Complete!\r\n\r\nPlease see our Wiki for important news and configuration requirements:\r\n\r\nhttps://starcitizen-lug.github.io",
+        "install_complete_text": "Installation Complete!\r\n\r\n***Important: For the 2.0 Launcher version you need to manually select wine-staging >=9.4 in the runner options.***\r\n\r\nPlease see our Wiki for important news and configuration requirements:\r\n\r\nhttps://starcitizen-lug.github.io",
         "installer": [
           {
             "task": {
@@ -74,6 +74,7 @@
             "EOS_USE_ANTICHEATCLIENTNULL": 1,
             "WINE_HIDE_NVIDIA_GPU": 1,
             "dual_color_blend_by_location": "true",
+            "radv_zero_vram": "true",
             "GAMEID": "umu-starcitizen",
             "STORE": "none"
           },
