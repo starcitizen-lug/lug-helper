@@ -74,7 +74,6 @@
             "PROTONPATH": "GE-Proton"
           },
           "prefer_system_libs": true,
-          "terminal": true,
           "prefix_command": "GAMEID=umu-starcitizen STORE=none"
         },
         "wine": {
