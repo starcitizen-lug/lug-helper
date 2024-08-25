@@ -74,6 +74,7 @@
             "EOS_USE_ANTICHEATCLIENTNULL": 1,
             "WINE_HIDE_NVIDIA_GPU": 1,
             "dual_color_blend_by_location": "true",
+            "radv_zero_vram": "true",
             "GAMEID": "umu-starcitizen",
             "STORE": "none"
           },
