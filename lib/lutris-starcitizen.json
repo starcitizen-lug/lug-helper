@@ -58,12 +58,6 @@
               "name": "wineexec",
               "prefix": "$GAMEDIR"
             }
-          },
-          {
-            "execute": {
-              "command": "mkdir -p \"$GAMEDIR/drive_c/Program Files/Roberts Space Industries/StarCitizen/\"{LIVE,PTU,EPTU,TECH-PREVIEW}",
-              "description": "Creating game path"
-            }
           }
         ],
         "system": {
@@ -84,13 +78,6 @@
           "prefix_command": "GAMEID=umu-starcitizen STORE=none"
         },
         "wine": {
-          "dxvk": true,
-          "esync": true,
-          "fsync": true,
-          "dxvk_nvapi": false,
-          "overrides": {
-            "powershell.exe": "disabled"
-          },
           "system_winetricks": false,
           "version": "GE-Proton (Latest)"
         }
