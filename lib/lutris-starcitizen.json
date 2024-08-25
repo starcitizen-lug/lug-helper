@@ -39,7 +39,7 @@
           "exe": "$GAMEDIR/drive_c/Program Files/Roberts Space Industries/RSI Launcher/RSI Launcher.exe",
           "prefix": "$GAMEDIR"
         },
-        "install_complete_text": "Installation Complete!\r\n\r\n***Important: For the 2.0 Launcher version you need to manually select wine-staging >=9.4 in the runner options.***\r\n\r\nPlease see our Wiki for important news and configuration requirements:\r\n\r\nhttps://starcitizen-lug.github.io",
+        "install_complete_text": "Installation Complete!\r\n\r\nPlease see our Wiki for important news and configuration requirements:\r\n\r\nhttps://starcitizen-lug.github.io",
         "installer": [
           {
             "task": {
