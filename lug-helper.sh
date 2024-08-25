@@ -214,7 +214,7 @@ dxvk_sources=(
 winetricks_required="20220411"
 
 # lutris minimum version
-lutris_required="0.5.11"
+lutris_required="0.5.17"
 
 # Minimum amount of combined RAM + swap in GiB
 memory_required="16"
