@@ -843,7 +843,7 @@ wine_check() {
     if [ -x "$(command -v wine)" ]; then
         preflight_pass+=("Wine is installed on your system.")
     else
-        preflight_fail+=("Wine does not appear to be installed.\nAt a minimum, wine dependencies must be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
+        preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
     fi
 }
 
