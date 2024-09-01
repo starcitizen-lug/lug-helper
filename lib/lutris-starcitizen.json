@@ -77,8 +77,8 @@
           "prefix_command": "GAMEID=umu-starcitizen STORE=none"
         },
         "wine": {
-          "system_winetricks": false,
-          "version": "GE-Proton (Latest)"
+          "system_winetricks": true,
+          "version": "system"
         }
       }
     }
