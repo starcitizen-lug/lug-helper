@@ -211,7 +211,7 @@ dxvk_sources=(
 ######## Requirements ######################################################
 
 # winetricks minimum version
-winetricks_required="20220411"
+winetricks_required="20240105-next"
 
 # lutris minimum version
 lutris_required="0.5.17"
@@ -884,7 +884,7 @@ lutris_check() {
             [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
         else
-            preflight_pass+=("Lutris is installed and up to date.")
+            preflight_pass+=("Lutris is installed and sufficiently up to date.")
         fi
     fi
 
@@ -897,23 +897,36 @@ lutris_check() {
             [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
             preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
         else
-            preflight_pass+=("Flatpak Lutris is installed and up to date.")
+            preflight_pass+=("Flatpak Lutris is installed and sufficiently up to date.")
         fi
     fi
+}
+
+# Run the winetricks self-updater
+winetricks_update() {
+    preflight_actions+=('winetricks --self-update')
+    preflight_results+=("Winetricks has been updated. See terminal output for details.")
 }
 
 # Check the installed winetricks version
 winetricks_check() {
     if [ -x "$(command -v winetricks)" ]; then
-        winetricks_current="$(winetricks --version | awk '{print $1}')"
+        winetricks_current="$(winetricks --version 2>/dev/null | awk '{print $1}')"
         if [ "$winetricks_required" != "$winetricks_current" ] &&
            [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
-            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
+            # Winetricks is out of date
+            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.")
+            # Add the function that will be called to update winetricks
+            preflight_action_funcs+=("winetricks_update")
+            # Add info for manually running the update
+            preflight_manual+=("To manually update winetricks, run 'winetricks --self-update'")
         else
-            preflight_pass+=("Winetricks is installed and up to date.")
+            # Winetricks meets the minimum required version
+            preflight_pass+=("Winetricks is installed and sufficiently up to date.")
         fi
     else
-        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
+        # Winetricks is not installed
+        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.")
     fi
 }
 
