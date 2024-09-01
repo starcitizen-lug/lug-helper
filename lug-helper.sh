@@ -979,6 +979,8 @@ preflight_check() {
     unset preflight_results
     unset preflight_manual
     unset preflight_followup
+    unset preflight_fail_string
+    unset preflight_pass_string
 
     # Call the optimization functions to perform the checks
     lutris_check
