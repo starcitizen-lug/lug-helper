@@ -904,6 +904,7 @@ lutris_check() {
 
 # Run the winetricks self-updater
 winetricks_update() {
+    debug_print continue "Running winetricks self-updater..."
     preflight_actions+=('winetricks --self-update')
     preflight_results+=("Winetricks has been updated. See terminal output for details.")
 }
