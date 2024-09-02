@@ -255,16 +255,16 @@ debug_print() {
     # Echo the provided string and, optionally, exit the script
     case "$1" in
         "continue")
-            printf "\n$2\n"
+            printf "\n%s\n" "$2"
             ;;
         "exit")
             # Write an error to stderr and exit
-            printf "lug-helper.sh: $2\n" 1>&2
+            printf "%s\n" "lug-helper.sh: $2" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 1
             ;;
         *)
-            printf "lug-helper.sh: Unknown argument provided to debug_print function. Aborting.\n" 1>&2
+            printf "%s\n" "lug-helper.sh: Unknown argument provided to debug_print function. Aborting." 1>&2
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
@@ -442,19 +442,19 @@ message() {
 menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The array 'menu_options' was not set before calling the menu function. Aborting."
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The array 'menu_actions' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_text_zenity" ]; then
-        debug_print exit "Script error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_text_zenity' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_text_terminal" ]; then
-        debug_print exit "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_text_terminal' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_height" ]; then
-        debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_height' was not set before calling the menu function. Aborting."
     elif [ "$menu_type" != "radiolist" ] && [ "$menu_type" != "checklist" ]; then
         debug_print exit "Script error: Unknown menu_type in menu() function. Aborting."
     elif [ -z "$cancel_label" ]; then
-        debug_print exit "Script error: The string 'cancel_label' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'cancel_label' was not set before calling the menu function. Aborting."
     fi
 
     # Use Zenity if it is available
@@ -1220,13 +1220,13 @@ get_lutris_dirs() {
 post_download() {
     # Sanity checks
     if [ -z "$post_download_type" ]; then
-        debug_print exit "Script error: The string 'post_download_type' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_type' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_msg_heading" ]; then
-        debug_print exit "Script error: The string 'post_download_msg_heading' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_msg_heading' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_msg" ]; then
-        debug_print exit "Script error: The string 'post_download_msg' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_msg' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
-        debug_print exit "Script error: The string 'post_download_sed_string' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
     fi
 
     # Configure the message heading and format it for zenity
@@ -1305,11 +1305,11 @@ download_delete() {
 
     # Sanity checks
     if [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_delete function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_delete function. Aborting."
     elif [ "${#installed_items[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'installed_items' was not set\nbefore calling the download_delete function. Aborting."
+        debug_print exit "Script error: The array 'installed_items' was not set before calling the download_delete function. Aborting."
     elif [ "${#installed_item_names[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'installed_item_names' was not set\nbefore calling the download_delete function. Aborting."
+        debug_print exit "Script error: The array 'installed_item_names' was not set before calling the download_delete function. Aborting."
     fi
 
     # Capture arguments and format a list of items
@@ -1342,9 +1342,9 @@ download_delete() {
 download_select_delete() {
     # Sanity checks
     if [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_select_delete function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_delete function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_delete function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_delete function. Aborting."
     fi
 
     # Configure the menu
@@ -1421,15 +1421,15 @@ download_install() {
 
     # Sanity checks
     if [ "${#download_versions[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_versions' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The array 'download_versions' was not set before calling the download_install function. Aborting."
     elif [ -z "$contributor_url" ]; then
-        debug_print exit "Script error: The string 'contributor_url' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The string 'contributor_url' was not set before calling the download_install function. Aborting."
     elif [ -z "$download_url_type" ]; then
-        debug_print exit "Script error: The string 'download_url_type' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The string 'download_url_type' was not set before calling the download_install function. Aborting."
     elif [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_install function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_install function. Aborting."
     fi
 
     # Get the filename including file extension
@@ -1601,11 +1601,11 @@ download_select_install() {
 
     # Sanity checks
     if [ "${#download_sources[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_sources' was not set\nbefore calling the download_select_install function. Aborting."
+        debug_print exit "Script error: The array 'download_sources' was not set before calling the download_select_install function. Aborting."
     elif [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_select_install function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_install function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_install function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_install function. Aborting."
     fi
 
     # Store info from the selected contributor
@@ -1870,15 +1870,15 @@ download_manage() {
 
     # Sanity checks
     if [ -z "$download_sources" ]; then
-        debug_print exit "Script error: The string 'download_sources' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_sources' was not set before calling the download_manage function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_heading" ]; then
-        debug_print exit "Script error: The string 'download_menu_heading' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_menu_heading' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_description" ]; then
-        debug_print exit "Script error: The string 'download_menu_description' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_menu_description' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_height" ]; then
-        debug_print exit "Script error: The string 'download_menu_height' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_menu_height' was not set before calling the download_manage function. Aborting."
     fi
 
     # Get the type of item we're downloading from the function arguments
