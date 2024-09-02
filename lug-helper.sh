@@ -2366,7 +2366,7 @@ install_game_lutris() {
 install_game_wine() {
     if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nAre you ready to continue?"; then
         # Double check that wine is installed
-        if [ !-x "$(command -v wine)" ]; then
+        if [ ! -x "$(command -v wine)" ]; then
             message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
             return 1
         fi
