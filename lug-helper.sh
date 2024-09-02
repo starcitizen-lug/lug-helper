@@ -1389,23 +1389,23 @@ download_install() {
     fi
 
     # Get the filename including file extension
-    download_file="${download_versions[$1]}"
+    download_filename="${download_versions[$1]}"
 
     # Get the selected item name minus the file extension
     # To add new file extensions, handle them here and in
     # the download_select_install function below
-    case "$download_file" in
+    case "$download_filename" in
         *.tar.gz)
-            download_name="$(basename "$download_file" .tar.gz)"
+            download_basename="$(basename "$download_filename" .tar.gz)"
             ;;
         *.tgz)
-            download_name="$(basename "$download_file" .tgz)"
+            download_basename="$(basename "$download_filename" .tgz)"
             ;;
         *.tar.xz)
-            download_name="$(basename "$download_file" .tar.xz)"
+            download_basename="$(basename "$download_filename" .tar.xz)"
             ;;
         *.tar.zst)
-            download_name="$(basename "$download_file" .tar.zst)"
+            download_basename="$(basename "$download_filename" .tar.zst)"
             ;;
         *)
             debug_print exit "Script error: Unknown archive filetype in download_install function. Aborting."
@@ -1430,7 +1430,7 @@ download_install() {
     fi
 
     # Get the selected download url
-    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_file" | cut -d '"' -f4 | cut -d '?' -f1 | sed 's|/-/blob/|/-/raw/|')"
+    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_filename" | cut -d '"' -f4 | cut -d '?' -f1 | sed 's|/-/blob/|/-/raw/|')"
 
     # Sanity check
     if [ -z "$download_url" ]; then
@@ -1439,7 +1439,7 @@ download_install() {
     fi
 
     # Download the item to the tmp directory
-    debug_print continue "Downloading $download_url into $tmp_dir/$download_file..."
+    debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
     if [ "$use_zenity" -eq 1 ]; then
         # Format the curl progress bar for zenity
         mkfifo "$tmp_dir/lugpipe"
@@ -1453,8 +1453,8 @@ download_install() {
 
         if [ "$?" -eq 1 ]; then
             # User clicked cancel
-            debug_print continue "Download aborted. Removing $tmp_dir/$download_file..."
-            rm --interactive=never "${tmp_dir:?}/$download_file"
+            debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
+            rm --interactive=never "${tmp_dir:?}/$download_filename"
             rm --interactive=never "${tmp_dir:?}/lugpipe"
             return 1
         fi
@@ -1465,28 +1465,28 @@ download_install() {
     fi
 
     # Sanity check
-    if [ ! -f "$tmp_dir/$download_file" ]; then
+    if [ ! -f "$tmp_dir/$download_filename" ]; then
         # Something went wrong with the download and the file doesn't exist
         message error "Something went wrong and the requested $download_type file could not be downloaded!"
-        debug_print continue "Download failed! File not found: $tmp_dir/$download_file"
+        debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
         return 1
     fi
 
     # Extract the archive to the tmp directory
-    debug_print continue "Extracting $download_type into $tmp_dir/$download_name..."
+    debug_print continue "Extracting $download_type into $tmp_dir/$download_basename..."
     if [ "$use_zenity" -eq 1 ]; then
         # Use Zenity progress bar
-        mkdir "$tmp_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$tmp_dir/$download_name" | \
+        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename" | \
                 zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Extracting ${download_type}...\n" 2>/dev/null
     else
-        mkdir "$tmp_dir/$download_name" && tar -xf "$tmp_dir/$download_file" -C "$tmp_dir/$download_name"
+        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename"
     fi
 
     # Check the contents of the extracted archive to determine the
     # directory structure we must create upon installation
     num_dirs=0
     num_files=0
-    for extracted_item in "$tmp_dir/$download_name"/*; do
+    for extracted_item in "$tmp_dir/$download_basename"/*; do
         if [ -d "$extracted_item" ]; then
             num_dirs="$(($num_dirs+1))"
             extracted_dir="$(basename "$extracted_item")"
@@ -1506,25 +1506,25 @@ download_install() {
         for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
             # Loop through all download destinations, installing to each one
             # Odd numbered elements will contain the download destination's path
-            if [ -d "${download_dirs[i]}/$download_name" ]; then
+            if [ -d "${download_dirs[i]}/$download_basename" ]; then
                 # This item has already been installed. Delete it before reinstalling
-                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
-                rm -r --interactive=never "${download_dirs[i]:?}/$download_name"
-                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
+                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
+                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
+                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
             else
-                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
+                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
             fi
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_name/$extracted_dir" "${download_dirs[i]}/$download_name" | \
+                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename" | \
                         zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
             else
-                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_name/$extracted_dir" "${download_dirs[i]}/$download_name"
+                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename"
             fi
         done
 
         # Store the final name of the downloaded directory
-        downloaded_item_name="$download_name"
+        downloaded_item_name="$download_basename"
         # Mark success for triggering post-download actions
         download_action_success="installed"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
@@ -1533,25 +1533,25 @@ download_install() {
         for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
             # Loop through all download destinations, installing to each one
             # Odd numbered elements will contain the download destination's path
-            if [ -d "${download_dirs[i]}/$download_name" ]; then
+            if [ -d "${download_dirs[i]}/$download_basename" ]; then
                 # This item has already been installed. Delete it before reinstalling
-                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_name..."
-                rm -r --interactive=never "${download_dirs[i]:?}/$download_name"
-                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_name..."
+                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
+                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
+                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
             else
-                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_name..."
+                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
             fi
             if [ "$use_zenity" -eq 1 ]; then
                 # Use Zenity progress bar
-                mkdir -p "${download_dirs[i]}/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "${download_dirs[i]}"/"$download_name" | \
+                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename" | \
                         zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
             else
-                mkdir -p "${download_dirs[i]}/$download_name" && cp -r "$tmp_dir"/"$download_name"/* "${download_dirs[i]}"/"$download_name"
+                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename"
             fi
         done
 
         # Store the final name of the downloaded directory
-        downloaded_item_name="$download_name"
+        downloaded_item_name="$download_basename"
         # Mark success for triggering post-download actions
         download_action_success="installed"
     else
@@ -1560,9 +1560,9 @@ download_install() {
     fi
 
     # Cleanup tmp download
-    debug_print continue "Cleaning up $tmp_dir/$download_file..."
-    rm --interactive=never "${tmp_dir:?}/$download_file"
-    rm -r "${tmp_dir:?}/$download_name"
+    debug_print continue "Cleaning up $tmp_dir/$download_filename..."
+    rm --interactive=never "${tmp_dir:?}/$download_filename"
+    rm -r "${tmp_dir:?}/$download_basename"
 }
 
 # List available items for download. Called by download_manage()
@@ -1737,16 +1737,16 @@ download_select_install() {
                 continue
                 ;;
             *.tar.gz)
-                download_name="$(basename "${download_versions[i]}" .tar.gz)"
+                download_basename="$(basename "${download_versions[i]}" .tar.gz)"
                 ;;
             *.tgz)
-                download_name="$(basename "${download_versions[i]}" .tgz)"
+                download_basename="$(basename "${download_versions[i]}" .tgz)"
                 ;;
             *.tar.xz)
-                download_name="$(basename "${download_versions[i]}" .tar.xz)"
+                download_basename="$(basename "${download_versions[i]}" .tar.xz)"
                 ;;
             *.tar.zst)
-                download_name="$(basename "${download_versions[i]}" .tar.zst)"
+                download_basename="$(basename "${download_versions[i]}" .tar.zst)"
                 ;;
             *)
                 # Print a warning and move on to the next item
@@ -1760,7 +1760,7 @@ download_select_install() {
         for (( j=0; j<"${#download_dirs[@]}"; j=j+2 )); do
             # Loop through all download destinations to get installed types
             # Even numbered elements will contain the download destination type (ie. native/flatpak)
-            if [ -d "${download_dirs[j+1]}/$download_name" ]; then
+            if [ -d "${download_dirs[j+1]}/$download_basename" ]; then
                 installed_types+=("${download_dirs[j]}")
             fi
         done
@@ -1769,17 +1769,17 @@ download_select_install() {
         unset menu_option_text
         if [ "${#download_dirs[@]}" -eq 2 ]; then
             # We're only installing to one location
-            if [ -d "${download_dirs[1]}/$download_name" ]; then
-                menu_option_text="$download_name    [installed]"
+            if [ -d "${download_dirs[1]}/$download_basename" ]; then
+                menu_option_text="$download_basename    [installed]"
             else
                 # The file is not installed
-                menu_option_text="$download_name"
+                menu_option_text="$download_basename"
             fi
         else
             # We're installing to multiple locations
             if [ "${#installed_types[@]}" -gt 0 ]; then
                 # The file is already installed
-                menu_option_text="$download_name    [installed:"
+                menu_option_text="$download_basename    [installed:"
                 for (( j=0; j<"${#installed_types[@]}"; j++ )); do
                     # Add labels for each installed location
                     menu_option_text="$menu_option_text ${installed_types[j]}"
@@ -1788,7 +1788,7 @@ download_select_install() {
                 menu_option_text="$menu_option_text]"
             else
                 # The file is not installed
-                menu_option_text="$download_name"
+                menu_option_text="$download_basename"
             fi
         fi
         # Add the file names to the menu
