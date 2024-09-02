@@ -2426,6 +2426,8 @@ install_game_wine() {
 
         # Run the installer
         WINEPREFIX="$install_dir" winecfg -v win10 && WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
+
+        message info "Installation has completed! See terminal output for details."
     fi   
 }
 
