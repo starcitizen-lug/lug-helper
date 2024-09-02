@@ -1107,8 +1107,8 @@ download_file() {
         exit 0
     fi
 
-    # Capture the arguments
-    download_url="$1"
+    # Capture the arguments and encode spaces in urls
+    download_url="${1// /%20}"
     download_filename="$2"
 
     # Download the item to the tmp directory
@@ -1116,7 +1116,7 @@ download_file() {
     if [ "$use_zenity" -eq 1 ]; then
         # Format the curl progress bar for zenity
         mkfifo "$tmp_dir/lugpipe"
-        cd "$tmp_dir" && curl -#LO "$download_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
         stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
         grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
         (
@@ -1134,7 +1134,7 @@ download_file() {
         rm --interactive=never "${tmp_dir:?}/lugpipe"
     else
         # Standard curl progress bar
-        (cd "$tmp_dir" && curl -LO "$download_url")
+        (cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename")
     fi
 }
 
