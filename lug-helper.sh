@@ -1094,6 +1094,47 @@ preflight_check() {
 ######## begin download functions ##########################################
 ############################################################################
 
+# Download a file to the tmp directory
+# Expects two arguments, the download URL and the file name
+download_file() {
+    # This function expects two string arguments
+    if [ "$#" -lt 2 ]; then
+        printf "\nScript error:  The download_file function expects two arguments. Aborting.\n"
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    # Capture the arguments
+    download_url="$1"
+    download_filename="$2"
+
+    # Download the item to the tmp directory
+    debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
+    if [ "$use_zenity" -eq 1 ]; then
+        # Format the curl progress bar for zenity
+        mkfifo "$tmp_dir/lugpipe"
+        cd "$tmp_dir" && curl -#LO "$download_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
+        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
+        (
+            trap 'kill "$curlpid"' ERR
+            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
+        )
+
+        if [ "$?" -eq 1 ]; then
+            # User clicked cancel
+            debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
+            rm --interactive=never "${tmp_dir:?}/$download_filename"
+            rm --interactive=never "${tmp_dir:?}/lugpipe"
+            return 1
+        fi
+        rm --interactive=never "${tmp_dir:?}/lugpipe"
+    else
+        # Standard curl progress bar
+        (cd "$tmp_dir" && curl -LO "$download_url")
+    fi
+}
+
 # Detect which version of Lutris is running and restart it
 lutris_restart() {
     # Detect the installed versions of Lutris
@@ -1439,30 +1480,7 @@ download_install() {
     fi
 
     # Download the item to the tmp directory
-    debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
-    if [ "$use_zenity" -eq 1 ]; then
-        # Format the curl progress bar for zenity
-        mkfifo "$tmp_dir/lugpipe"
-        cd "$tmp_dir" && curl -#LO "$download_url" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
-        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
-        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
-        (
-            trap 'kill "$curlpid"' ERR
-            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
-        )
-
-        if [ "$?" -eq 1 ]; then
-            # User clicked cancel
-            debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
-            rm --interactive=never "${tmp_dir:?}/$download_filename"
-            rm --interactive=never "${tmp_dir:?}/lugpipe"
-            return 1
-        fi
-        rm --interactive=never "${tmp_dir:?}/lugpipe"
-    else
-        # Standard curl progress bar
-        (cd "$tmp_dir" && curl -LO "$download_url")
-    fi
+    download_file "$download_url" "$download_filename"
 
     # Sanity check
     if [ ! -f "$tmp_dir/$download_filename" ]; then
