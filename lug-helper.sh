@@ -2364,7 +2364,7 @@ install_game_lutris() {
 
 # Install the game without Lutris
 install_game_wine() {
-    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nAre you ready to continue?"; then
+    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nRefer to our Quick Start Guide for prerequisites:\n$lug_wiki\n\nAre you ready to continue?"; then
         # Double check that wine is installed
         if [ ! -x "$(command -v wine)" ]; then
             message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
@@ -2425,7 +2425,7 @@ install_game_wine() {
         fi
 
         # Run the installer
-        WINEPREFIX="$install_dir" winecfg -v win10 && wine "$tmp_dir/$rsi_installer"
+        WINEPREFIX="$install_dir" winecfg -v win10 && WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
     fi   
 }
 
