@@ -220,18 +220,21 @@ lutris_required="0.5.17"
 memory_required="16"
 memory_combined_required="40"
 
-######## Links #############################################################
+######## Links / Versions ##################################################
 
 # LUG Wiki
 lug_wiki="https://starcitizen-lug.github.io"
+
+# NixOS section in Wiki
+lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
+
+# RSI Installer version
+rsi_installer="RSI Launcher-Setup-2.0.2.exe"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
 current_version="v2.18"
-
-# NixOS section in Wiki
-lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
 
 ############################################################################
 ############################################################################
@@ -2363,6 +2366,12 @@ install_game_lutris() {
 # Install the game without Lutris
 install_game_wine() {
     if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nAre you ready to continue?"; then
+        # Double check that wine is installed
+        if [ !-x "$(command -v wine)" ]; then
+            message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
+            return 1
+        fi
+
         if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
             # Set the default install path
             install_dir="$HOME/Games/star-citizen"
@@ -2405,7 +2414,19 @@ install_game_wine() {
         # Create the game path
         mkdir -p "$install_dir"
 
-        # Download rsi installer to tmp and run with install_dir as prefix
+        # Download RSI installer to tmp
+        download_file "https://install.robertsspaceindustries.com/rel/2/$rsi_installer" "$rsi_installer"
+
+        # Sanity check
+        if [ ! -f "$tmp_dir/$rsi_installer" ]; then
+            # Something went wrong with the download and the file doesn't exist
+            message error "Something went wrong; the installer could not be downloaded!"
+            debug_print continue "Download failed! File not found: $tmp_dir/$rsi_installer"
+            return 1
+        fi
+
+        # Run the installer
+        WINEPREFIX="$install_dir" winecfg -v win10 && wine "$tmp_dir/$rsi_installer"
     fi   
 }
 
