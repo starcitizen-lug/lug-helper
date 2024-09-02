@@ -2541,7 +2541,7 @@ if [ "$#" -gt 0 ]; then
                 printf "Star Citizen Linux Users Group Helper Script
 Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
-  -i, --install                 Install Star Citizen
+  -i, --install [lutris|wine]   Install Star Citizen (default: lutris)
   -m, --manage-runners          Install or remove Lutris runners
   -k, --manage-dxvk             Install or remove DXVK versions
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
@@ -2561,7 +2561,17 @@ Usage: lug-helper <options>
                 cargs+=("preflight_check")
                 ;;
             --install | -i )
-                cargs+=("install_game")
+                install_method="$2"
+                if [ "$install_method" = "lutris" ] || [ "$install_method" = "LUTRIS" ]; then
+                    cargs+=("install_game_lutris")
+                elif [ "$install_method" = "wine" ] || [ "$install_method" = "WINE" ]; then
+                    cargs+=("install_game_wine")
+                else
+                    printf "$0: Invalid argument '%s'\n" "$install_method"
+                    exit 0
+                fi
+                # Shift forward one argument
+                shift
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
