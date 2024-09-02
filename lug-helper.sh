@@ -2260,7 +2260,6 @@ display_wiki() {
 
 # Delete the helper's config directory
 reset_helper() {
-    # Delete the shader directory
     if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
         debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"*.conf
