@@ -2684,8 +2684,8 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
-    install_msg_lutris="Install Star Citizen (Lutris)"
-    install_msg_wine="Install Star Citizen (Wine)"
+    install_msg_lutris="Install Star Citizen with Lutris"
+    install_msg_wine="Install Star Citizen with Wine"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
