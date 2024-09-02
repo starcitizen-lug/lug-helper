@@ -2293,7 +2293,7 @@ maintenance_menu() {
 
 
 # Install Star Citizen using Lutris
-install_game() {
+install_game_lutris() {
     # Check if Lutris is installed
     lutris_detect
     if [ "$lutris_installed" = "false" ]; then
@@ -2340,6 +2340,55 @@ install_game() {
 
         message info "The installation will continue in Lutris"
     fi
+}
+
+# Install the game without Lutris
+install_game_wine() {
+    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nAre you ready to continue?"; then
+        if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
+            # Set the default install path
+            install_dir="$HOME/Games/star-citizen"
+        else
+            if [ "$use_zenity" -eq 1 ]; then
+                message info "On the following screen, select your Star Citizen install location.\n\nA new subdirectory named 'star-citizen' will be created in the selected location."
+
+                # Get the install path from the user
+                install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+                if [ "$?" -eq -1 ]; then
+                    message error "An unexpected error has occurred. The Helper is unable to proceed."
+                    return 1
+                elif [ -z "$install_dir" ]; then
+                    # User clicked cancel
+                    message warning "Installation cancelled."
+                    return 1
+                fi
+            else
+                # No Zenity, use terminal-based menus
+                clear
+                # Get the install path from the user
+                printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games\n\nA new subdirectory named 'star-citizen' will be created in the location entered.\n\n"
+                while read -rp "Install path: " install_dir; do
+                    if [ -z "$install_dir" ]; then
+                        printf "Invalid directory. Please try again.\n\n"
+                    elif [ ! -d "$install_dir" ]; then
+                        if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
+                            break
+                        fi
+                    else
+                        break
+                    fi
+                done
+            fi
+
+            # Set the game subdirectory
+            install_dir="$install_dir/star-citizen"
+        fi
+
+        # Create the game path
+        mkdir -p "$install_dir"
+
+        # Download rsi installer to tmp and run with install_dir as prefix
+    fi   
 }
 
 # Format some URLs for Zenity
@@ -2586,7 +2635,8 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
-    install_msg="Install Star Citizen"
+    install_msg_lutris="Install Star Citizen (Lutris)"
+    install_msg_wine="Install Star Citizen (Wine)"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -2594,9 +2644,9 @@ while true; do
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
