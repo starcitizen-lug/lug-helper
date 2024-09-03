@@ -1098,11 +1098,11 @@ preflight_check() {
 ############################################################################
 
 # Download a file to the tmp directory
-# Expects two arguments, the download URL and the file name
+# Expects three arguments: The download URL, file name, and download type
 download_file() {
-    # This function expects two string arguments
-    if [ "$#" -lt 2 ]; then
-        printf "\nScript error:  The download_file function expects two arguments. Aborting.\n"
+    # This function expects three string arguments
+    if [ "$#" -lt 3 ]; then
+        printf "\nScript error:  The download_file function expects three arguments. Aborting.\n"
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
@@ -1110,6 +1110,7 @@ download_file() {
     # Capture the arguments and encode spaces in urls
     download_url="${1// /%20}"
     download_filename="$2"
+    download_type="$3"
 
     # Download the item to the tmp directory
     debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
@@ -1483,7 +1484,7 @@ download_install() {
     fi
 
     # Download the item to the tmp directory
-    download_file "$download_url" "$download_filename"
+    download_file "$download_url" "$download_filename" "$download_type"
 
     # Sanity check
     if [ ! -f "$tmp_dir/$download_filename" ]; then
@@ -2414,7 +2415,7 @@ install_game_wine() {
         mkdir -p "$install_dir"
 
         # Download RSI installer to tmp
-        download_file "https://install.robertsspaceindustries.com/rel/2/$rsi_installer" "$rsi_installer"
+        download_file "https://install.robertsspaceindustries.com/rel/2/$rsi_installer" "$rsi_installer" "installer"
 
         # Sanity check
         if [ ! -f "$tmp_dir/$rsi_installer" ]; then
@@ -2427,7 +2428,7 @@ install_game_wine() {
         # Run the installer
         WINEPREFIX="$install_dir" winecfg -v win10 && WINEPREFIX="$install_dir" winetricks powershell && WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
 
-        message info "Installation has completed! See terminal output for details."
+        message info "Installation has completed. See terminal output for details."
     fi   
 }
 
