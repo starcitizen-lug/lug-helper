@@ -2460,11 +2460,11 @@ install_game_wine() {
 
 # Install powershell verb into the game's wine prefix
 install_powershell() {
-    if message question "This will install PowerShell into your game's wine prefix.\nNote that this is done automatically for new game installs.\n\nDo you want to continue?"; then
+    if message question "Run the Preflight Check to update winetricks before proceeding!\n\nDo you want to continue?"; then
         getdirs
         debug_print continue "Launching winetricks to install PowerShell into ${wine_prefix}..."
         WINEPREFIX="$wine_prefix" winetricks powershell
-        message info "PowerShell install complete"
+        message info "PowerShell operation complete. See terminal output for details.\n\nIf nothing happened, your winetricks is out of date."
     fi
 }
 
