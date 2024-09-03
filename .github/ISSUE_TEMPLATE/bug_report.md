@@ -1,6 +1,7 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Bugs or issues with the Helper tool. See other options below for non-Helper
+  related issues
 title: ''
 labels: ''
 assignees: ''
