@@ -2365,7 +2365,7 @@ install_game_lutris() {
 
 # Install the game without Lutris
 install_game_wine() {
-    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nRefer to our Quick Start Guide for prerequisites:\n$lug_wiki\n\nAre you ready to continue?"; then
+    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nDon't forget to install DXVK!\n\nRefer to our Quick Start Guide for other prerequisites:\n$lug_wiki\n\nAre you ready to continue?"; then
         # Double check that wine is installed
         if [ ! -x "$(command -v wine)" ]; then
             message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
