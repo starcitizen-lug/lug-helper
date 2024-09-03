@@ -2069,6 +2069,22 @@ version_menu(){
     menu
 }
 
+# Target the Helper at a different Star Citizen prefix/installation
+switch_prefix() {
+    # Check if the config file exists
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ] && [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+        getdirs
+        if message question "The Helper is currently targeting this Star Citizen install\nWould you like to change it?\n\n$wine_prefix"; then
+            reset_helper "switchprefix"
+            # Prompt the user for a new set of game paths
+            getdirs
+        fi
+    else
+        # Prompt the user for game paths
+        getdirs
+    fi
+}
+
 # Save exported keybinds, wipe the USER directory, and restore keybinds
 rm_userdir() {
     # Prompt user to back up the current keybinds in the game
@@ -2261,11 +2277,20 @@ display_wiki() {
 
 # Delete the helper's config directory
 reset_helper() {
-    if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
+    if [ "$1" = "switchprefix" ]; then
+        # This gets called by the switch_prefix function
+        # We only want to delete configs related to the game path in order to target a different game install
+        debug_print continue "Deleting $conf_dir/$conf_subdir/{winedir,gamedir}.conf..."
+        rm --interactive=never "${conf_dir:?}/$conf_subdir/"{winedir,gamedir}.conf
+    elif message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
+        # Called normally by the user, wipe all the things!
         debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"*.conf
         message info "The Helper has been reset!"
     fi
+    # Also wipe path variables so the reset takes immediate effect
+    wine_prefix=""
+    game_path=""
 }
 
 # Show maintenance/troubleshooting options
@@ -2281,6 +2306,7 @@ maintenance_menu() {
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
+        prefix_msg="Target a different Star Citizen installation"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
@@ -2289,9 +2315,9 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2430,6 +2456,16 @@ install_game_wine() {
 
         message info "Installation has completed. See terminal output for details."
     fi   
+}
+
+# Install powershell verb into the game's wine prefix
+install_powershell() {
+    if message question "This will install PowerShell into your game's wine prefix.\nNote that this is done automatically for new game installs.\n\nDo you want to continue?"; then
+        getdirs
+        debug_print continue "Launching winetricks to install PowerShell into ${wine_prefix}..."
+        WINEPREFIX="$wine_prefix" winetricks powershell
+        message info "PowerShell install complete"
+    fi
 }
 
 # Format some URLs for Zenity
@@ -2688,6 +2724,7 @@ while true; do
     preflight_msg="Preflight Check (System Optimization)"
     install_msg_lutris="Install Star Citizen with Lutris"
     install_msg_wine="Install Star Citizen with Wine"
+    powershell_msg="Install PowerShell into Wine prefix"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -2695,9 +2732,9 @@ while true; do
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$powershell_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "install_powershell" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
