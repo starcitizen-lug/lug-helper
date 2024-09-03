@@ -1,4 +1,7 @@
 contact_links:
-  - name: Community Support and Help
+  - name: Wiki
     url: https://starcitizen-lug.github.io
-    about: Please ask for installation help in our Discord tech support channel. It's bridged to our Matrix space too!
+    about: Installation issues, troubleshooting, and recent news/changes
+  - name: Community Support
+    url: https://discord.gg/meCFYPj
+    about: Gelp in our Discord tech support channel. It's bridged to our Matrix space too! (See wiki above for links)
