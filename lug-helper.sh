@@ -216,8 +216,9 @@ winetricks_required="20240105-next"
 # lutris minimum version
 lutris_required="0.5.17"
 
-# Minimum amount of combined RAM + swap in GiB
+# Minimum amount of RAM in GiB
 memory_required="16"
+# Minimum amount of combined RAM + swap in GiB
 memory_combined_required="40"
 
 ######## Links / Versions ##################################################
@@ -948,7 +949,7 @@ memory_check() {
     swaptotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$swaptotal")"
     combtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$combtotal")"
 
-    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$memory_required" ]; then
+    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required-1))" ]; then
         # Minimum requirements are not met
         preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.")
     elif [ "${memtotal::-3}" -ge "$memory_combined_required" ]; then
