@@ -2453,9 +2453,11 @@ install_game_wine() {
         fi
 
         # Run the installer
-        WINEPREFIX="$install_dir" winecfg -v win10 && WINEPREFIX="$install_dir" winetricks powershell && WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
+        WINEPREFIX="$install_dir" winecfg -v win10 &&
+        WINEPREFIX="$install_dir" winetricks powershell
+        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
 
-        message info "Installation has completed.\n\nNote: Wine may have created the following launcher files on your system\nYou may remove or edit these if desired:\n\n$HOME/Desktop/RSI Launcher.destop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop\n\nAfter making changes, update the database by running:\nupdate-desktop-database \$HOME/.local/share/applications"
+        message info "Installation has finished.\n\nNote: Wine may have created the following launcher files on your system\nYou may remove or edit these if desired:\n\n$HOME/Desktop/RSI Launcher.destop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop\n\nAfter making changes, update the database by running:\nupdate-desktop-database \$HOME/.local/share/applications"
     fi   
 }
 
