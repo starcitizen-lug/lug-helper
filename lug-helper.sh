@@ -220,18 +220,21 @@ lutris_required="0.5.17"
 memory_required="16"
 memory_combined_required="40"
 
-######## Links #############################################################
+######## Links / Versions ##################################################
 
 # LUG Wiki
 lug_wiki="https://starcitizen-lug.github.io"
+
+# NixOS section in Wiki
+lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
+
+# RSI Installer version
+rsi_installer="RSI Launcher-Setup-2.0.2.exe"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
 current_version="v2.18"
-
-# NixOS section in Wiki
-lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
 
 ############################################################################
 ############################################################################
@@ -252,16 +255,16 @@ debug_print() {
     # Echo the provided string and, optionally, exit the script
     case "$1" in
         "continue")
-            printf "\n$2\n"
+            printf "\n%s\n" "$2"
             ;;
         "exit")
             # Write an error to stderr and exit
-            printf "lug-helper.sh: $2\n" 1>&2
+            printf "%s\n" "lug-helper.sh: $2" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 1
             ;;
         *)
-            printf "lug-helper.sh: Unknown argument provided to debug_print function. Aborting.\n" 1>&2
+            printf "%s\n" "lug-helper.sh: Unknown argument provided to debug_print function. Aborting." 1>&2
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
@@ -439,19 +442,19 @@ message() {
 menu() {
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'menu_options' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The array 'menu_options' was not set before calling the menu function. Aborting."
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'menu_actions' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The array 'menu_actions' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_text_zenity" ]; then
-        debug_print exit "Script error: The string 'menu_text_zenity' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_text_zenity' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_text_terminal" ]; then
-        debug_print exit "Script error: The string 'menu_text_terminal' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_text_terminal' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_height" ]; then
-        debug_print exit "Script error: The string 'menu_height' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'menu_height' was not set before calling the menu function. Aborting."
     elif [ "$menu_type" != "radiolist" ] && [ "$menu_type" != "checklist" ]; then
         debug_print exit "Script error: Unknown menu_type in menu() function. Aborting."
     elif [ -z "$cancel_label" ]; then
-        debug_print exit "Script error: The string 'cancel_label' was not set\nbefore calling the menu function. Aborting."
+        debug_print exit "Script error: The string 'cancel_label' was not set before calling the menu function. Aborting."
     fi
 
     # Use Zenity if it is available
@@ -1095,6 +1098,48 @@ preflight_check() {
 ############################################################################
 
 # Download a file to the tmp directory
+# Expects three arguments: The download URL, file name, and download type
+download_file() {
+    # This function expects three string arguments
+    if [ "$#" -lt 3 ]; then
+        printf "\nScript error:  The download_file function expects three arguments. Aborting.\n"
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    # Capture the arguments and encode spaces in urls
+    download_url="${1// /%20}"
+    download_filename="$2"
+    download_type="$3"
+
+    # Download the item to the tmp directory
+    debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
+    if [ "$use_zenity" -eq 1 ]; then
+        # Format the curl progress bar for zenity
+        mkfifo "$tmp_dir/lugpipe"
+        cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
+        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
+        (
+            trap 'kill "$curlpid"' ERR
+            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
+        )
+
+        if [ "$?" -eq 1 ]; then
+            # User clicked cancel
+            debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
+            rm --interactive=never "${tmp_dir:?}/$download_filename"
+            rm --interactive=never "${tmp_dir:?}/lugpipe"
+            return 1
+        fi
+        rm --interactive=never "${tmp_dir:?}/lugpipe"
+    else
+        # Standard curl progress bar
+        (cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename")
+    fi
+}
+
+# Download a file to the tmp directory
 # Expects two arguments, the download URL and the file name
 download_file() {
     # This function expects two string arguments
@@ -1217,13 +1262,13 @@ get_lutris_dirs() {
 post_download() {
     # Sanity checks
     if [ -z "$post_download_type" ]; then
-        debug_print exit "Script error: The string 'post_download_type' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_type' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_msg_heading" ]; then
-        debug_print exit "Script error: The string 'post_download_msg_heading' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_msg_heading' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_msg" ]; then
-        debug_print exit "Script error: The string 'post_download_msg' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_msg' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
-        debug_print exit "Script error: The string 'post_download_sed_string' was not set\nbefore calling the post_download function. Aborting."
+        debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
     fi
 
     # Configure the message heading and format it for zenity
@@ -1302,11 +1347,11 @@ download_delete() {
 
     # Sanity checks
     if [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_delete function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_delete function. Aborting."
     elif [ "${#installed_items[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'installed_items' was not set\nbefore calling the download_delete function. Aborting."
+        debug_print exit "Script error: The array 'installed_items' was not set before calling the download_delete function. Aborting."
     elif [ "${#installed_item_names[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'installed_item_names' was not set\nbefore calling the download_delete function. Aborting."
+        debug_print exit "Script error: The array 'installed_item_names' was not set before calling the download_delete function. Aborting."
     fi
 
     # Capture arguments and format a list of items
@@ -1339,9 +1384,9 @@ download_delete() {
 download_select_delete() {
     # Sanity checks
     if [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_select_delete function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_delete function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_delete function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_delete function. Aborting."
     fi
 
     # Configure the menu
@@ -1418,15 +1463,15 @@ download_install() {
 
     # Sanity checks
     if [ "${#download_versions[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_versions' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The array 'download_versions' was not set before calling the download_install function. Aborting."
     elif [ -z "$contributor_url" ]; then
-        debug_print exit "Script error: The string 'contributor_url' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The string 'contributor_url' was not set before calling the download_install function. Aborting."
     elif [ -z "$download_url_type" ]; then
-        debug_print exit "Script error: The string 'download_url_type' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The string 'download_url_type' was not set before calling the download_install function. Aborting."
     elif [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_install function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_install function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_install function. Aborting."
     fi
 
     # Get the filename including file extension
@@ -1598,11 +1643,11 @@ download_select_install() {
 
     # Sanity checks
     if [ "${#download_sources[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_sources' was not set\nbefore calling the download_select_install function. Aborting."
+        debug_print exit "Script error: The array 'download_sources' was not set before calling the download_select_install function. Aborting."
     elif [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set\nbefore calling the download_select_install function. Aborting."
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_install function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_select_install function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_install function. Aborting."
     fi
 
     # Store info from the selected contributor
@@ -1867,15 +1912,15 @@ download_manage() {
 
     # Sanity checks
     if [ -z "$download_sources" ]; then
-        debug_print exit "Script error: The string 'download_sources' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_sources' was not set before calling the download_manage function. Aborting."
     elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_heading" ]; then
-        debug_print exit "Script error: The string 'download_menu_heading' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_menu_heading' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_description" ]; then
-        debug_print exit "Script error: The string 'download_menu_description' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_menu_description' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_height" ]; then
-        debug_print exit "Script error: The string 'download_menu_height' was not set\nbefore calling the download_manage function. Aborting."
+        debug_print exit "Script error: The string 'download_menu_height' was not set before calling the download_manage function. Aborting."
     fi
 
     # Get the type of item we're downloading from the function arguments
@@ -2063,6 +2108,22 @@ version_menu(){
 
     # Call the menu function.  It will use the options as configured above
     menu
+}
+
+# Target the Helper at a different Star Citizen prefix/installation
+switch_prefix() {
+    # Check if the config file exists
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ] && [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
+        getdirs
+        if message question "The Helper is currently targeting this Star Citizen install\nWould you like to change it?\n\n$wine_prefix"; then
+            reset_helper "switchprefix"
+            # Prompt the user for a new set of game paths
+            getdirs
+        fi
+    else
+        # Prompt the user for game paths
+        getdirs
+    fi
 }
 
 # Save exported keybinds, wipe the USER directory, and restore keybinds
@@ -2257,12 +2318,20 @@ display_wiki() {
 
 # Delete the helper's config directory
 reset_helper() {
-    # Delete the shader directory
-    if message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
+    if [ "$1" = "switchprefix" ]; then
+        # This gets called by the switch_prefix function
+        # We only want to delete configs related to the game path in order to target a different game install
+        debug_print continue "Deleting $conf_dir/$conf_subdir/{winedir,gamedir}.conf..."
+        rm --interactive=never "${conf_dir:?}/$conf_subdir/"{winedir,gamedir}.conf
+    elif message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
+        # Called normally by the user, wipe all the things!
         debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"*.conf
         message info "The Helper has been reset!"
     fi
+    # Also wipe path variables so the reset takes immediate effect
+    wine_prefix=""
+    game_path=""
 }
 
 # Show maintenance/troubleshooting options
@@ -2278,6 +2347,7 @@ maintenance_menu() {
 
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
+        prefix_msg="Target a different Star Citizen installation"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
@@ -2286,9 +2356,9 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2311,7 +2381,7 @@ maintenance_menu() {
 
 
 # Install Star Citizen using Lutris
-install_game() {
+install_game_lutris() {
     # Check if Lutris is installed
     lutris_detect
     if [ "$lutris_installed" = "false" ]; then
@@ -2357,6 +2427,85 @@ install_game() {
         fi
 
         message info "The installation will continue in Lutris"
+    fi
+}
+
+# Install the game without Lutris
+install_game_wine() {
+    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nDon't forget to install DXVK!\n\nRefer to our Quick Start Guide for other prerequisites:\n$lug_wiki\n\nAre you ready to continue?"; then
+        # Double check that wine is installed
+        if [ ! -x "$(command -v wine)" ]; then
+            message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
+            return 1
+        fi
+
+        if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
+            # Set the default install path
+            install_dir="$HOME/Games/star-citizen"
+        else
+            if [ "$use_zenity" -eq 1 ]; then
+                message info "On the following screen, select your Star Citizen install location.\n\nA new subdirectory named 'star-citizen' will be created in the selected location."
+
+                # Get the install path from the user
+                install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+                if [ "$?" -eq -1 ]; then
+                    message error "An unexpected error has occurred. The Helper is unable to proceed."
+                    return 1
+                elif [ -z "$install_dir" ]; then
+                    # User clicked cancel
+                    message warning "Installation cancelled."
+                    return 1
+                fi
+            else
+                # No Zenity, use terminal-based menus
+                clear
+                # Get the install path from the user
+                printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games\n\nA new subdirectory named 'star-citizen' will be created in the location entered.\n\n"
+                while read -rp "Install path: " install_dir; do
+                    if [ -z "$install_dir" ]; then
+                        printf "Invalid directory. Please try again.\n\n"
+                    elif [ ! -d "$install_dir" ]; then
+                        if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
+                            break
+                        fi
+                    else
+                        break
+                    fi
+                done
+            fi
+
+            # Set the game subdirectory
+            install_dir="$install_dir/star-citizen"
+        fi
+
+        # Create the game path
+        mkdir -p "$install_dir"
+
+        # Download RSI installer to tmp
+        download_file "https://install.robertsspaceindustries.com/rel/2/$rsi_installer" "$rsi_installer" "installer"
+
+        # Sanity check
+        if [ ! -f "$tmp_dir/$rsi_installer" ]; then
+            # Something went wrong with the download and the file doesn't exist
+            message error "Something went wrong; the installer could not be downloaded!"
+            debug_print continue "Download failed! File not found: $tmp_dir/$rsi_installer"
+            return 1
+        fi
+
+        # Run the installer
+        WINEPREFIX="$install_dir" winecfg -v win10 && WINEPREFIX="$install_dir" winetricks powershell && WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
+
+        message info "Installation has completed.\n\nNote: Wine may have created the following launcher files on your system\nYou may remove or edit these if desired:\n\n$HOME/Desktop/RSI Launcher.destop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop\n\nAfter making changes, update the database by running:\nupdate-desktop-database \$HOME/.local/share/applications"
+    fi   
+}
+
+# Install powershell verb into the game's wine prefix
+install_powershell() {
+    if message question "Run the Preflight Check to update winetricks before proceeding!\n\nDo you want to continue?"; then
+        getdirs
+        debug_print continue "Launching winetricks to install PowerShell into ${wine_prefix}..."
+        WINEPREFIX="$wine_prefix" winetricks powershell
+        message info "PowerShell operation complete. See terminal output for details.\n\nIf nothing happened, your winetricks is out of date."
     fi
 }
 
@@ -2471,7 +2620,7 @@ if [ "$#" -gt 0 ]; then
                 printf "Star Citizen Linux Users Group Helper Script
 Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
-  -i, --install                 Install Star Citizen
+  -i, --install [lutris|wine]   Install Star Citizen (default: lutris)
   -m, --manage-runners          Install or remove Lutris runners
   -k, --manage-dxvk             Install or remove DXVK versions
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
@@ -2491,7 +2640,17 @@ Usage: lug-helper <options>
                 cargs+=("preflight_check")
                 ;;
             --install | -i )
-                cargs+=("install_game")
+                install_method="$2"
+                if [ "$install_method" = "lutris" ] || [ "$install_method" = "LUTRIS" ]; then
+                    cargs+=("install_game_lutris")
+                elif [ "$install_method" = "wine" ] || [ "$install_method" = "WINE" ]; then
+                    cargs+=("install_game_wine")
+                else
+                    printf "$0: Invalid argument '%s'\n" "$install_method"
+                    exit 0
+                fi
+                # Shift forward one argument
+                shift
                 ;;
             --manage-runners | -m )
                 cargs+=("runner_manage")
@@ -2604,7 +2763,9 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
-    install_msg="Install Star Citizen"
+    install_msg_lutris="Install Star Citizen with Lutris"
+    install_msg_wine="Install Star Citizen with Wine"
+    powershell_msg="Install PowerShell into Wine prefix"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -2612,9 +2773,9 @@ while true; do
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$powershell_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "install_powershell" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option

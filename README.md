@@ -20,8 +20,14 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Checks that the hard open file descriptors limit is set to at least 524288.
     - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
 
-`Install Star Citizen`
+`Install Star Citizen with Lutris`
 - Launches Lutris and installs Star Citizen
+
+`Install Star Citizen with Wine`
+- Installs Star Citizen without Lutris, just using the system Wine
+
+`Install PowerShell into Wine prefix`
+- Uses winetricks to install PowerShell
 
 `Manage Lutris Runners`
 - Quickly install and delete Lutris wine runners
@@ -32,6 +38,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Maintenance and Troubleshooting`
 - `Switch the helper between LIVE/PTU/EPTU`
   - Target the LIVE, PTU, or EPTU installation for all operations.  Defaults to LIVE on each run.
+
+`Target a different Star Citizen installation`
+- Select a different wine prefix for the Helper to target in its operations  
 
 - `Delete my Star Citizen USER folder and preserve my keybinds`
   - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
@@ -47,17 +56,11 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Delete my DXVK cache`
   - A troubleshooting step that sometimes helps fix various issues and crashes.
 
-- `Deploy Global Easy Anti-Cheat Workaround`
-  - Applies the workaround to /etc/hosts and deletes the necessary EAC files
-
 - `Display Helper and Star Citizen directories`
   - Show all the directories currently in use by both the Helper and Star Citizen.
 
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
-
-- `Show the LUG Wiki`
-  - Display a link to the LUG Wiki for help with installation and troubleshooting
 
 `Get a random Penguin's Star Citizen referral code`
 - Display a referral code for a random member of the Star Citizen Linux Users Group.
