@@ -1485,7 +1485,7 @@ download_install() {
     fi
 
     # Download the item to the tmp directory
-    download_file "$download_url" "$download_filename"
+    download_file "$download_url" "$download_filename" "$download_type"
 
     # Sanity check
     if [ ! -f "$tmp_dir/$download_filename" ]; then
