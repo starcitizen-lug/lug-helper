@@ -229,7 +229,7 @@ lug_wiki="https://starcitizen-lug.github.io"
 lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos-tweaks"
 
 # RSI Installer version
-rsi_installer="RSI Launcher-Setup-2.0.2.exe"
+rsi_installer="RSI Launcher-Setup-2.0.3.exe"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
