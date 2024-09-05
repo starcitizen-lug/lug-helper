@@ -1112,7 +1112,6 @@ download_file() {
     download_url="${1// /%20}"
     download_filename="$2"
     download_type="$3"
-    echo "DEBUG: $download_url"
 
     # Download the item to the tmp directory
     debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
