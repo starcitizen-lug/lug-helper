@@ -2629,7 +2629,7 @@ Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
   -i, --install [lutris|wine]   Install Star Citizen (default: lutris)
   -m, --manage-runners          Install or remove Lutris runners
-  -k, --manage-dxvk             Install or remove DXVK versions
+  -k, --manage-dxvk             Install or remove Lutris DXVK versions
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
   -s, --delete-shaders          Delete Star Citizen shaders
   -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
@@ -2648,7 +2648,7 @@ Usage: lug-helper <options>
                 ;;
             --install | -i )
                 install_method="$2"
-                if [ "$install_method" = "lutris" ] || [ "$install_method" = "LUTRIS" ]; then
+                if [ "$install_method" = "lutris" ] || [ "$install_method" = "LUTRIS" ] || [ "$install_method" = "" ]; then
                     cargs+=("install_game_lutris")
                 elif [ "$install_method" = "wine" ] || [ "$install_method" = "WINE" ]; then
                     cargs+=("install_game_wine")
