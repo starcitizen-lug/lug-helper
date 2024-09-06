@@ -11,10 +11,6 @@
 # $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
 #############################################################################################
 #
-# IMPORTANT NOTE about using the above .desktop files:
-# The RSI Launcher currently requires a terminal. Without this step, you will see a javascript error!
-# To use the above .desktop files, modify the last line of this script as detailed in its comment
-#
 # If you do not wish to use the above .desktop files, then simply run this script from your terminal
 
 # Configure the environment
@@ -29,10 +25,4 @@ export radv_zero_vram="true"
 #export MANGOHUD=1
 
 # Launch the game
-# If you wish to launch the game from the .desktop files as mentioned above,
-# modify this line to open your preferred terminal and then call wine. For example:
-#
-# gnome-terminal -- sh -c 'wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"'
-#
-# If you do not wish to use the above .desktop files, then no modifications are required.
 wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"

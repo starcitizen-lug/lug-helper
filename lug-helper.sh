@@ -2466,6 +2466,15 @@ install_game_wine() {
         WINEPREFIX="$install_dir" winetricks powershell 2>>/tmp/sc-install.log
         WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" 2>>/tmp/sc-install.log
 
+        if [ "$?" -eq 1 ]; then
+            # User cancelled or there was an error
+            if message question "Installation aborted. Do you want to delete\n${install_dir}?"; then
+                debug_print continue "Deleting $install_dir..."
+                rm -r --interactive=never "$install_dir"
+            fi
+            return 0
+        fi
+
         # Copy game launch script to the wine prefix root directory
         debug_print continue "Copying game launch script to ${install_dir}..."
         cp "$launch_script" "$install_dir"
@@ -2478,10 +2487,12 @@ install_game_wine() {
         debug_print continue "Updating .desktop files..."
         if [ -f "$HOME/Desktop/RSI Launcher.desktop" ]; then
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/Desktop/RSI Launcher.desktop"
+            echo "Terminal=true" >> "$HOME/Desktop/RSI Launcher.desktop"
             debug_print continue "Updated $HOME/Desktop/RSI Launcher.desktop"
         fi
         if [ -f "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            echo "Terminal=true" >> "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             debug_print continue "Updated $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
         fi
 
@@ -2491,7 +2502,7 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nWine may have installed the following .desktop files:\n$HOME/Desktop/RSI Launcher.desktop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop\n\nTo use these .destop files, the above launch script must be modified to start the game in a terminal!\nYou'll find instructions in comments within the launch script"
+        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$HOME/Desktop/RSI Launcher.desktop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
     fi   
 }
 
