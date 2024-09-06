@@ -17,11 +17,11 @@
 # Add additional environment variables here as needed
 export WINEPREFIX="$HOME/Games/star-citizen"
 export EOS_USE_ANTICHEATCLIENTNULL=1
-export DXVK_HUD=0
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=1073741824
 export WINE_HIDE_NVIDIA_GPU=1
 export radv_zero_vram="true"
+#export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
 # Run optional prelaunch and postexit scripts
