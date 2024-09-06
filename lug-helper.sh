@@ -164,12 +164,20 @@ else
     lug_logo="info"
 fi
 
-# Use Lutris install script installed by a packaged version of this script if available
+# Use Lutris install json installed by a packaged version of this script if available
 # Otherwise, default to the json in the lib directory
 if [ -f "$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json" ]; then
     install_script="$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json"
 else
     install_script="$helper_dir/lib/lutris-starcitizen.json"
+fi
+
+# Use game launch script installed by a packaged version of this script if available
+# Otherwise, default to the launch script in the lib directory
+if [ -f "$(dirname "$helper_dir")/share/lug-helper/sc-launch.sh" ]; then
+    launch_script="$(dirname "$helper_dir")/share/lug-helper/sc-launch.sh"
+else
+    launch_script="$helper_dir/lib/sc-launch.sh"
 fi
 
 ######## Runners ###########################################################
@@ -2453,11 +2461,37 @@ install_game_wine() {
         fi
 
         # Run the installer
-        WINEPREFIX="$install_dir" winecfg -v win10 &&
-        WINEPREFIX="$install_dir" winetricks powershell
-        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer"
+        debug_print continue "Preparing the wine prefix and launching the RSI Installer..."
+        WINEPREFIX="$install_dir" winecfg -v win10 2>/tmp/sc-install.log &&
+        WINEPREFIX="$install_dir" winetricks powershell 2>>/tmp/sc-install.log
+        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" 2>>/tmp/sc-install.log
 
-        message info "Installation has finished.\n\nNote: Wine may have created the following launcher files on your system\nYou may remove or edit these if desired:\n\n$HOME/Desktop/RSI Launcher.destop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop\n\nAfter making changes, update the database by running:\nupdate-desktop-database \$HOME/.local/share/applications"
+        # Copy game launch script to the wine prefix root directory
+        debug_print continue "Copying game launch script to ${install_dir}..."
+        cp "$launch_script" "$install_dir"
+        installed_launch_script="$install_dir/$(basename $launch_script)"
+
+        # Update WINEPREFIX in game launch script
+        sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=$install_dir|" "$install_dir/$(basename "$launch_script")"
+
+        # Modify the .desktop files installed by wine to exec the game launch script
+        debug_print continue "Updating .desktop files..."
+        if [ -f "$HOME/Desktop/RSI Launcher.desktop" ]; then
+            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/Desktop/RSI Launcher.desktop"
+            debug_print continue "Updated $HOME/Desktop/RSI Launcher.desktop"
+        fi
+        if [ -f "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
+            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            debug_print continue "Updated $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+        fi
+
+        # Update the .desktop file database if the command is available
+        if [ -x "$(command -v update-desktop-database)" ]; then
+            debug_print continue "Running update-desktop-database..."
+            update-desktop-database "$HOME/.local/share/applications"
+        fi
+
+        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nWine may have installed the following .desktop files:\n$HOME/Desktop/RSI Launcher.desktop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop\n\nTo use these .destop files, the above launch script must be modified to start the game in a terminal!\nYou'll find instructions in comments within the launch script"
     fi   
 }
 
