@@ -2488,14 +2488,14 @@ install_game_wine() {
             echo "Terminal=true" >> "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
             debug_print continue "Updated ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
         fi
-        if [ -f "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
+        if [ -f "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
             # Replace the exec line with our launch script
-            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             # Escape spaces in the exec and path lines
-            sed -i '/^Exec=\|^Path=/s/ /\\\s/g' "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            sed -i '/^Exec=\|^Path=/s/ /\\\s/g' "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             # Make it start in a terminal
-            echo "Terminal=true" >> "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
-            debug_print continue "Updated $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            echo "Terminal=true" >> "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            debug_print continue "Updated $data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
         fi
 
         # Update the .desktop file database if the command is available
@@ -2504,7 +2504,7 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop\n$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
     fi   
 }
 
