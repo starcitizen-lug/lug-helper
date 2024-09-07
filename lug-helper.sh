@@ -2479,10 +2479,10 @@ install_game_wine() {
 
         # Modify the .desktop files installed by wine to exec the game launch script
         debug_print continue "Updating .desktop files..."
-        if [ -f "$HOME/Desktop/RSI Launcher.desktop" ]; then
-            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/Desktop/RSI Launcher.desktop"
-            echo "Terminal=true" >> "$HOME/Desktop/RSI Launcher.desktop"
-            debug_print continue "Updated $HOME/Desktop/RSI Launcher.desktop"
+        if [ -f "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" ]; then
+            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            echo "Terminal=true" >> "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            debug_print continue "Updated ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
         fi
         if [ -f "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
@@ -2496,7 +2496,7 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$HOME/Desktop/RSI Launcher.desktop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop\n$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
     fi   
 }
 
