@@ -78,6 +78,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 **NixOS:** https://github.com/LovingMelody/nix-citizen
 
+**Fedora:** https://copr.fedorainfracloud.org/coprs/jackgreiner/lug-helper
+
 _Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
 _Optional Dependencies: **zenity** (for GUI)_  
 
