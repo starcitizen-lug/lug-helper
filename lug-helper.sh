@@ -2480,12 +2480,20 @@ install_game_wine() {
         # Modify the .desktop files installed by wine to exec the game launch script
         debug_print continue "Updating .desktop files..."
         if [ -f "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" ]; then
+            # Replace the exec line with our launch script
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            # Escape spaces in the exec and path lines
+            sed -i '/^Exec=\|^Path=/s/ /\\\s/g' "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            # Make it start in a terminal
             echo "Terminal=true" >> "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
             debug_print continue "Updated ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
         fi
         if [ -f "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
+            # Replace the exec line with our launch script
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            # Escape spaces in the exec and path lines
+            sed -i '/^Exec=\|^Path=/s/ /\\\s/g' "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            # Make it start in a terminal
             echo "Terminal=true" >> "$HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             debug_print continue "Updated $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
         fi
