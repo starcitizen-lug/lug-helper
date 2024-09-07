@@ -97,6 +97,10 @@ game_conf="gamedir.conf"
 firstrun_conf="firstrun.conf"
 
 # Use XDG base directories if defined
+if [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs" ]; then
+    # Source the user's xdg directories
+    source "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
+fi
 conf_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
 data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
 
