@@ -2479,15 +2479,18 @@ install_game_wine() {
         installed_launch_script="$install_dir/$(basename "$launch_script")"
 
         # Update WINEPREFIX in game launch script
-        sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=$install_dir|" "$install_dir/$(basename "$launch_script")"
+        sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$install_dir/$(basename "$launch_script")"
 
         # Modify the .desktop files installed by wine to exec the game launch script
         debug_print continue "Updating .desktop files..."
         if [ -f "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" ]; then
             # Replace the exec line with our launch script
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
-            # Escape spaces in the exec and path lines
-            sed -i '/^Exec=\|^Path=/s/ /\\\s/g' "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            # Quote exec line
+            sed -i '/^Exec=/s/=/="/' "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            sed -i '/^Exec=/s/$/"/' "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+            # Escape spaces in path line
+            sed -i '/^Path=/s/ /\\\s/g' "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
             # Make it start in a terminal
             echo "Terminal=true" >> "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
             debug_print continue "Updated ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
@@ -2495,8 +2498,11 @@ install_game_wine() {
         if [ -f "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
             # Replace the exec line with our launch script
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
-            # Escape spaces in the exec and path lines
-            sed -i '/^Exec=\|^Path=/s/ /\\\s/g' "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            # Quote exec line
+            sed -i '/^Exec=/s/=/="/' "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            sed -i '/^Exec=/s/$/"/' "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+            # Escape spaces in path line
+            sed -i '/^Path=/s/ /\\\s/g' "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             # Make it start in a terminal
             echo "Terminal=true" >> "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             debug_print continue "Updated $data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
