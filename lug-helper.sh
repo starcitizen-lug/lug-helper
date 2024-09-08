@@ -2501,9 +2501,13 @@ install_game_wine() {
         fi
 
         # Run the installer
-        debug_print continue "Preparing the wine prefix and launching the RSI Installer..."
-        WINEPREFIX="$install_dir" winecfg -v win10 2>/tmp/sc-install.log &&
+        debug_print continue "Preparing the wine prefix..."
+        WINEPREFIX="$install_dir" winecfg -v win11 2>/tmp/sc-install.log &&
+        debug_print continue "Installing dxvk..."
+        WINEPREFIX="$install_dir" winetricks dxvk 2>>/tmp/sc-install.log
+        debug_print continue "Installing powershell..."
         WINEPREFIX="$install_dir" winetricks powershell 2>>/tmp/sc-install.log
+        debug_print continue "Launching the RSI Installer..."
         WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" 2>>/tmp/sc-install.log
 
         if [ "$?" -eq 1 ]; then
