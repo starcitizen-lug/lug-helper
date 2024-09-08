@@ -2853,7 +2853,7 @@ if [ "$use_zenity" -eq 1 ]; then
 else
     firstrun_message="$menu_heading_terminal\n\n$firstrun_message"
 fi
-if [ "$is_firstrun" = "false" ]; then
+if [ "$is_firstrun" = "true" ]; then
     if message question "$firstrun_message"; then
         if message options "Wine" "Lutris" "Which install method would you like to use?"; then
             install_game_lutris
