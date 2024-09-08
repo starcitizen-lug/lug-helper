@@ -335,25 +335,25 @@ message() {
             "info")
                 # info message
                 # call format: message info "text to display"
-                margs=("--info" "--window-icon=\"$lug_logo\"" "--no-wrap" "--text=")
+                margs=("--info" "--no-wrap" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                margs=("--warning" "--window-icon=\"$lug_logo\"" "--text=")
+                margs=("--warning" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
             "error")
                 # error message
                 # call format: message error "text to display"
-                margs=("--error" "--window-icon=\"$lug_logo\"" "--text=")
+                margs=("--error" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                margs=("--question" "--window-icon=\"$lug_logo\"" "--text=")
+                margs=("--question" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
             "options")
@@ -363,7 +363,7 @@ message() {
                 if [ "$#" -lt 4 ]; then
                     debug_print exit "Script error: The options type in the message function expects four arguments. Aborting."
                 fi
-                margs=("--question" "--cancel-label=$2" "--ok-label=$3" "--window-icon=\"$lug_logo\"" "--text=")
+                margs=("--question" "--cancel-label=$2" "--ok-label=$3" "--text=")
                 shift 3   # drop the type and button label arguments and shift up to the text
                 ;;
             *)
@@ -506,7 +506,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --"$menu_type" --width="510" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --window-icon="$lug_logo" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --"$menu_type" --width="510" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
 
         # Match up choice with an element in menu_options
         matched="false"
