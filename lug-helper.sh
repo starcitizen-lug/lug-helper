@@ -2500,15 +2500,18 @@ install_game_wine() {
             return 1
         fi
 
+        # Create a temporary log file
+        tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
+
         # Run the installer
         debug_print continue "Preparing the wine prefix..."
-        WINEPREFIX="$install_dir" winecfg -v win11 2>/tmp/sc-install.log &&
+        WINEPREFIX="$install_dir" winecfg -v win11 2>"$tmp_install_log" &&
         debug_print continue "Installing dxvk..."
-        WINEPREFIX="$install_dir" winetricks dxvk 2>>/tmp/sc-install.log
+        WINEPREFIX="$install_dir" winetricks dxvk 2>>"$tmp_install_log"
         debug_print continue "Installing powershell..."
-        WINEPREFIX="$install_dir" winetricks powershell 2>>/tmp/sc-install.log
+        WINEPREFIX="$install_dir" winetricks powershell 2>>"$tmp_install_log"
         debug_print continue "Launching the RSI Installer..."
-        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" 2>>/tmp/sc-install.log
+        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" 2>>"$tmp_install_log"
 
         if [ "$?" -eq 1 ]; then
             # User cancelled or there was an error
@@ -2567,7 +2570,7 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. The log can be found in /tmp/sc-install.log\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
+        message info "Installation has finished. The log can be found in "$tmp_install_log"\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
     fi   
 }
 
