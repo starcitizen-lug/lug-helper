@@ -981,6 +981,7 @@ avx_check() {
 }
 
 # Check that the system is optimized for Star Citizen
+# Accepts an optional string argument, "quiet", which causes the preflight check to only output problems that must be fixed
 preflight_check() {
     # Initialize variables
     unset preflight_pass
@@ -992,6 +993,10 @@ preflight_check() {
     unset preflight_followup
     unset preflight_fail_string
     unset preflight_pass_string
+    retval=0
+
+    # Capture optional argument
+    output_mode="$1"
 
     # Call the optimization functions to perform the checks
     lutris_check
@@ -1034,19 +1039,27 @@ preflight_check() {
         fi
     done
 
+    # Format a message heading
+    message_heading="Preflight Check Results"
+    if [ "$use_zenity" -eq 1 ]; then
+        message_heading="<big><b>$message_heading</b></big>"
+    fi
+
     # Display the results of the preflight check
     if [ -z "$preflight_fail_string" ]; then
-        # Formatting
-        message_heading="Preflight Check Complete"
-        if [ "$use_zenity" -eq 1 ]; then
-            message_heading="<b>$message_heading</b>"
+        # If output mode is quiet, we won't bother the user when all checks pass
+        if [ "$output_mode" != "quiet" ]; then
+            # All checks pass!
+            message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
         fi
 
-        message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
+        return 0
     else
         if [ "${#preflight_action_funcs[@]}" -eq 0 ]; then
-            message warning "$preflight_fail_string$preflight_pass_string"
-        elif message question "$preflight_fail_string$preflight_pass_string\n\nWould you like configuration issues to be fixed for you?"; then
+            # We have failed checks, but they're issues we can't automatically fix
+            message warning "$message_heading\n\n$preflight_fail_string$preflight_pass_string"
+        elif message question "$message_heading\n\n$preflight_fail_string$preflight_pass_string\n\nWould you like these configuration issues to be fixed for you?"; then
+            # We have failed checks, but we can fix them for the user
             # Call functions to build fixes for any issues found
             for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
                 ${preflight_action_funcs[i]}
@@ -1093,6 +1106,8 @@ preflight_check() {
                 message info "$preflight_manual_string"
             fi
         fi
+
+        return 1
     fi
 }
 
@@ -2352,15 +2367,25 @@ install_game_lutris() {
     lutris_detect
     if [ "$lutris_installed" = "false" ]; then
         message warning "Lutris is required but does not appear to be installed."
-        return 0
+        return 1
     fi
     # Check if the install script exists
     if [ ! -f "$install_script" ]; then
-        message warning "Lutris install script not found.\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
-        return 0
+        message warning "Lutris install script not found!\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
+        return 1
     fi
 
-    if message question "Installing Star Citizen...\n\nBefore proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"; then
+    # Call the preflight check
+    preflight_check "quiet"
+    if [ "$?" -eq 1 ]; then
+        # There were errors
+        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
+    else
+        # No errors
+        install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAll Preflight Checks have passed\nAre you ready to continue?"
+    fi
+
+    if message question "$install_question"; then
         # Detect which version of Lutris is installed
         if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
             # Both versions of Lutris are installed so ask the user
@@ -2398,7 +2423,23 @@ install_game_lutris() {
 
 # Install the game without Lutris
 install_game_wine() {
-    if message question "Before proceeding, be sure all Preflight Checks have passed!\n\nDon't forget to install DXVK!\n\nRefer to our Quick Start Guide for other prerequisites:\n$lug_wiki\n\nAre you ready to continue?"; then
+    # Check if the install script exists
+    if [ ! -f "$launch_script" ]; then
+        message warning "Game launch script not found!\n\n$launch_script\n\nIt is included in our official releases here:\n$releases_url"
+        return 1
+    fi
+
+    # Call the preflight check
+    preflight_check "quiet"
+    if [ "$?" -eq 1 ]; then
+        # There were errors
+        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nDon't forget to install DXVK!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
+    else
+        # No errors
+        install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nDon't forget to install DXVK!\n\nAll Preflight Checks have passed\nAre you ready to continue?"
+    fi
+
+    if message question "$install_question"; then
         # Double check that wine is installed
         if [ ! -x "$(command -v wine)" ]; then
             message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
