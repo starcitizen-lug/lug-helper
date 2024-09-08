@@ -165,9 +165,9 @@ fi
 # Use Lutris install json installed by a packaged version of this script if available
 # Otherwise, default to the json in the lib directory
 if [ -f "$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json" ]; then
-    install_script="$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json"
+    lutris_install_script="$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json"
 else
-    install_script="$helper_dir/lib/lutris-starcitizen.json"
+    lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
 fi
 
 # Use game launch script installed by a packaged version of this script if available
@@ -2370,8 +2370,8 @@ install_game_lutris() {
         return 1
     fi
     # Check if the install script exists
-    if [ ! -f "$install_script" ]; then
-        message warning "Lutris install script not found!\n\n$install_script\n\nIt is included in our official releases here:\n$releases_url"
+    if [ ! -f "$lutris_install_script" ]; then
+        message warning "Lutris install script not found!\n\n$lutris_install_script\n\nIt is included in our official releases here:\n$releases_url"
         return 1
     fi
 
@@ -2409,9 +2409,9 @@ install_game_lutris() {
 
         # Run the appropriate installer
         if [ "$install_version" = "native" ]; then
-            lutris --install "$install_script" &
+            lutris --install "$lutris_install_script" &
         elif [ "$install_version" = "flatpak" ]; then
-            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$install_script" @@ &
+            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$lutris_install_script" @@ &
         else
             # We shouldn't get here
             debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
