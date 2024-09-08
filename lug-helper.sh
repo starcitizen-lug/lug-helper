@@ -2426,6 +2426,11 @@ install_game_lutris() {
 
 # Install the game without Lutris
 install_game_wine() {
+    # Double check that wine is installed
+    if [ ! -x "$(command -v wine)" ]; then
+        message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
+        return 1
+    fi
     # Check if the install script exists
     if [ ! -f "$launch_script" ]; then
         message warning "Game launch script not found!\n\n$launch_script\n\nIt is included in our official releases here:\n$releases_url"
@@ -2443,12 +2448,6 @@ install_game_wine() {
     fi
 
     if message question "$install_question"; then
-        # Double check that wine is installed
-        if [ ! -x "$(command -v wine)" ]; then
-            message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
-            return 1
-        fi
-
         if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
             # Set the default install path
             install_dir="$HOME/Games/star-citizen"
