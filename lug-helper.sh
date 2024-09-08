@@ -721,14 +721,14 @@ getdirs() {
 # Check if setting vm.max_map_count was successful
 mapcount_confirm() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        preflight_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
+        preflight_fix_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
     fi
 }
 
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
     preflight_actions+=('sysctl -w vm.max_map_count=16777216')
-    preflight_results+=("vm.max_map_count was changed until the next boot.")
+    preflight_fix_results+=("vm.max_map_count was changed until the next boot.")
     preflight_followup+=("mapcount_confirm")
 }
 
@@ -737,11 +737,11 @@ mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         # Newer versions of sysctl
         preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --system')
-        preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
+        preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
     else
         # Older versions of sysctl
         preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
-        preflight_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
+        preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
     fi
 
     # Verify that the setting took effect
@@ -791,7 +791,7 @@ mapcount_check() {
 # Check if setting the open file descriptors limit was successful
 filelimit_confirm() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
-        preflight_results+=("WARNING: As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.")
+        preflight_fix_results+=("WARNING: As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.")
     fi
 }
 
@@ -801,15 +801,15 @@ filelimit_set() {
         # Using systemd
         # Append to the file
         preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/99-starcitizen-filelimit.conf && systemctl daemon-reexec')
-        preflight_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf")
+        preflight_fix_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf")
     elif [ -f "/etc/security/limits.conf" ]; then
         # Using limits.conf
         # Insert before the last line in the file
         preflight_actions+=('sed -i "\$i#Added by LUG-Helper:" /etc/security/limits.conf; sed -i "\$i* hard nofile 524288" /etc/security/limits.conf')
-        preflight_results+=("The open files limit configuration has been appended to:\n/etc/security/limits.conf")
+        preflight_fix_results+=("The open files limit configuration has been appended to:\n/etc/security/limits.conf")
     else
         # Don't know what method to use
-        preflight_results+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
+        preflight_fix_results+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
     fi
 
     # Verify that setting the limit was successful
@@ -916,7 +916,7 @@ lutris_check() {
 winetricks_update() {
     debug_print continue "Running winetricks self-updater..."
     preflight_actions+=('winetricks --self-update')
-    preflight_results+=("Winetricks has been updated. See terminal output for details.")
+    preflight_fix_results+=("Winetricks has been updated. See terminal output for details.")
 }
 
 # Check the installed winetricks version
@@ -988,7 +988,7 @@ preflight_check() {
     unset preflight_fail
     unset preflight_action_funcs
     unset preflight_actions
-    unset preflight_results
+    unset preflight_fix_results
     unset preflight_manual
     unset preflight_followup
     unset preflight_fail_string
@@ -1089,16 +1089,16 @@ preflight_check() {
             done
 
             # Populate the results string
-            for (( i=0; i<"${#preflight_results[@]}"; i++ )); do
+            for (( i=0; i<"${#preflight_fix_results[@]}"; i++ )); do
                 if [ "$i" -eq 0 ]; then
-                    preflight_results_string="${preflight_results[i]}"
+                    preflight_fix_results_string="${preflight_fix_results[i]}"
                 else
-                    preflight_results_string="$preflight_results_string\n\n${preflight_results[i]}"
+                    preflight_fix_results_string="$preflight_fix_results_string\n\n${preflight_fix_results[i]}"
                 fi
             done
 
             # Display the results
-            message info "$preflight_results_string"
+            message info "$preflight_fix_results_string"
         else
             # User declined to automatically fix configuration issues
             # Show manual configuration options
