@@ -2434,10 +2434,10 @@ install_game_wine() {
     preflight_check "quiet"
     if [ "$?" -eq 1 ]; then
         # There were errors
-        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nDon't forget to install DXVK!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
+        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
     else
         # No errors
-        install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nDon't forget to install DXVK!\n\nAll Preflight Checks have passed\nAre you ready to continue?"
+        install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAll Preflight Checks have passed\nAre you ready to continue?"
     fi
 
     if message question "$install_question"; then
