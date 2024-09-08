@@ -606,7 +606,7 @@ getdirs() {
     # If we don't have the directory paths we need yet,
     # ask the user to provide them
     if [ -z "$wine_prefix" ] || [ -z "$game_path" ]; then
-        message info "Star Citizen must be fully downloaded and installed before proceeding.\n\nAt the next screen, please select your Star Citizen install directory (WINE prefix)\nIt will be remembered for future use.\n\nLutris default install path: ~/Games/star-citizen"
+        message info "Star Citizen must be fully downloaded and installed before proceeding.\n\nAt the next screen, please select your Star Citizen install directory (WINE prefix)\nIt will be remembered for future use.\n\nDefault install path: ~/Games/star-citizen"
         if [ "$use_zenity" -eq 1 ]; then
             # Using Zenity file selection menus
             # Get the wine prefix directory
@@ -715,270 +715,6 @@ getdirs() {
 ############################################################################
 ######## begin preflight check functions ###################################
 ############################################################################
-######## begin mapcount functions ##########################################
-############################################################################
-
-# Check if setting vm.max_map_count was successful
-mapcount_confirm() {
-    if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        preflight_fix_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
-    fi
-}
-
-# Sets vm.max_map_count for the current session only
-mapcount_once() {
-    preflight_actions+=('sysctl -w vm.max_map_count=16777216')
-    preflight_fix_results+=("vm.max_map_count was changed until the next boot.")
-    preflight_followup+=("mapcount_confirm")
-}
-
-# Set vm.max_map_count
-mapcount_set() {
-    if [ -d "/etc/sysctl.d" ]; then
-        # Newer versions of sysctl
-        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --system')
-        preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
-    else
-        # Older versions of sysctl
-        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
-        preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
-    fi
-
-    # Verify that the setting took effect
-    preflight_followup+=("mapcount_confirm")
-}
-
-# Check vm.max_map_count for the correct setting
-mapcount_check() {
-    mapcount="$(cat /proc/sys/vm/max_map_count)"
-    # Add to the results and actions arrays
-    if [ "$mapcount" -ge 16777216 ]; then
-        # All good
-        preflight_pass+=("vm.max_map_count is set to $mapcount.")
-    elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
-        # Was it supposed to have been set by sysctl?
-        preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
-        # Add the function that will be called to change the configuration
-        preflight_action_funcs+=("mapcount_once")
-
-        # Add info for manually changing the setting
-        preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
-    else
-        # The setting should be changed
-        preflight_fail+=("vm.max_map_count is $mapcount\nand should be set to at least 16777216\nto give the game access to sufficient memory.")
-        # Add the function that will be called to change the configuration
-        preflight_action_funcs+=("mapcount_set")
-
-        # Add info for manually changing the setting
-        if [ -d "/etc/sysctl.d" ]; then
-            # Newer versions of sysctl
-            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/99-starcitizen-max_map_count.conf' and reload with 'sudo sysctl --system'\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
-        else
-            # Older versions of sysctl
-            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.conf' and reload with 'sudo sysctl -p':\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
-        fi
-    fi
-}
-
-############################################################################
-######## end mapcount functions ############################################
-############################################################################
-
-############################################################################
-######## begin filelimit functions #########################################
-############################################################################
-
-# Check if setting the open file descriptors limit was successful
-filelimit_confirm() {
-    if [ "$(ulimit -Hn)" -lt 524288 ]; then
-        preflight_fix_results+=("WARNING: As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.")
-    fi
-}
-
-# Set the open file descriptors limit
-filelimit_set() {
-    if [ -f "/etc/systemd/system.conf" ]; then
-        # Using systemd
-        # Append to the file
-        preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/99-starcitizen-filelimit.conf && systemctl daemon-reexec')
-        preflight_fix_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf")
-    elif [ -f "/etc/security/limits.conf" ]; then
-        # Using limits.conf
-        # Insert before the last line in the file
-        preflight_actions+=('sed -i "\$i#Added by LUG-Helper:" /etc/security/limits.conf; sed -i "\$i* hard nofile 524288" /etc/security/limits.conf')
-        preflight_fix_results+=("The open files limit configuration has been appended to:\n/etc/security/limits.conf")
-    else
-        # Don't know what method to use
-        preflight_fix_results+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
-    fi
-
-    # Verify that setting the limit was successful
-    preflight_followup+=("filelimit_confirm")
-}
-
-# Check the open file descriptors limit
-filelimit_check() {
-    filelimit="$(ulimit -Hn)"
-
-    # Add to the results and actions arrays
-    if [ "$filelimit" -ge 524288 ]; then
-        # All good
-        preflight_pass+=("Hard open file descriptors limit is set to $filelimit.")
-    else
-        # The file limit should be changed
-        preflight_fail+=("Your hard open file descriptors limit is $filelimit\nand should be set to at least 524288\nto increase the maximum number of open files.")
-        # Add the function that will be called to change the configuration
-        preflight_action_funcs+=("filelimit_set")
-
-        # Add info for manually changing the settings
-        if [ -f "/etc/systemd/system.conf" ]; then
-            # Using systemd
-            preflight_manual+=("To change your open file descriptors limit, add the following to\n'/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf':\n\n[Manager]\nDefaultLimitNOFILE=524288")
-        elif [ -f "/etc/security/limits.conf" ]; then
-            # Using limits.conf
-            preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/security/limits.conf':\n    * hard nofile 524288")
-        else
-            # Don't know what method to use
-            preflight_manual+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
-        fi
-    fi
-}
-
-############################################################################
-######## end filelimit functions ###########################################
-############################################################################
-
-# Check if WINE is installed
-wine_check() {
-    if [ -x "$(command -v wine)" ]; then
-        preflight_pass+=("Wine is installed on your system.")
-    else
-        preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
-    fi
-}
-
-# Detect if lutris is installed
-lutris_detect() {
-    lutris_installed="false"
-    lutris_native="false"
-    lutris_flatpak="false"
-
-    # Detect native lutris
-    if [ -x "$(command -v lutris)" ]; then
-        lutris_installed="true"
-        lutris_native="true"
-    fi
-
-    # Detect flatpak lutris
-    if [ -x "$(command -v flatpak)" ] && flatpak list --app | grep -q Lutris; then
-            lutris_installed="true"
-            lutris_flatpak="true"
-    fi
-}
-
-# Check the installed lutris version
-lutris_check() {
-    lutris_detect
-
-    if [ "$lutris_installed" = "false" ]; then
-        preflight_fail+=("Lutris does not appear to be installed.\nFor manual installations, this may be ignored.")
-        return 1
-    fi
-
-    # Check the native lutris version number
-    if [ "$lutris_native" = "true" ]; then
-        lutris_current="$(lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
-        if [ -z "$lutris_current" ]; then
-            preflight_fail+=("Unable to detect Lutris version info.\nVersion $lutris_required or newer is required.")
-        elif [ "$lutris_required" != "$lutris_current" ] &&
-            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
-            preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
-        else
-            preflight_pass+=("Lutris is installed and sufficiently up to date.")
-        fi
-    fi
-
-    # Check the flatpak lutris version number
-    if [ "$lutris_flatpak" = "true" ]; then
-        lutris_current="$(flatpak run net.lutris.Lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
-        if [ -z "$lutris_current" ]; then
-            preflight_fail+=("Unable to detect Flatpak Lutris version info.\nVersion $lutris_required or newer is required.")
-        elif [ "$lutris_required" != "$lutris_current" ] &&
-            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
-            preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
-        else
-            preflight_pass+=("Flatpak Lutris is installed and sufficiently up to date.")
-        fi
-    fi
-}
-
-# Run the winetricks self-updater
-winetricks_update() {
-    debug_print continue "Running winetricks self-updater..."
-    preflight_actions+=('winetricks --self-update')
-    preflight_fix_results+=("Winetricks has been updated. See terminal output for details.")
-}
-
-# Check the installed winetricks version
-winetricks_check() {
-    if [ -x "$(command -v winetricks)" ]; then
-        winetricks_current="$(winetricks --version 2>/dev/null | awk '{print $1}')"
-        if [ "$winetricks_required" != "$winetricks_current" ] &&
-           [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
-            # Winetricks is out of date
-            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.")
-            # Add the function that will be called to update winetricks
-            preflight_action_funcs+=("winetricks_update")
-            # Add info for manually running the update
-            preflight_manual+=("To manually update winetricks, run 'winetricks --self-update'")
-        else
-            # Winetricks meets the minimum required version
-            preflight_pass+=("Winetricks is installed and sufficiently up to date.")
-        fi
-    else
-        # Winetricks is not installed
-        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.")
-    fi
-}
-
-# Check system memory and swap space
-memory_check() {
-    # Get totals in bytes
-    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2}' /proc/meminfo)"
-    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf $2}' /proc/meminfo)"
-    memtotal="$(($memtotal * 1024))"
-    swaptotal="$(($swaptotal * 1024))"
-    combtotal="$(($memtotal + $swaptotal))"
-
-    # Convert to whole number GiB
-    memtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$memtotal")"
-    swaptotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$swaptotal")"
-    combtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$combtotal")"
-
-    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required-1))" ]; then
-        # Minimum requirements are not met
-        preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.")
-    elif [ "${memtotal::-3}" -ge "$memory_combined_required" ]; then
-        # System has sufficient RAM
-        preflight_pass+=("Your system has $memtotal of memory.")
-    elif [ "${combtotal::-3}" -ge "$memory_combined_required" ]; then
-        # System has sufficient combined RAM + swap
-        preflight_pass+=("Your system has $memtotal memory and $swaptotal swap.")
-    else
-        # Recommend swap
-        swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
-        preflight_fail+=("Your system has $memtotal memory and $swaptotal swap.\nWe recommend at least ${swap_recommended}GiB swap to avoid crashes.")
-    fi
-}
-
-# Check CPU for the required AVX extension
-avx_check() {
-    if grep -q "avx" /proc/cpuinfo; then
-        preflight_pass+=("Your CPU supports the necessary AVX instruction set.")
-    else
-        preflight_fail+=("Your CPU does not appear to support AVX instructions.\nThis requirement was added to Star Citizen in version 3.11")
-    fi
-}
 
 # Check that the system is optimized for Star Citizen
 # Accepts an optional string argument, "quiet", which causes the preflight check to only output problems that must be fixed
@@ -1112,6 +848,272 @@ preflight_check() {
     fi
 }
 
+# Check the installed lutris version
+lutris_check() {
+    lutris_detect
+
+    if [ "$lutris_installed" = "false" ]; then
+        preflight_fail+=("Lutris does not appear to be installed.\nFor manual installations, this may be ignored.")
+        return 1
+    fi
+
+    # Check the native lutris version number
+    if [ "$lutris_native" = "true" ]; then
+        lutris_current="$(lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
+        if [ -z "$lutris_current" ]; then
+            preflight_fail+=("Unable to detect Lutris version info.\nVersion $lutris_required or newer is required.")
+        elif [ "$lutris_required" != "$lutris_current" ] &&
+            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
+            preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
+        else
+            preflight_pass+=("Lutris is installed and sufficiently up to date.")
+        fi
+    fi
+
+    # Check the flatpak lutris version number
+    if [ "$lutris_flatpak" = "true" ]; then
+        lutris_current="$(flatpak run net.lutris.Lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
+        if [ -z "$lutris_current" ]; then
+            preflight_fail+=("Unable to detect Flatpak Lutris version info.\nVersion $lutris_required or newer is required.")
+        elif [ "$lutris_required" != "$lutris_current" ] &&
+            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
+            preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
+        else
+            preflight_pass+=("Flatpak Lutris is installed and sufficiently up to date.")
+        fi
+    fi
+}
+
+# Detect if lutris is installed
+lutris_detect() {
+    lutris_installed="false"
+    lutris_native="false"
+    lutris_flatpak="false"
+
+    # Detect native lutris
+    if [ -x "$(command -v lutris)" ]; then
+        lutris_installed="true"
+        lutris_native="true"
+    fi
+
+    # Detect flatpak lutris
+    if [ -x "$(command -v flatpak)" ] && flatpak list --app | grep -q Lutris; then
+            lutris_installed="true"
+            lutris_flatpak="true"
+    fi
+}
+
+# Check if WINE is installed
+wine_check() {
+    if [ -x "$(command -v wine)" ]; then
+        preflight_pass+=("Wine is installed on your system.")
+    else
+        preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
+    fi
+}
+
+# Check the installed winetricks version
+winetricks_check() {
+    if [ -x "$(command -v winetricks)" ]; then
+        winetricks_current="$(winetricks --version 2>/dev/null | awk '{print $1}')"
+        if [ "$winetricks_required" != "$winetricks_current" ] &&
+           [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
+            # Winetricks is out of date
+            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.")
+            # Add the function that will be called to update winetricks
+            preflight_action_funcs+=("winetricks_update")
+            # Add info for manually running the update
+            preflight_manual+=("To manually update winetricks, run 'winetricks --self-update'")
+        else
+            # Winetricks meets the minimum required version
+            preflight_pass+=("Winetricks is installed and sufficiently up to date.")
+        fi
+    else
+        # Winetricks is not installed
+        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.")
+    fi
+}
+
+# Run the winetricks self-updater
+winetricks_update() {
+    debug_print continue "Running winetricks self-updater..."
+    preflight_actions+=('winetricks --self-update')
+    preflight_fix_results+=("Winetricks has been updated. See terminal output for details.")
+}
+
+# Check system memory and swap space
+memory_check() {
+    # Get totals in bytes
+    memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2}' /proc/meminfo)"
+    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf $2}' /proc/meminfo)"
+    memtotal="$(($memtotal * 1024))"
+    swaptotal="$(($swaptotal * 1024))"
+    combtotal="$(($memtotal + $swaptotal))"
+
+    # Convert to whole number GiB
+    memtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$memtotal")"
+    swaptotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$swaptotal")"
+    combtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$combtotal")"
+
+    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required-1))" ]; then
+        # Minimum requirements are not met
+        preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.")
+    elif [ "${memtotal::-3}" -ge "$memory_combined_required" ]; then
+        # System has sufficient RAM
+        preflight_pass+=("Your system has $memtotal of memory.")
+    elif [ "${combtotal::-3}" -ge "$memory_combined_required" ]; then
+        # System has sufficient combined RAM + swap
+        preflight_pass+=("Your system has $memtotal memory and $swaptotal swap.")
+    else
+        # Recommend swap
+        swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
+        preflight_fail+=("Your system has $memtotal memory and $swaptotal swap.\nWe recommend at least ${swap_recommended}GiB swap to avoid crashes.")
+    fi
+}
+
+# Check CPU for the required AVX extension
+avx_check() {
+    if grep -q "avx" /proc/cpuinfo; then
+        preflight_pass+=("Your CPU supports the necessary AVX instruction set.")
+    else
+        preflight_fail+=("Your CPU does not appear to support AVX instructions.\nThis requirement was added to Star Citizen in version 3.11")
+    fi
+}
+
+############################################################################
+######## begin mapcount functions ##########################################
+############################################################################
+
+# Check vm.max_map_count for the correct setting
+mapcount_check() {
+    mapcount="$(cat /proc/sys/vm/max_map_count)"
+    # Add to the results and actions arrays
+    if [ "$mapcount" -ge 16777216 ]; then
+        # All good
+        preflight_pass+=("vm.max_map_count is set to $mapcount.")
+    elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
+        # Was it supposed to have been set by sysctl?
+        preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
+        # Add the function that will be called to change the configuration
+        preflight_action_funcs+=("mapcount_once")
+
+        # Add info for manually changing the setting
+        preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
+    else
+        # The setting should be changed
+        preflight_fail+=("vm.max_map_count is $mapcount\nand should be set to at least 16777216\nto give the game access to sufficient memory.")
+        # Add the function that will be called to change the configuration
+        preflight_action_funcs+=("mapcount_set")
+
+        # Add info for manually changing the setting
+        if [ -d "/etc/sysctl.d" ]; then
+            # Newer versions of sysctl
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/99-starcitizen-max_map_count.conf' and reload with 'sudo sysctl --system'\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
+        else
+            # Older versions of sysctl
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.conf' and reload with 'sudo sysctl -p':\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
+        fi
+    fi
+}
+
+# Set vm.max_map_count
+mapcount_set() {
+    if [ -d "/etc/sysctl.d" ]; then
+        # Newer versions of sysctl
+        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --system')
+        preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
+    else
+        # Older versions of sysctl
+        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
+        preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
+    fi
+
+    # Verify that the setting took effect
+    preflight_followup+=("mapcount_confirm")
+}
+
+# Sets vm.max_map_count for the current session only
+mapcount_once() {
+    preflight_actions+=('sysctl -w vm.max_map_count=16777216')
+    preflight_fix_results+=("vm.max_map_count was changed until the next boot.")
+    preflight_followup+=("mapcount_confirm")
+}
+
+# Check if setting vm.max_map_count was successful
+mapcount_confirm() {
+    if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
+        preflight_fix_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
+    fi
+}
+
+############################################################################
+######## end mapcount functions ############################################
+############################################################################
+
+############################################################################
+######## begin filelimit functions #########################################
+############################################################################
+
+# Check the open file descriptors limit
+filelimit_check() {
+    filelimit="$(ulimit -Hn)"
+
+    # Add to the results and actions arrays
+    if [ "$filelimit" -ge 524288 ]; then
+        # All good
+        preflight_pass+=("Hard open file descriptors limit is set to $filelimit.")
+    else
+        # The file limit should be changed
+        preflight_fail+=("Your hard open file descriptors limit is $filelimit\nand should be set to at least 524288\nto increase the maximum number of open files.")
+        # Add the function that will be called to change the configuration
+        preflight_action_funcs+=("filelimit_set")
+
+        # Add info for manually changing the settings
+        if [ -f "/etc/systemd/system.conf" ]; then
+            # Using systemd
+            preflight_manual+=("To change your open file descriptors limit, add the following to\n'/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf':\n\n[Manager]\nDefaultLimitNOFILE=524288")
+        elif [ -f "/etc/security/limits.conf" ]; then
+            # Using limits.conf
+            preflight_manual+=("To change your open file descriptors limit, add the following line to\n'/etc/security/limits.conf':\n    * hard nofile 524288")
+        else
+            # Don't know what method to use
+            preflight_manual+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
+        fi
+    fi
+}
+
+# Set the open file descriptors limit
+filelimit_set() {
+    if [ -f "/etc/systemd/system.conf" ]; then
+        # Using systemd
+        # Append to the file
+        preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/99-starcitizen-filelimit.conf && systemctl daemon-reexec')
+        preflight_fix_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf")
+    elif [ -f "/etc/security/limits.conf" ]; then
+        # Using limits.conf
+        # Insert before the last line in the file
+        preflight_actions+=('sed -i "\$i#Added by LUG-Helper:" /etc/security/limits.conf; sed -i "\$i* hard nofile 524288" /etc/security/limits.conf')
+        preflight_fix_results+=("The open files limit configuration has been appended to:\n/etc/security/limits.conf")
+    else
+        # Don't know what method to use
+        preflight_fix_results+=("This Helper is unable to detect the correct method of setting\nthe open file descriptors limit on your system.\n\nWe recommend manually configuring this limit to at least 524288.")
+    fi
+
+    # Verify that setting the limit was successful
+    preflight_followup+=("filelimit_confirm")
+}
+
+# Check if setting the open file descriptors limit was successful
+filelimit_confirm() {
+    if [ "$(ulimit -Hn)" -lt 524288 ]; then
+        preflight_fix_results+=("WARNING: As far as this Helper can detect, the open files limit\nwas not successfully configured on your system.\nYou may experience crashes.")
+    fi
+}
+
+############################################################################
+######## end filelimit functions ###########################################
+############################################################################
+
 ############################################################################
 ######## end preflight check functions #####################################
 ############################################################################
@@ -1120,760 +1122,14 @@ preflight_check() {
 ######## begin download functions ##########################################
 ############################################################################
 
-# Download a file to the tmp directory
-# Expects three arguments: The download URL, file name, and download type
-download_file() {
-    # This function expects three string arguments
-    if [ "$#" -lt 3 ]; then
-        printf "\nScript error:  The download_file function expects three arguments. Aborting.\n"
-        read -n 1 -s -p "Press any key..."
-        exit 0
-    fi
-
-    # Capture the arguments and encode spaces in urls
-    download_url="${1// /%20}"
-    download_filename="$2"
-    download_type="$3"
-
-    # Download the item to the tmp directory
-    debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
-    if [ "$use_zenity" -eq 1 ]; then
-        # Format the curl progress bar for zenity
-        mkfifo "$tmp_dir/lugpipe"
-        cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
-        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
-        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
-        (
-            trap 'kill "$curlpid"' ERR
-            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
-        )
-
-        if [ "$?" -eq 1 ]; then
-            # User clicked cancel
-            debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
-            rm --interactive=never "${tmp_dir:?}/$download_filename"
-            rm --interactive=never "${tmp_dir:?}/lugpipe"
-            return 1
-        fi
-        rm --interactive=never "${tmp_dir:?}/lugpipe"
-    else
-        # Standard curl progress bar
-        (cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename")
-    fi
-}
-
-# Detect which version of Lutris is running and restart it
-lutris_restart() {
-    # Detect the installed versions of Lutris
-    lutris_detect
-    if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -Eq "[/]usr/bin/lutris|[/]usr/games/lutris"; then
-        # Native Lutris is running
-        debug_print continue "Restarting native Lutris..."
-        pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-    fi
-    if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]app/bin/lutris"; then
-        # Flatpak Lutris is running
-        debug_print continue "Restarting flatpak Lutris..."
-        pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
-    fi
-}
-
-# Create an array of directories used by Lutris
-# Array will be formatted in pairs of ("[type]" "[directory]")
-# Supports native install and flatpak
-# Takes an argument to specify the type to return: "runner" or "dxvk"
-get_lutris_dirs() {
-    # Sanity check
-    if [ "$#" -lt 1 ]; then
-        debug_print exit "Script error: The get_lutris_dirs function expects one argument. Aborting."
-    fi
-
-    # Detect the type of Lutris install
-    lutris_detect
-
-    # Add lutris directories to an array
-    unset lutris_dirs
-    case "$1" in
-        "runner")
-            # Native Lutris install
-            if [ "$lutris_native" = "true" ]; then
-                lutris_dirs+=("native" "$runners_dir_native")
-            fi
-            # Flatpak lutris install
-            if [ "$lutris_flatpak" = "true" ]; then
-                lutris_dirs+=("flatpak" "$runners_dir_flatpak")
-            fi
-            ;;
-        "dxvk")
-            # Native Lutris install
-            if [ "$lutris_native" = "true" ]; then
-                lutris_dirs+=("native" "$dxvk_dir_native")
-            fi
-            # Flatpak lutris install
-            if [ "$lutris_flatpak" = "true" ]; then
-                lutris_dirs+=("flatpak" "$dxvk_dir_flatpak")
-            fi
-            ;;
-        *)
-            printf "lug-helper.sh: Unknown argument provided to get_lutris_dirs function. Aborting.\n" 1>&2
-            read -n 1 -s -p "Press any key..."
-            exit 0
-            ;;
-    esac
-}
-
-# Perform post-download actions or display a message/instructions
-#
-# The following variables are expected to be set before calling this function:
-# - post_download_type (string. "none", "info", or "configure-lutris")
-# - post_download_msg_heading (string)
-# - post_download_msg (string)
-# - post_download_sed_string (string. For type configure-lutris)
-# - download_action_success (string. Set automatically in install/delete functions)
-# - downloaded_item_name (string. For installs only. Set automatically in download_install function)
-# - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
-#
-# Details for post_download_sed_string:
-# This is the string sed will match against when editing Lutris yml configs
-# It will be used to detect the appropriate yml key and replace its value
-# with the name of the downloaded item. Example: "dxvk_version: "
-#
-# Message display format:
-# A header is automatically displayed that reads: Download Complete
-# post_download_msg is displayed below the header
-post_download() {
-    # Sanity checks
-    if [ -z "$post_download_type" ]; then
-        debug_print exit "Script error: The string 'post_download_type' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_download_msg_heading" ]; then
-        debug_print exit "Script error: The string 'post_download_msg_heading' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_download_msg" ]; then
-        debug_print exit "Script error: The string 'post_download_msg' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
-        debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
-    fi
-
-    # Configure the message heading and format it for zenity
-    if [ "$use_zenity" -eq 1 ]; then
-        post_download_msg_heading="<b>$post_download_msg_heading</b>"
-    fi
-
-    # Display appropriate post-download message
-    if [ "$post_download_type" = "info" ]; then
-            # Just displaying an informational message
-            message info "$post_download_msg_heading\n\n$post_download_msg"
-    elif [ "$post_download_type" = "configure-lutris" ]; then
-        # We need to configure and restart Lutris
-        unset lutris_game_ymls
-        # Build an array of all Lutris Star Citizen yml files
-        while IFS='' read -r line; do
-            lutris_game_ymls+=("$line")
-        done < <(grep -iRlE --include="*.yml" "Roberts Space Industries|starcitizen|star citizen|star-citizen" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
-
-        # We handle installs and deletions differently
-        if [ "$download_action_success" = "installed" ]; then
-            # We are installing something for Lutris
-            if message question "$post_download_msg_heading\n\n$post_download_msg"; then
-                # Cylce through all Lutris config files for Star Citizen and configure the downloaded item
-                for (( i=0; i<"${#lutris_game_ymls[@]}"; i++ )); do
-                    # Replace the appropriate key:value line if it exists
-                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${post_download_sed_string}/s/${post_download_sed_string}.*/${post_download_sed_string}${downloaded_item_name}/}" "${lutris_game_ymls[i]}"
-
-                    # If it doesn't exist, add it at the start of the wine: grouping
-                    if ! grep -q "${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"; then
-                        # This assumes an indent of two spaces before the key:value pair
-                        sed -i -e '/^wine:/a\' -e "  ${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"
-                    fi
-                done
-
-                # Lutris needs to be restarted after making changes
-                if [ "$(pgrep -f lutris)" ]; then
-                    # For installations, we ask the user if we can configure and restart Lutris in the post_download_msg
-                    lutris_restart
-                fi
-            fi
-        elif [ "$download_action_success" = "deleted" ]; then
-            # Find all Star Citizen Lutris configs and delete the matching key:value line
-            for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
-                # Cylce through all Lutris config files for Star Citizen and remove the item
-                for (( j=0; j<"${#lutris_game_ymls[@]}"; j++ )); do
-                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}" "${lutris_game_ymls[j]}"
-                done
-            done
-
-            # Lutris needs to be restarted after making changes
-            if [ "$(pgrep -f lutris)" ] && message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
-                # For deletions, we ask the user if it's okay to restart Lutris here
-                lutris_restart
-            fi
-        else
-            debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
-        fi
-    else
-            debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
-    fi
-}
-
-# Uninstall the selected item(s). Called by download_select_install()
-# Accepts array index numbers as an argument
-#
-# The following variables are expected to be set before calling this function:
-# - download_type (string)
-# - installed_items (array)
-# - installed_item_names (array)
-download_delete() {
-    # This function expects at least one index number for the array installed_items to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
-    fi
-
-    # Sanity checks
-    if [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set before calling the download_delete function. Aborting."
-    elif [ "${#installed_items[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'installed_items' was not set before calling the download_delete function. Aborting."
-    elif [ "${#installed_item_names[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'installed_item_names' was not set before calling the download_delete function. Aborting."
-    fi
-
-    # Capture arguments and format a list of items
-    item_to_delete=("$@")
-    unset list_to_delete
-    unset deleted_item_names
-    for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
-        list_to_delete+="\n${installed_items[${item_to_delete[i]}]}"
-    done
-
-    if message question "Are you sure you want to delete the following ${download_type}(s)?\n$list_to_delete"; then
-        # Loop through the arguments
-        for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
-            rm -r --interactive=never "${installed_items[${item_to_delete[i]}]}"
-            debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
-
-            # Store the names of deleted items for post_download() processing
-            deleted_item_names+=("${installed_item_names[${item_to_delete[i]}]}")
-        done
-        # Mark success for triggering post-deletion actions
-        download_action_success="deleted"
-    fi
-}
-
-# List installed items for deletion. Called by download_manage()
-#
-# The following variables are expected to be set before calling this function:
-# - download_type (string)
-# - download_dirs (array)
-download_select_delete() {
-    # Sanity checks
-    if [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_delete function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_delete function. Aborting."
-    fi
-
-    # Configure the menu
-    menu_text_zenity="Select the $download_type(s) you want to remove:"
-    menu_text_terminal="Select the $download_type you want to remove:"
-    menu_text_height="60"
-    menu_type="checklist"
-    goback="Return to the $download_type management menu"
-    unset installed_items
-    unset installed_item_names
-    unset menu_options
-    unset menu_actions
-
-    # Find all installed items in the download destinations
-    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-        # Loop through all download destinations
-        # Odd numbered elements will contain the download destination's path
-        for item in "${download_dirs[i]}"/*; do
-            if [ -d "$item" ]; then
-                if [ "${#download_dirs[@]}" -eq 2 ]; then
-                    # We're deleting from one location
-                    installed_item_names+=("$(basename "$item")")
-                else
-                    # We're deleting from multiple locations so label each one
-                    installed_item_names+=("$(basename "$item    [${download_dirs[i-1]}]")")
-                fi
-                installed_items+=("$item")
-            fi
-        done
-    done
-
-    # Create menu options for the installed items
-    for (( i=0; i<"${#installed_items[@]}"; i++ )); do
-        menu_options+=("${installed_item_names[i]}")
-        menu_actions+=("download_delete $i")
-    done
-
-    # Complete the menu by adding the option to go back to the previous menu
-    menu_options+=("$goback")
-    menu_actions+=(":") # no-op
-
-    # Calculate the total height the menu should be
-    # menu_option_height = pixels per menu option
-    # #menu_options[@] = number of menu options
-    # menu_text_height = height of the title/description text
-    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
-    # Cap menu height
-    if [ "$menu_height" -gt "$menu_height_max" ]; then
-        menu_height="$menu_height_max"
-    fi
-
-    # Set the label for the cancel button
-    cancel_label="Go Back"
-
-    # Call the menu function.  It will use the options as configured above
-    menu
-}
-
-# Download and install the selected item. Called by download_select_install()
-#
-# The following variables are expected to be set before calling this function:
-# - download_versions (array)
-# - contributor_url (string)
-# - download_url_type (string)
-# - download_type (string)
-# - download_dirs (array)
-download_install() {
-    # This function expects an index number for the array
-    # download_versions to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The download_install function expects a numerical argument. Aborting."
-    fi
-
-    # Sanity checks
-    if [ "${#download_versions[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_versions' was not set before calling the download_install function. Aborting."
-    elif [ -z "$contributor_url" ]; then
-        debug_print exit "Script error: The string 'contributor_url' was not set before calling the download_install function. Aborting."
-    elif [ -z "$download_url_type" ]; then
-        debug_print exit "Script error: The string 'download_url_type' was not set before calling the download_install function. Aborting."
-    elif [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set before calling the download_install function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_install function. Aborting."
-    fi
-
-    # Get the filename including file extension
-    download_filename="${download_versions[$1]}"
-
-    # Get the selected item name minus the file extension
-    # To add new file extensions, handle them here and in
-    # the download_select_install function below
-    case "$download_filename" in
-        *.tar.gz)
-            download_basename="$(basename "$download_filename" .tar.gz)"
-            ;;
-        *.tgz)
-            download_basename="$(basename "$download_filename" .tgz)"
-            ;;
-        *.tar.xz)
-            download_basename="$(basename "$download_filename" .tar.xz)"
-            ;;
-        *.tar.zst)
-            download_basename="$(basename "$download_filename" .tar.zst)"
-            ;;
-        *)
-            debug_print exit "Script error: Unknown archive filetype in download_install function. Aborting."
-            ;;
-    esac
-
-    # Set the search keys we'll use to parse the api for the download url
-    # To add new sources, handle them here and in the
-    # download_select_install function below
-    if [ "$download_url_type" = "github" ]; then
-        # Which json key are we looking for?
-        search_key="browser_download_url"
-        # Add a query string to the url
-        query_string="?per_page=$max_download_items"
-    elif [ "$download_url_type" = "gitlab" ]; then
-        # Which json key are we looking for?
-        search_key="direct_asset_url"
-        # Add a query string to the url
-        query_string="?per_page=$max_download_items"
-    else
-        debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
-    fi
-
-    # Get the selected download url
-    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_filename" | cut -d '"' -f4 | cut -d '?' -f1 | sed 's|/-/blob/|/-/raw/|')"
-
-    # Sanity check
-    if [ -z "$download_url" ]; then
-        message warning "Could not find the requested ${download_type}.  The source API may be down or rate limited."
-        return 1
-    fi
-
-    # Download the item to the tmp directory
-    download_file "$download_url" "$download_filename" "$download_type"
-
-    # Sanity check
-    if [ ! -f "$tmp_dir/$download_filename" ]; then
-        # Something went wrong with the download and the file doesn't exist
-        message error "Something went wrong and the requested $download_type file could not be downloaded!"
-        debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
-        return 1
-    fi
-
-    # Extract the archive to the tmp directory
-    debug_print continue "Extracting $download_type into $tmp_dir/$download_basename..."
-    if [ "$use_zenity" -eq 1 ]; then
-        # Use Zenity progress bar
-        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Extracting ${download_type}...\n" 2>/dev/null
-    else
-        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename"
-    fi
-
-    # Check the contents of the extracted archive to determine the
-    # directory structure we must create upon installation
-    num_dirs=0
-    num_files=0
-    for extracted_item in "$tmp_dir/$download_basename"/*; do
-        if [ -d "$extracted_item" ]; then
-            num_dirs="$(($num_dirs+1))"
-            extracted_dir="$(basename "$extracted_item")"
-        elif [ -f "$extracted_item" ]; then
-            num_files="$(($num_files+1))"
-        fi
-    done
-
-    # Create the correct directory structure and install the item
-    if [ "$num_dirs" -eq 0 ] && [ "$num_files" -eq 0 ]; then
-        # Sanity check
-        message warning "The downloaded archive is empty. There is nothing to do."
-    elif [ "$num_dirs" -eq 1 ] && [ "$num_files" -eq 0 ]; then
-        # If the archive contains only one directory, install that directory
-        # We rename it to the name of the archive in case it is different
-        # so we can easily detect installed items in download_select_install()
-        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-            # Loop through all download destinations, installing to each one
-            # Odd numbered elements will contain the download destination's path
-            if [ -d "${download_dirs[i]}/$download_basename" ]; then
-                # This item has already been installed. Delete it before reinstalling
-                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
-                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
-                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
-            else
-                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
-            fi
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename" | \
-                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename"
-            fi
-        done
-
-        # Store the final name of the downloaded directory
-        downloaded_item_name="$download_basename"
-        # Mark success for triggering post-download actions
-        download_action_success="installed"
-    elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
-        # If the archive contains more than one directory or
-        # one or more files, we must create a subdirectory
-        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-            # Loop through all download destinations, installing to each one
-            # Odd numbered elements will contain the download destination's path
-            if [ -d "${download_dirs[i]}/$download_basename" ]; then
-                # This item has already been installed. Delete it before reinstalling
-                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
-                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
-                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
-            else
-                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
-            fi
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename" | \
-                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename"
-            fi
-        done
-
-        # Store the final name of the downloaded directory
-        downloaded_item_name="$download_basename"
-        # Mark success for triggering post-download actions
-        download_action_success="installed"
-    else
-        # Some unexpected combination of directories and files
-        debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
-    fi
-
-    # Cleanup tmp download
-    debug_print continue "Cleaning up $tmp_dir/$download_filename..."
-    rm --interactive=never "${tmp_dir:?}/$download_filename"
-    rm -r "${tmp_dir:?}/$download_basename"
-}
-
-# List available items for download. Called by download_manage()
-#
-# The following variables are expected to be set before calling this function:
-# - download_sources (array)
-# - download_type (string)
-# - download_dirs (array)
-download_select_install() {
-    # This function expects an element number for the sources array
-    # to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The download_select_install function expects a numerical argument. Aborting."
-    fi
-
-    # Sanity checks
-    if [ "${#download_sources[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_sources' was not set before calling the download_select_install function. Aborting."
-    elif [ -z "$download_type" ]; then
-        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_install function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_install function. Aborting."
-    fi
-
-    # Store info from the selected contributor
-    contributor_name="${download_sources[$1]}"
-    contributor_url="${download_sources[$1+1]}"
-
-    # For runners, check GlibC version against runner requirements
-    if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ]; }; then
-        unset glibc_fail
-        required_glibc="2.33"
-
-        # Native lutris
-        if [ "$lutris_native" = "true" ]; then
-            if [ -x "$(command -v ldd)" ]; then
-                native_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
-            else
-                native_glibc="0 (Not installed)"
-            fi
-
-            # Sort the versions and check if the installed glibc is smaller
-            if [ "$required_glibc" != "$native_glibc" ] &&
-            [ "$native_glibc" = "$(printf "%s\n%s" "$native_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
-                glibc_fail+=("Native")
-            fi
-        fi
-
-        # Flatpak lutris
-        if [ "$lutris_flatpak" = "true" ]; then
-            flatpak_glibc="$(flatpak run --command="ldd" net.lutris.Lutris --version | awk '/ldd/{print $NF}')"
-
-            # Sort the versions and check if the installed glibc is smaller
-            if [ "$required_glibc" != "$flatpak_glibc" ] &&
-            [ "$flatpak_glibc" = "$(printf "%s\n%s" "$flatpak_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
-                glibc_fail+=("Flatpak")
-            fi
-        fi
-
-        # Display a warning message
-        if [ "${#glibc_fail[@]}" -gt 0 ]; then
-            unset glibc_message
-            # Prepare the warning message
-            for (( i=0; i<"${#glibc_fail[@]}"; i++ )); do
-                case "${glibc_fail[i]}" in
-                    "Native")
-                        glibc_message+="System glibc: $native_glibc\n"
-                        ;;
-                    "Flatpak")
-                        glibc_message+="Flatpak glibc: $flatpak_glibc\n"
-                        ;;
-                    *)
-                        debug_print exit "Script error:  Unknown glibc_fail string in download_select_install() function. Aborting."
-                        ;;
-                esac
-            done
-
-            message warning "Your glibc version is incompatible with the selected runner\n\n${glibc_message}Minimum required glibc: $required_glibc"
-
-            # Return if all installed versions of lutris fail the check
-            if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
-                # Both are installed
-                if [ "${#glibc_fail[@]}" -eq 2 ]; then
-                    # Both failed the check
-                    return 1
-                fi
-            else
-                # Only one is installed, but it failed the check
-                return 1
-            fi
-        fi
-    fi
-
-    # Check the provided contributor url to make sure we know how to handle it
-    # To add new sources, add them here and handle in the if statement
-    # just below and the download_install function above
-    case "$contributor_url" in
-        https://api.github.com/*)
-            download_url_type="github"
-            ;;
-        https://gitlab.com/api/v4/projects/*)
-            download_url_type="gitlab"
-            ;;
-        *)
-            debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
-            ;;
-    esac
-
-    # Set the search keys we'll use to parse the api for the download url
-    # To add new sources, handle them here, in the if statement
-    # just above, and the download_install function above
-    if [ "$download_url_type" = "github" ]; then
-        # Which json key are we looking for?
-        search_key="browser_download_url"
-        # Optional: Only match urls containing a keyword
-        match_url_keyword=""
-        # Optional: Filter out game-specific builds by keyword
-        # Format for grep extended regex (ie: "word1|word2|word3")
-        if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
-            filter_keywords="lol|diablo"
-        else
-            filter_keywords="oh hi there. this is just placeholder text. how are you today?"
-        fi
-        # Add a query string to the url
-        query_string="?per_page=$max_download_items"
-    elif [ "$download_url_type" = "gitlab" ]; then
-        # Which json key are we looking for?
-        search_key="direct_asset_url"
-        # Only match urls containing a keyword
-        match_url_keyword="releases"
-        # Optional: Filter out game-specific builds by keyword
-        # Format for grep extended regex (ie: "word1|word2|word3")
-        filter_keywords="oh hi there. this is just placeholder text. how are you today?"
-        # Add a query string to the url
-        query_string="?per_page=$max_download_items"
-    else
-        debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
-    fi
-
-    # Fetch a list of versions from the selected contributor
-    unset download_versions
-    while IFS='' read -r line; do
-        download_versions+=("$line")
-    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep -viE "$filter_keywords")
-    # Note: match from search_key until " or EOL (Handles embedded commas and escaped quotes). Cut out quotes and gitlab's extraneous query strings.
-
-    # Sanity check
-    if [ "${#download_versions[@]}" -eq 0 ]; then
-        message warning "No $download_type versions were found.  The source API may be down or rate limited."
-        return 1
-    fi
-
-    # Configure the menu
-    menu_text_zenity="Select the $download_type you want to install:"
-    menu_text_terminal="Select the $download_type you want to install:"
-    menu_text_height="60"
-    menu_type="radiolist"
-    goback="Return to the $download_type management menu"
-    unset menu_options
-    unset menu_actions
-
-    # Iterate through the versions, check if they are installed,
-    # and add them to the menu options
-    # To add new file extensions, handle them here and in
-    # the download_install function above
-    for (( i=0,num_download_items=0; i<"${#download_versions[@]}" && "$num_download_items"<"$max_download_items"; i++ )); do
-
-        # Get the file name minus the extension
-        case "${download_versions[i]}" in
-            *.sha*sum | *.ini | proton* | *.txt)
-                # Ignore hashes, configs, and proton downloads
-                continue
-                ;;
-            *.tar.gz)
-                download_basename="$(basename "${download_versions[i]}" .tar.gz)"
-                ;;
-            *.tgz)
-                download_basename="$(basename "${download_versions[i]}" .tgz)"
-                ;;
-            *.tar.xz)
-                download_basename="$(basename "${download_versions[i]}" .tar.xz)"
-                ;;
-            *.tar.zst)
-                download_basename="$(basename "${download_versions[i]}" .tar.zst)"
-                ;;
-            *)
-                # Print a warning and move on to the next item
-                debug_print continue "Warning: Unknown archive filetype in download_select_install() function. Offending String: ${download_versions[i]}"
-                continue
-                ;;
-        esac
-
-        # Create a list of locations where the file is already installed
-        unset installed_types
-        for (( j=0; j<"${#download_dirs[@]}"; j=j+2 )); do
-            # Loop through all download destinations to get installed types
-            # Even numbered elements will contain the download destination type (ie. native/flatpak)
-            if [ -d "${download_dirs[j+1]}/$download_basename" ]; then
-                installed_types+=("${download_dirs[j]}")
-            fi
-        done
-
-        # Build the menu item
-        unset menu_option_text
-        if [ "${#download_dirs[@]}" -eq 2 ]; then
-            # We're only installing to one location
-            if [ -d "${download_dirs[1]}/$download_basename" ]; then
-                menu_option_text="$download_basename    [installed]"
-            else
-                # The file is not installed
-                menu_option_text="$download_basename"
-            fi
-        else
-            # We're installing to multiple locations
-            if [ "${#installed_types[@]}" -gt 0 ]; then
-                # The file is already installed
-                menu_option_text="$download_basename    [installed:"
-                for (( j=0; j<"${#installed_types[@]}"; j++ )); do
-                    # Add labels for each installed location
-                    menu_option_text="$menu_option_text ${installed_types[j]}"
-                done
-                # Complete the menu text
-                menu_option_text="$menu_option_text]"
-            else
-                # The file is not installed
-                menu_option_text="$download_basename"
-            fi
-        fi
-        # Add the file names to the menu
-        menu_options+=("$menu_option_text")
-        menu_actions+=("download_install $i")
-
-        # Increment the added items counter
-        num_download_items="$(($num_download_items+1))"
-    done
-
-    # Complete the menu by adding the option to go back to the previous menu
-    menu_options+=("$goback")
-    menu_actions+=(":") # no-op
-
-    # Calculate the total height the menu should be
-    # menu_option_height = pixels per menu option
-    # #menu_options[@] = number of menu options
-    # menu_text_height = height of the title/description text
-    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
-    # Cap menu height
-    if [ "$menu_height" -gt "$menu_height_max" ]; then
-        menu_height="$menu_height_max"
-    fi
-
-    # Set the label for the cancel button
-    cancel_label="Go Back"
-
-    # Call the menu function.  It will use the options as configured above
-    menu
-}
-
-# Manage downloads. Called by a dedicated download type manage function, ie runner_manage() below
+# Manage downloads. Called by a dedicated download type manage function, ie runner_manage()
 #
 # This function expects the following variables to be set:
 #
 # - The string download_sources is a formatted array containing the URLs
 #   of items to download. It should be pointed to the appropriate
 #   array set at the top of the script using indirect expansion.
-#   See runner_sources at the top and runner_manage() below for examples.
+#   See runner_sources at the top and runner_manage() for examples.
 # - The array download_dirs should contain the locations the downloaded item
 #   will be installed to. Must be formatted in pairs of ("[type]" "[directory]")
 # - The string "download_menu_heading" should contain the type of item
@@ -1885,7 +1141,7 @@ download_select_install() {
 # This function also expects one string argument containing the type of item to
 # be downloaded.  ie. runner or dxvk.
 #
-# See runner_manage() below for a configuration example.
+# See runner_manage() for a configuration example.
 download_manage() {
     # This function expects a string to be passed as an argument
     if [ -z "$1" ]; then
@@ -2044,6 +1300,752 @@ dxvk_manage() {
     download_manage "dxvk"
 }
 
+# List available items for download. Called by download_manage()
+#
+# The following variables are expected to be set before calling this function:
+# - download_sources (array)
+# - download_type (string)
+# - download_dirs (array)
+download_select_install() {
+    # This function expects an element number for the sources array
+    # to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The download_select_install function expects a numerical argument. Aborting."
+    fi
+
+    # Sanity checks
+    if [ "${#download_sources[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_sources' was not set before calling the download_select_install function. Aborting."
+    elif [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_install function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_install function. Aborting."
+    fi
+
+    # Store info from the selected contributor
+    contributor_name="${download_sources[$1]}"
+    contributor_url="${download_sources[$1+1]}"
+
+    # For runners, check GlibC version against runner requirements
+    if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ]; }; then
+        unset glibc_fail
+        required_glibc="2.33"
+
+        # Native lutris
+        if [ "$lutris_native" = "true" ]; then
+            if [ -x "$(command -v ldd)" ]; then
+                native_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+            else
+                native_glibc="0 (Not installed)"
+            fi
+
+            # Sort the versions and check if the installed glibc is smaller
+            if [ "$required_glibc" != "$native_glibc" ] &&
+            [ "$native_glibc" = "$(printf "%s\n%s" "$native_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
+                glibc_fail+=("Native")
+            fi
+        fi
+
+        # Flatpak lutris
+        if [ "$lutris_flatpak" = "true" ]; then
+            flatpak_glibc="$(flatpak run --command="ldd" net.lutris.Lutris --version | awk '/ldd/{print $NF}')"
+
+            # Sort the versions and check if the installed glibc is smaller
+            if [ "$required_glibc" != "$flatpak_glibc" ] &&
+            [ "$flatpak_glibc" = "$(printf "%s\n%s" "$flatpak_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
+                glibc_fail+=("Flatpak")
+            fi
+        fi
+
+        # Display a warning message
+        if [ "${#glibc_fail[@]}" -gt 0 ]; then
+            unset glibc_message
+            # Prepare the warning message
+            for (( i=0; i<"${#glibc_fail[@]}"; i++ )); do
+                case "${glibc_fail[i]}" in
+                    "Native")
+                        glibc_message+="System glibc: $native_glibc\n"
+                        ;;
+                    "Flatpak")
+                        glibc_message+="Flatpak glibc: $flatpak_glibc\n"
+                        ;;
+                    *)
+                        debug_print exit "Script error:  Unknown glibc_fail string in download_select_install() function. Aborting."
+                        ;;
+                esac
+            done
+
+            message warning "Your glibc version is incompatible with the selected runner\n\n${glibc_message}Minimum required glibc: $required_glibc"
+
+            # Return if all installed versions of lutris fail the check
+            if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
+                # Both are installed
+                if [ "${#glibc_fail[@]}" -eq 2 ]; then
+                    # Both failed the check
+                    return 1
+                fi
+            else
+                # Only one is installed, but it failed the check
+                return 1
+            fi
+        fi
+    fi
+
+    # Check the provided contributor url to make sure we know how to handle it
+    # To add new sources, add them here and handle in the if statement
+    # just below and in the download_install function
+    case "$contributor_url" in
+        https://api.github.com/*)
+            download_url_type="github"
+            ;;
+        https://gitlab.com/api/v4/projects/*)
+            download_url_type="gitlab"
+            ;;
+        *)
+            debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
+            ;;
+    esac
+
+    # Set the search keys we'll use to parse the api for the download url
+    # To add new sources, handle them here, in the if statement
+    # just above, and in the download_install function
+    if [ "$download_url_type" = "github" ]; then
+        # Which json key are we looking for?
+        search_key="browser_download_url"
+        # Optional: Only match urls containing a keyword
+        match_url_keyword=""
+        # Optional: Filter out game-specific builds by keyword
+        # Format for grep extended regex (ie: "word1|word2|word3")
+        if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
+            filter_keywords="lol|diablo"
+        else
+            filter_keywords="oh hi there. this is just placeholder text. how are you today?"
+        fi
+        # Add a query string to the url
+        query_string="?per_page=$max_download_items"
+    elif [ "$download_url_type" = "gitlab" ]; then
+        # Which json key are we looking for?
+        search_key="direct_asset_url"
+        # Only match urls containing a keyword
+        match_url_keyword="releases"
+        # Optional: Filter out game-specific builds by keyword
+        # Format for grep extended regex (ie: "word1|word2|word3")
+        filter_keywords="oh hi there. this is just placeholder text. how are you today?"
+        # Add a query string to the url
+        query_string="?per_page=$max_download_items"
+    else
+        debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
+    fi
+
+    # Fetch a list of versions from the selected contributor
+    unset download_versions
+    while IFS='' read -r line; do
+        download_versions+=("$line")
+    done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep -viE "$filter_keywords")
+    # Note: match from search_key until " or EOL (Handles embedded commas and escaped quotes). Cut out quotes and gitlab's extraneous query strings.
+
+    # Sanity check
+    if [ "${#download_versions[@]}" -eq 0 ]; then
+        message warning "No $download_type versions were found.  The source API may be down or rate limited."
+        return 1
+    fi
+
+    # Configure the menu
+    menu_text_zenity="Select the $download_type you want to install:"
+    menu_text_terminal="Select the $download_type you want to install:"
+    menu_text_height="60"
+    menu_type="radiolist"
+    goback="Return to the $download_type management menu"
+    unset menu_options
+    unset menu_actions
+
+    # Iterate through the versions, check if they are installed,
+    # and add them to the menu options
+    # To add new file extensions, handle them here and in
+    # the download_install function
+    for (( i=0,num_download_items=0; i<"${#download_versions[@]}" && "$num_download_items"<"$max_download_items"; i++ )); do
+
+        # Get the file name minus the extension
+        case "${download_versions[i]}" in
+            *.sha*sum | *.ini | proton* | *.txt)
+                # Ignore hashes, configs, and proton downloads
+                continue
+                ;;
+            *.tar.gz)
+                download_basename="$(basename "${download_versions[i]}" .tar.gz)"
+                ;;
+            *.tgz)
+                download_basename="$(basename "${download_versions[i]}" .tgz)"
+                ;;
+            *.tar.xz)
+                download_basename="$(basename "${download_versions[i]}" .tar.xz)"
+                ;;
+            *.tar.zst)
+                download_basename="$(basename "${download_versions[i]}" .tar.zst)"
+                ;;
+            *)
+                # Print a warning and move on to the next item
+                debug_print continue "Warning: Unknown archive filetype in download_select_install() function. Offending String: ${download_versions[i]}"
+                continue
+                ;;
+        esac
+
+        # Create a list of locations where the file is already installed
+        unset installed_types
+        for (( j=0; j<"${#download_dirs[@]}"; j=j+2 )); do
+            # Loop through all download destinations to get installed types
+            # Even numbered elements will contain the download destination type (ie. native/flatpak)
+            if [ -d "${download_dirs[j+1]}/$download_basename" ]; then
+                installed_types+=("${download_dirs[j]}")
+            fi
+        done
+
+        # Build the menu item
+        unset menu_option_text
+        if [ "${#download_dirs[@]}" -eq 2 ]; then
+            # We're only installing to one location
+            if [ -d "${download_dirs[1]}/$download_basename" ]; then
+                menu_option_text="$download_basename    [installed]"
+            else
+                # The file is not installed
+                menu_option_text="$download_basename"
+            fi
+        else
+            # We're installing to multiple locations
+            if [ "${#installed_types[@]}" -gt 0 ]; then
+                # The file is already installed
+                menu_option_text="$download_basename    [installed:"
+                for (( j=0; j<"${#installed_types[@]}"; j++ )); do
+                    # Add labels for each installed location
+                    menu_option_text="$menu_option_text ${installed_types[j]}"
+                done
+                # Complete the menu text
+                menu_option_text="$menu_option_text]"
+            else
+                # The file is not installed
+                menu_option_text="$download_basename"
+            fi
+        fi
+        # Add the file names to the menu
+        menu_options+=("$menu_option_text")
+        menu_actions+=("download_install $i")
+
+        # Increment the added items counter
+        num_download_items="$(($num_download_items+1))"
+    done
+
+    # Complete the menu by adding the option to go back to the previous menu
+    menu_options+=("$goback")
+    menu_actions+=(":") # no-op
+
+    # Calculate the total height the menu should be
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+    # Cap menu height
+    if [ "$menu_height" -gt "$menu_height_max" ]; then
+        menu_height="$menu_height_max"
+    fi
+
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+# Download and install the selected item. Called by download_select_install()
+#
+# The following variables are expected to be set before calling this function:
+# - download_versions (array)
+# - contributor_url (string)
+# - download_url_type (string)
+# - download_type (string)
+# - download_dirs (array)
+download_install() {
+    # This function expects an index number for the array
+    # download_versions to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The download_install function expects a numerical argument. Aborting."
+    fi
+
+    # Sanity checks
+    if [ "${#download_versions[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_versions' was not set before calling the download_install function. Aborting."
+    elif [ -z "$contributor_url" ]; then
+        debug_print exit "Script error: The string 'contributor_url' was not set before calling the download_install function. Aborting."
+    elif [ -z "$download_url_type" ]; then
+        debug_print exit "Script error: The string 'download_url_type' was not set before calling the download_install function. Aborting."
+    elif [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_install function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_install function. Aborting."
+    fi
+
+    # Get the filename including file extension
+    download_filename="${download_versions[$1]}"
+
+    # Get the selected item name minus the file extension
+    # To add new file extensions, handle them here and in
+    # the download_select_install function
+    case "$download_filename" in
+        *.tar.gz)
+            download_basename="$(basename "$download_filename" .tar.gz)"
+            ;;
+        *.tgz)
+            download_basename="$(basename "$download_filename" .tgz)"
+            ;;
+        *.tar.xz)
+            download_basename="$(basename "$download_filename" .tar.xz)"
+            ;;
+        *.tar.zst)
+            download_basename="$(basename "$download_filename" .tar.zst)"
+            ;;
+        *)
+            debug_print exit "Script error: Unknown archive filetype in download_install function. Aborting."
+            ;;
+    esac
+
+    # Set the search keys we'll use to parse the api for the download url
+    # To add new sources, handle them here and in the
+    # download_select_install function
+    if [ "$download_url_type" = "github" ]; then
+        # Which json key are we looking for?
+        search_key="browser_download_url"
+        # Add a query string to the url
+        query_string="?per_page=$max_download_items"
+    elif [ "$download_url_type" = "gitlab" ]; then
+        # Which json key are we looking for?
+        search_key="direct_asset_url"
+        # Add a query string to the url
+        query_string="?per_page=$max_download_items"
+    else
+        debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
+    fi
+
+    # Get the selected download url
+    download_url="$(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$download_filename" | cut -d '"' -f4 | cut -d '?' -f1 | sed 's|/-/blob/|/-/raw/|')"
+
+    # Sanity check
+    if [ -z "$download_url" ]; then
+        message warning "Could not find the requested ${download_type}.  The source API may be down or rate limited."
+        return 1
+    fi
+
+    # Download the item to the tmp directory
+    download_file "$download_url" "$download_filename" "$download_type"
+
+    # Sanity check
+    if [ ! -f "$tmp_dir/$download_filename" ]; then
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong and the requested $download_type file could not be downloaded!"
+        debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
+        return 1
+    fi
+
+    # Extract the archive to the tmp directory
+    debug_print continue "Extracting $download_type into $tmp_dir/$download_basename..."
+    if [ "$use_zenity" -eq 1 ]; then
+        # Use Zenity progress bar
+        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Extracting ${download_type}...\n" 2>/dev/null
+    else
+        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename"
+    fi
+
+    # Check the contents of the extracted archive to determine the
+    # directory structure we must create upon installation
+    num_dirs=0
+    num_files=0
+    for extracted_item in "$tmp_dir/$download_basename"/*; do
+        if [ -d "$extracted_item" ]; then
+            num_dirs="$(($num_dirs+1))"
+            extracted_dir="$(basename "$extracted_item")"
+        elif [ -f "$extracted_item" ]; then
+            num_files="$(($num_files+1))"
+        fi
+    done
+
+    # Create the correct directory structure and install the item
+    if [ "$num_dirs" -eq 0 ] && [ "$num_files" -eq 0 ]; then
+        # Sanity check
+        message warning "The downloaded archive is empty. There is nothing to do."
+    elif [ "$num_dirs" -eq 1 ] && [ "$num_files" -eq 0 ]; then
+        # If the archive contains only one directory, install that directory
+        # We rename it to the name of the archive in case it is different
+        # so we can easily detect installed items in download_select_install()
+        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+            # Loop through all download destinations, installing to each one
+            # Odd numbered elements will contain the download destination's path
+            if [ -d "${download_dirs[i]}/$download_basename" ]; then
+                # This item has already been installed. Delete it before reinstalling
+                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
+                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
+                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
+            else
+                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
+            fi
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename" | \
+                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
+            else
+                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename"
+            fi
+        done
+
+        # Store the final name of the downloaded directory
+        downloaded_item_name="$download_basename"
+        # Mark success for triggering post-download actions
+        download_action_success="installed"
+    elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
+        # If the archive contains more than one directory or
+        # one or more files, we must create a subdirectory
+        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+            # Loop through all download destinations, installing to each one
+            # Odd numbered elements will contain the download destination's path
+            if [ -d "${download_dirs[i]}/$download_basename" ]; then
+                # This item has already been installed. Delete it before reinstalling
+                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
+                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
+                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
+            else
+                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
+            fi
+            if [ "$use_zenity" -eq 1 ]; then
+                # Use Zenity progress bar
+                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename" | \
+                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
+            else
+                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename"
+            fi
+        done
+
+        # Store the final name of the downloaded directory
+        downloaded_item_name="$download_basename"
+        # Mark success for triggering post-download actions
+        download_action_success="installed"
+    else
+        # Some unexpected combination of directories and files
+        debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
+    fi
+
+    # Cleanup tmp download
+    debug_print continue "Cleaning up $tmp_dir/$download_filename..."
+    rm --interactive=never "${tmp_dir:?}/$download_filename"
+    rm -r "${tmp_dir:?}/$download_basename"
+}
+
+# List installed items for deletion. Called by download_manage()
+#
+# The following variables are expected to be set before calling this function:
+# - download_type (string)
+# - download_dirs (array)
+download_select_delete() {
+    # Sanity checks
+    if [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_delete function. Aborting."
+    elif [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_delete function. Aborting."
+    fi
+
+    # Configure the menu
+    menu_text_zenity="Select the $download_type(s) you want to remove:"
+    menu_text_terminal="Select the $download_type you want to remove:"
+    menu_text_height="60"
+    menu_type="checklist"
+    goback="Return to the $download_type management menu"
+    unset installed_items
+    unset installed_item_names
+    unset menu_options
+    unset menu_actions
+
+    # Find all installed items in the download destinations
+    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+        # Loop through all download destinations
+        # Odd numbered elements will contain the download destination's path
+        for item in "${download_dirs[i]}"/*; do
+            if [ -d "$item" ]; then
+                if [ "${#download_dirs[@]}" -eq 2 ]; then
+                    # We're deleting from one location
+                    installed_item_names+=("$(basename "$item")")
+                else
+                    # We're deleting from multiple locations so label each one
+                    installed_item_names+=("$(basename "$item    [${download_dirs[i-1]}]")")
+                fi
+                installed_items+=("$item")
+            fi
+        done
+    done
+
+    # Create menu options for the installed items
+    for (( i=0; i<"${#installed_items[@]}"; i++ )); do
+        menu_options+=("${installed_item_names[i]}")
+        menu_actions+=("download_delete $i")
+    done
+
+    # Complete the menu by adding the option to go back to the previous menu
+    menu_options+=("$goback")
+    menu_actions+=(":") # no-op
+
+    # Calculate the total height the menu should be
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+    # Cap menu height
+    if [ "$menu_height" -gt "$menu_height_max" ]; then
+        menu_height="$menu_height_max"
+    fi
+
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+# Uninstall the selected item(s). Called by download_select_install()
+# Accepts array index numbers as an argument
+#
+# The following variables are expected to be set before calling this function:
+# - download_type (string)
+# - installed_items (array)
+# - installed_item_names (array)
+download_delete() {
+    # This function expects at least one index number for the array installed_items to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The download_delete function expects an argument. Aborting."
+    fi
+
+    # Sanity checks
+    if [ -z "$download_type" ]; then
+        debug_print exit "Script error: The string 'download_type' was not set before calling the download_delete function. Aborting."
+    elif [ "${#installed_items[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'installed_items' was not set before calling the download_delete function. Aborting."
+    elif [ "${#installed_item_names[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'installed_item_names' was not set before calling the download_delete function. Aborting."
+    fi
+
+    # Capture arguments and format a list of items
+    item_to_delete=("$@")
+    unset list_to_delete
+    unset deleted_item_names
+    for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
+        list_to_delete+="\n${installed_items[${item_to_delete[i]}]}"
+    done
+
+    if message question "Are you sure you want to delete the following ${download_type}(s)?\n$list_to_delete"; then
+        # Loop through the arguments
+        for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
+            rm -r --interactive=never "${installed_items[${item_to_delete[i]}]}"
+            debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
+
+            # Store the names of deleted items for post_download() processing
+            deleted_item_names+=("${installed_item_names[${item_to_delete[i]}]}")
+        done
+        # Mark success for triggering post-deletion actions
+        download_action_success="deleted"
+    fi
+}
+
+# Perform post-download actions or display a message/instructions
+#
+# The following variables are expected to be set before calling this function:
+# - post_download_type (string. "none", "info", or "configure-lutris")
+# - post_download_msg_heading (string)
+# - post_download_msg (string)
+# - post_download_sed_string (string. For type configure-lutris)
+# - download_action_success (string. Set automatically in install/delete functions)
+# - downloaded_item_name (string. For installs only. Set automatically in download_install function)
+# - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
+#
+# Details for post_download_sed_string:
+# This is the string sed will match against when editing Lutris yml configs
+# It will be used to detect the appropriate yml key and replace its value
+# with the name of the downloaded item. Example: "dxvk_version: "
+#
+# Message display format:
+# A header is automatically displayed that reads: Download Complete
+# post_download_msg is displayed below the header
+post_download() {
+    # Sanity checks
+    if [ -z "$post_download_type" ]; then
+        debug_print exit "Script error: The string 'post_download_type' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_download_msg_heading" ]; then
+        debug_print exit "Script error: The string 'post_download_msg_heading' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_download_msg" ]; then
+        debug_print exit "Script error: The string 'post_download_msg' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
+        debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
+    fi
+
+    # Configure the message heading and format it for zenity
+    if [ "$use_zenity" -eq 1 ]; then
+        post_download_msg_heading="<b>$post_download_msg_heading</b>"
+    fi
+
+    # Display appropriate post-download message
+    if [ "$post_download_type" = "info" ]; then
+            # Just displaying an informational message
+            message info "$post_download_msg_heading\n\n$post_download_msg"
+    elif [ "$post_download_type" = "configure-lutris" ]; then
+        # We need to configure and restart Lutris
+        unset lutris_game_ymls
+        # Build an array of all Lutris Star Citizen yml files
+        while IFS='' read -r line; do
+            lutris_game_ymls+=("$line")
+        done < <(grep -iRlE --include="*.yml" "Roberts Space Industries|starcitizen|star citizen|star-citizen" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
+
+        # We handle installs and deletions differently
+        if [ "$download_action_success" = "installed" ]; then
+            # We are installing something for Lutris
+            if message question "$post_download_msg_heading\n\n$post_download_msg"; then
+                # Cylce through all Lutris config files for Star Citizen and configure the downloaded item
+                for (( i=0; i<"${#lutris_game_ymls[@]}"; i++ )); do
+                    # Replace the appropriate key:value line if it exists
+                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${post_download_sed_string}/s/${post_download_sed_string}.*/${post_download_sed_string}${downloaded_item_name}/}" "${lutris_game_ymls[i]}"
+
+                    # If it doesn't exist, add it at the start of the wine: grouping
+                    if ! grep -q "${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"; then
+                        # This assumes an indent of two spaces before the key:value pair
+                        sed -i -e '/^wine:/a\' -e "  ${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"
+                    fi
+                done
+
+                # Lutris needs to be restarted after making changes
+                if [ "$(pgrep -f lutris)" ]; then
+                    # For installations, we ask the user if we can configure and restart Lutris in the post_download_msg
+                    lutris_restart
+                fi
+            fi
+        elif [ "$download_action_success" = "deleted" ]; then
+            # Find all Star Citizen Lutris configs and delete the matching key:value line
+            for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
+                # Cylce through all Lutris config files for Star Citizen and remove the item
+                for (( j=0; j<"${#lutris_game_ymls[@]}"; j++ )); do
+                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}" "${lutris_game_ymls[j]}"
+                done
+            done
+
+            # Lutris needs to be restarted after making changes
+            if [ "$(pgrep -f lutris)" ] && message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
+                # For deletions, we ask the user if it's okay to restart Lutris here
+                lutris_restart
+            fi
+        else
+            debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
+        fi
+    else
+            debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
+    fi
+}
+
+# Create an array of directories used by Lutris
+# Array will be formatted in pairs of ("[type]" "[directory]")
+# Supports native install and flatpak
+# Takes an argument to specify the type to return: "runner" or "dxvk"
+get_lutris_dirs() {
+    # Sanity check
+    if [ "$#" -lt 1 ]; then
+        debug_print exit "Script error: The get_lutris_dirs function expects one argument. Aborting."
+    fi
+
+    # Detect the type of Lutris install
+    lutris_detect
+
+    # Add lutris directories to an array
+    unset lutris_dirs
+    case "$1" in
+        "runner")
+            # Native Lutris install
+            if [ "$lutris_native" = "true" ]; then
+                lutris_dirs+=("native" "$runners_dir_native")
+            fi
+            # Flatpak lutris install
+            if [ "$lutris_flatpak" = "true" ]; then
+                lutris_dirs+=("flatpak" "$runners_dir_flatpak")
+            fi
+            ;;
+        "dxvk")
+            # Native Lutris install
+            if [ "$lutris_native" = "true" ]; then
+                lutris_dirs+=("native" "$dxvk_dir_native")
+            fi
+            # Flatpak lutris install
+            if [ "$lutris_flatpak" = "true" ]; then
+                lutris_dirs+=("flatpak" "$dxvk_dir_flatpak")
+            fi
+            ;;
+        *)
+            printf "lug-helper.sh: Unknown argument provided to get_lutris_dirs function. Aborting.\n" 1>&2
+            read -n 1 -s -p "Press any key..."
+            exit 0
+            ;;
+    esac
+}
+
+# Detect which version of Lutris is running and restart it
+lutris_restart() {
+    # Detect the installed versions of Lutris
+    lutris_detect
+    if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -Eq "[/]usr/bin/lutris|[/]usr/games/lutris"; then
+        # Native Lutris is running
+        debug_print continue "Restarting native Lutris..."
+        pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
+    fi
+    if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]app/bin/lutris"; then
+        # Flatpak Lutris is running
+        debug_print continue "Restarting flatpak Lutris..."
+        pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
+    fi
+}
+
+# Download a file to the tmp directory
+# Expects three arguments: The download URL, file name, and download type
+download_file() {
+    # This function expects three string arguments
+    if [ "$#" -lt 3 ]; then
+        printf "\nScript error:  The download_file function expects three arguments. Aborting.\n"
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    # Capture the arguments and encode spaces in urls
+    download_url="${1// /%20}"
+    download_filename="$2"
+    download_type="$3"
+
+    # Download the item to the tmp directory
+    debug_print continue "Downloading $download_url into $tmp_dir/$download_filename..."
+    if [ "$use_zenity" -eq 1 ]; then
+        # Format the curl progress bar for zenity
+        mkfifo "$tmp_dir/lugpipe"
+        cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename" > "$tmp_dir/lugpipe" 2>&1 & curlpid="$!"
+        stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
+        grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
+        (
+            trap 'kill "$curlpid"' ERR
+            zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
+        )
+
+        if [ "$?" -eq 1 ]; then
+            # User clicked cancel
+            debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
+            rm --interactive=never "${tmp_dir:?}/$download_filename"
+            rm --interactive=never "${tmp_dir:?}/lugpipe"
+            return 1
+        fi
+        rm --interactive=never "${tmp_dir:?}/lugpipe"
+    else
+        # Standard curl progress bar
+        (cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename")
+    fi
+}
+
 ############################################################################
 ######## end download functions ############################################
 ############################################################################
@@ -2052,16 +2054,45 @@ dxvk_manage() {
 ######## begin maintenance functions #######################################
 ############################################################################
 
-# Set the game version to target for all Helper functions
-# Accepts a string as an argument
-set_version() {
-    # This function expects a string to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The set_version function expects an argument. Aborting."
-    fi
+# Show maintenance/troubleshooting options
+maintenance_menu() {
+    # Loop the menu until the user selects quit
+    looping_menu="true"
+    while [ "$looping_menu" = "true" ]; do
+        # Configure the menu
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nYou may choose from the following options:"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nYou may choose from the following options:"
+        menu_text_height="140"
+        menu_type="radiolist"
 
-    # Set the game version from the passed argument
-    game_version="$1"
+        # Configure the menu options
+        version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
+        prefix_msg="Target a different Star Citizen installation"
+        userdir_msg="Delete my user folder and preserve keybinds/characters"
+        shaders_msg="Delete my shaders (Do this after each game update)"
+        vidcache_msg="Delete my DXVK cache"
+        dirs_msg="Display Helper and Star Citizen directories"
+        reset_msg="Reset Helper configs"
+        quit_msg="Return to the main menu"
+
+        # Set the options to be displayed in the menu
+        menu_options=("$version_msg" "$prefix_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        # Set the corresponding functions to be called for each of the options
+        menu_actions=("version_menu" "switch_prefix" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+
+        # Calculate the total height the menu should be
+        # menu_option_height = pixels per menu option
+        # #menu_options[@] = number of menu options
+        # menu_text_height = height of the title/description text
+        # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+
+       # Set the label for the cancel button
+       cancel_label="Go Back"
+
+        # Call the menu function.  It will use the options as configured above
+        menu
+    done
 }
 
 # Display a menu to select the game version (LIVE/PTU/EPTU) to target for all Helper functions
@@ -2090,6 +2121,18 @@ version_menu(){
 
     # Call the menu function.  It will use the options as configured above
     menu
+}
+
+# Set the game version to target for all Helper functions
+# Accepts a string as an argument
+set_version() {
+    # This function expects a string to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The set_version function expects an argument. Aborting."
+    fi
+
+    # Set the game version from the passed argument
+    game_version="$1"
 }
 
 # Target the Helper at a different Star Citizen prefix/installation
@@ -2123,7 +2166,7 @@ rm_userdir() {
 
     # Sanity check
     if [ ! -d "$user_dir" ]; then
-        message warning "user directory not found. There is nothing to delete!\n\n$user_dir"
+        message warning "User directory not found. There is nothing to delete!\n\n$user_dir"
         return 0
     fi
 
@@ -2314,47 +2357,6 @@ reset_helper() {
     # Also wipe path variables so the reset takes immediate effect
     wine_prefix=""
     game_path=""
-}
-
-# Show maintenance/troubleshooting options
-maintenance_menu() {
-    # Loop the menu until the user selects quit
-    looping_menu="true"
-    while [ "$looping_menu" = "true" ]; do
-        # Configure the menu
-        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nYou may choose from the following options:"
-        menu_text_height="140"
-        menu_type="radiolist"
-
-        # Configure the menu options
-        version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
-        prefix_msg="Target a different Star Citizen installation"
-        userdir_msg="Delete my user folder and preserve keybinds/characters"
-        shaders_msg="Delete my shaders (Do this after each game update)"
-        vidcache_msg="Delete my DXVK cache"
-        dirs_msg="Display Helper and Star Citizen directories"
-        reset_msg="Reset Helper configs"
-        quit_msg="Return to the main menu"
-
-        # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
-        # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
-
-        # Calculate the total height the menu should be
-        # menu_option_height = pixels per menu option
-        # #menu_options[@] = number of menu options
-        # menu_text_height = height of the title/description text
-        # menu_text_height_zenity4 = added title/description height for libadwaita bigness
-        menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
-
-       # Set the label for the cancel button
-       cancel_label="Go Back"
-
-        # Call the menu function.  It will use the options as configured above
-        menu
-    done
 }
 
 ############################################################################
