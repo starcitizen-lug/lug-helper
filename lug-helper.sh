@@ -2482,7 +2482,7 @@ install_game_wine() {
         sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$install_dir/$(basename "$launch_script")"
 
         # Modify the .desktop files installed by wine to exec the game launch script
-        debug_print continue "Updating .desktop files..."
+        debug_print continue "Updating .desktop files installed by wine..."
         if [ -f "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" ]; then
             # Replace the exec line with our launch script
             sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
@@ -2494,6 +2494,8 @@ install_game_wine() {
             # Make it start in a terminal
             echo "Terminal=true" >> "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
             debug_print continue "Updated ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+        else
+            debug_print continue "Unable to find ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
         fi
         if [ -f "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop" ]; then
             # Replace the exec line with our launch script
@@ -2506,6 +2508,8 @@ install_game_wine() {
             # Make it start in a terminal
             echo "Terminal=true" >> "$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
             debug_print continue "Updated $data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+        else
+            debug_print continue "Unable to find $data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
         fi
 
         # Update the .desktop file database if the command is available
