@@ -326,7 +326,7 @@ try_exec() {
 message() {
     # Sanity check
     if [ "$#" -lt 2 ]; then
-        debug_print exit "Script error: The message function expects two arguments. Aborting."
+        debug_print exit "Script error: The message function expects at least two arguments. Aborting."
     fi
 
     # Use zenity messages if available
@@ -411,6 +411,24 @@ message() {
                             ;;
                         *)
                             printf "Please type 'y' or 'n'\n"
+                            ;;
+                    esac
+                done
+                ;;
+            "options")
+                # Choose from two options
+                # call format: if message options left_button_name right_button_name "which one do you want?"; then...
+                printf "\n$4\n1: $3\n2: $2\n"
+                while read -p "[1/2]: " option; do
+                    case "$option" in
+                        1*)
+                            return 0
+                            ;;
+                        2*)
+                            return 1
+                            ;;
+                        *)
+                            printf "Please type '1' or '2'\n"
                             ;;
                     esac
                 done
@@ -2419,7 +2437,7 @@ install_game_lutris() {
             install_version="flatpak"
         else
             # We shouldn't get here
-            debug_print exit "Script error: Unable to detect Lutris version in install_game function. Aborting."
+            debug_print exit "Script error: Unable to detect Lutris version in install_game_lutris function. Aborting."
         fi
 
         # Run the appropriate installer
@@ -2429,7 +2447,7 @@ install_game_lutris() {
             flatpak run --file-forwarding net.lutris.Lutris --install @@ "$lutris_install_script" @@ &
         else
             # We shouldn't get here
-            debug_print exit "Script error: Unknown condition for install_version in install_game() function. Aborting."
+            debug_print exit "Script error: Unknown condition for install_version in install_game_lutris() function. Aborting."
         fi
 
         message info "The installation will continue in Lutris"
@@ -2835,10 +2853,13 @@ if [ "$use_zenity" -eq 1 ]; then
 else
     firstrun_message="$menu_heading_terminal\n\n$firstrun_message"
 fi
-if [ "$is_firstrun" = "true" ]; then
+if [ "$is_firstrun" = "false" ]; then
     if message question "$firstrun_message"; then
-        preflight_check
-        install_game
+        if message options "Wine" "Lutris" "Which install method would you like to use?"; then
+            install_game_lutris
+        else
+            install_game_wine
+        fi
     fi
     # Store the first run state for subsequent launches
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
