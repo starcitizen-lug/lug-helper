@@ -993,6 +993,7 @@ preflight_check() {
     unset preflight_followup
     unset preflight_fail_string
     unset preflight_pass_string
+    unset preflight_fix_results_string
     retval=0
 
     # Capture optional argument
