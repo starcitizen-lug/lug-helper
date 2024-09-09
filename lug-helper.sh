@@ -248,36 +248,6 @@ current_version="v2.18"
 ############################################################################
 
 
-# Echo a formatted debug message to the terminal and optionally exit
-# Accepts either "continue" or "exit" as the first argument
-# followed by the string to be echoed
-debug_print() {
-    # This function expects two string arguments
-    if [ "$#" -lt 2 ]; then
-        printf "\nScript error:  The debug_print function expects two arguments. Aborting.\n"
-        read -n 1 -s -p "Press any key..."
-        exit 0
-    fi
-
-    # Echo the provided string and, optionally, exit the script
-    case "$1" in
-        "continue")
-            printf "\n%s\n" "$2"
-            ;;
-        "exit")
-            # Write an error to stderr and exit
-            printf "%s\n" "lug-helper.sh: $2" 1>&2
-            read -n 1 -s -p "Press any key..."
-            exit 1
-            ;;
-        *)
-            printf "%s\n" "lug-helper.sh: Unknown argument provided to debug_print function. Aborting." 1>&2
-            read -n 1 -s -p "Press any key..."
-            exit 0
-            ;;
-    esac
-}
-
 # Try to execute a supplied command as root
 # Expects one string argument
 try_exec() {
@@ -315,6 +285,36 @@ try_exec() {
     fi
 
     return "$retval"
+}
+
+# Echo a formatted debug message to the terminal and optionally exit
+# Accepts either "continue" or "exit" as the first argument
+# followed by the string to be echoed
+debug_print() {
+    # This function expects two string arguments
+    if [ "$#" -lt 2 ]; then
+        printf "\nScript error:  The debug_print function expects two arguments. Aborting.\n"
+        read -n 1 -s -p "Press any key..."
+        exit 0
+    fi
+
+    # Echo the provided string and, optionally, exit the script
+    case "$1" in
+        "continue")
+            printf "\n%s\n" "$2"
+            ;;
+        "exit")
+            # Write an error to stderr and exit
+            printf "%s\n" "lug-helper.sh: $2" 1>&2
+            read -n 1 -s -p "Press any key..."
+            exit 1
+            ;;
+        *)
+            printf "%s\n" "lug-helper.sh: Unknown argument provided to debug_print function. Aborting." 1>&2
+            read -n 1 -s -p "Press any key..."
+            exit 0
+            ;;
+    esac
 }
 
 # Display a message to the user.
@@ -2630,17 +2630,6 @@ format_urls() {
     fi
 }
 
-# Get a random Penguin's Star Citizen referral code
-referral_randomizer() {
-    # Populate the referral codes array
-    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T" "STAR-FG6Y-N4Q4" "STAR-VLD6-VZRG" "STAR-T9KF-LV77" "STAR-4XHB-R7RF" "STAR-9NVF-MRN7" "STAR-3Q4W-9TC3" "STAR-3SBK-7QTT" "STAR-XFBT-9TTK" "STAR-F3H9-YPHN" "STAR-BYK6-RCCL" "STAR-XCKH-W6T7" "STAR-H292-39WK" "STAR-ZRT5-PJB7" "STAR-GMBP-SH9Y" "STAR-PLWB-LMFY" "STAR-TNZN-H4ZT" "STAR-T5G5-L2GJ" "STAR-6TPV-7QH2" "STAR-THHD-TV3Y" "STAR-7ZFS-PK2L" "STAR-SRQN-43TB" "STAR-9TDG-D4H9" "STAR-BPH3-THJC" "STAR-HL3M-R5KC" "STAR-GBS5-LTVB" "STAR-CJ3Y-KZZ4" "STAR-5GRM-7HBY" "STAR-G2GX-Y2QJ" "STAR-YWY3-H4XX" "STAR-6VGM-PTKC" "STAR-T6MZ-QFHX" "STAR-T2K6-LXFW" "STAR-XN25-9CJJ" "STAR-47V3-4QGB" "STAR-YD4Z-TQZV" "STAR-XLN7-9XNJ" "STAR-N62T-2R39" "STAR-3S3D-9HXQ" "STAR-TRZF-NMCV" "STAR-TLLJ-SMG4" "STAR-MFT6-Q44H" "STAR-TZX2-TPWF" "STAR-WCHN-4ZMX" "STAR-2GHY-WB4F" "STAR-KLM2-R4SX" "STAR-RYXQ-PBZB" "STAR-BSTC-NQPW" "STAR-X32P-J2NS" "STAR-9DMZ-CXWW")
-    # Pick a random array element. Scale a floating point number for
-    # a more random distribution than simply calling RANDOM
-    random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
-
-    message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
-}
-
 # Get the latest release version of a repo. Expects "user/repo_name" as input
 # Credits for this go to https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
 get_latest_release() {
@@ -2652,6 +2641,17 @@ get_latest_release() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
         grep '"tag_name":' |                                            # Get tag line
         sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+}
+
+# Get a random Penguin's Star Citizen referral code
+referral_randomizer() {
+    # Populate the referral codes array
+    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T" "STAR-FG6Y-N4Q4" "STAR-VLD6-VZRG" "STAR-T9KF-LV77" "STAR-4XHB-R7RF" "STAR-9NVF-MRN7" "STAR-3Q4W-9TC3" "STAR-3SBK-7QTT" "STAR-XFBT-9TTK" "STAR-F3H9-YPHN" "STAR-BYK6-RCCL" "STAR-XCKH-W6T7" "STAR-H292-39WK" "STAR-ZRT5-PJB7" "STAR-GMBP-SH9Y" "STAR-PLWB-LMFY" "STAR-TNZN-H4ZT" "STAR-T5G5-L2GJ" "STAR-6TPV-7QH2" "STAR-THHD-TV3Y" "STAR-7ZFS-PK2L" "STAR-SRQN-43TB" "STAR-9TDG-D4H9" "STAR-BPH3-THJC" "STAR-HL3M-R5KC" "STAR-GBS5-LTVB" "STAR-CJ3Y-KZZ4" "STAR-5GRM-7HBY" "STAR-G2GX-Y2QJ" "STAR-YWY3-H4XX" "STAR-6VGM-PTKC" "STAR-T6MZ-QFHX" "STAR-T2K6-LXFW" "STAR-XN25-9CJJ" "STAR-47V3-4QGB" "STAR-YD4Z-TQZV" "STAR-XLN7-9XNJ" "STAR-N62T-2R39" "STAR-3S3D-9HXQ" "STAR-TRZF-NMCV" "STAR-TLLJ-SMG4" "STAR-MFT6-Q44H" "STAR-TZX2-TPWF" "STAR-WCHN-4ZMX" "STAR-2GHY-WB4F" "STAR-KLM2-R4SX" "STAR-RYXQ-PBZB" "STAR-BSTC-NQPW" "STAR-X32P-J2NS" "STAR-9DMZ-CXWW")
+    # Pick a random array element. Scale a floating point number for
+    # a more random distribution than simply calling RANDOM
+    random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
+
+    message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
 }
 
 quit() {
