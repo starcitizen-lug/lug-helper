@@ -949,18 +949,18 @@ winetricks_check() {
         if [ "$winetricks_required" != "$winetricks_current" ] &&
            [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
             # Winetricks is out of date
-            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.")
+            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
             # Add the function that will be called to update winetricks
             preflight_action_funcs+=("winetricks_update")
             # Add info for manually running the update
-            preflight_manual+=("To manually update winetricks, run 'winetricks --self-update'")
+            preflight_manual+=("To manually update winetricks, run 'sudo winetricks --self-update'")
         else
             # Winetricks meets the minimum required version
             preflight_pass+=("Winetricks is installed and sufficiently up to date.")
         fi
     else
         # Winetricks is not installed
-        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.")
+        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
     fi
 }
 
