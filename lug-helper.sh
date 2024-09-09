@@ -2539,15 +2539,15 @@ install_game_wine() {
 
         # Run the installer
         debug_print continue "Preparing the wine prefix..."
-        WINEPREFIX="$install_dir" winecfg -v win11 2>"$tmp_install_log" &&
+        WINEPREFIX="$install_dir" winecfg -v win11 >"$tmp_install_log" 2>&1 &&
         debug_print continue "Installing dxvk and powershell..."
-        WINEPREFIX="$install_dir" winetricks dxvk powershell 2>>"$tmp_install_log"
+        WINEPREFIX="$install_dir" winetricks dxvk powershell >>"$tmp_install_log" 2>&1
         debug_print continue "Launching the RSI Installer..."
-        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" 2>>"$tmp_install_log"
+        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" >>"$tmp_install_log" 2>&1
 
         if [ "$?" -eq 1 ]; then
             # User cancelled or there was an error
-            if message question "Installation aborted. Do you want to delete\n${install_dir}?"; then
+            if message question "Installation aborted. The install log was written to\n"$tmp_install_log"\n\nDo you want to delete\n${install_dir}?"; then
                 debug_print continue "Deleting $install_dir..."
                 rm -r --interactive=never "$install_dir"
             fi
@@ -2610,7 +2610,7 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. Any errors can be found in "$tmp_install_log"\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
+        message info "Installation has finished. The install log was written to "$tmp_install_log"\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
     fi   
 }
 
