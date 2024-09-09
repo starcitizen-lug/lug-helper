@@ -11,7 +11,7 @@ Command line arguments are available for quickly launching functions from the te
 Configuration is saved in *$XDG_CONFIG_HOME/starcitizen-lug/*  
 Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
-## Options:
+## Options
 
 `Preflight Check`
 - Runs a series of system optimization checks and offers to fix any issues.
@@ -67,7 +67,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 
 
-## Installation:
+## Installation
 
 **From Source:**
 1. Download it! https://github.com/starcitizen-lug/lug-helper/releases
@@ -81,7 +81,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 _Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
 _Optional Dependencies: **zenity** (for GUI)_  
 
-## Contributors:
+## Contributors
 - https://github.com/Termuellinator
 - https://github.com/pstn
 - https://github.com/gort818
@@ -90,3 +90,6 @@ _Optional Dependencies: **zenity** (for GUI)_
 - https://github.com/ananace
 - https://github.com/LovingMelody
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
+
+## Contributing
+See the [Contributors' Guide](https://github.com/starcitizen-lug/lug-helper/wiki/Contributors-Guide) for a high level overview of the script
