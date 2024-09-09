@@ -2440,17 +2440,20 @@ install_game_lutris() {
             debug_print exit "Script error: Unable to detect Lutris version in install_game_lutris function. Aborting."
         fi
 
+        # Create a temporary log file
+        tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
+
         # Run the appropriate installer
         if [ "$install_version" = "native" ]; then
-            lutris --install "$lutris_install_script" &
+            lutris --debug --install "$lutris_install_script" >"$tmp_install_log" 2>&1 &
         elif [ "$install_version" = "flatpak" ]; then
-            flatpak run --file-forwarding net.lutris.Lutris --install @@ "$lutris_install_script" @@ &
+            flatpak run --file-forwarding net.lutris.Lutris --debug --install @@ "$lutris_install_script" @@ >"$tmp_install_log" 2>&1 &
         else
             # We shouldn't get here
             debug_print exit "Script error: Unknown condition for install_version in install_game_lutris() function. Aborting."
         fi
 
-        message info "The installation will continue in Lutris"
+        message info "The installation will continue in Lutris. The debug log will be written to $tmp_install_log"
     fi
 }
 
