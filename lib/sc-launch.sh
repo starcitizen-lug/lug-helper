@@ -26,8 +26,13 @@ export radv_zero_vram="true"
 
 # Run optional prelaunch and postexit scripts
 # To use, update the game install paths here, then create the scripts with your desired actions in them
+#
 # "$HOME/Games/star-citizen/sc-prelaunch.sh"
 # trap "$HOME/Games/star-citizen/sc-postexit.sh" EXIT
 
 # Launch the game
+#
+# To enable feral gamemode, replace the launch line below with:
+# gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+
 wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
