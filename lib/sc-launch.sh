@@ -34,5 +34,8 @@ export radv_zero_vram="true"
 #
 # To enable feral gamemode, replace the launch line below with:
 # gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+#
+# To enable gamescope and feral gamemode, replace the launch line below with the desired gamescope arguments. For example:
+# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 
 wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
