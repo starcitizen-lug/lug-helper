@@ -12,6 +12,7 @@
 #############################################################################################
 #
 # If you do not wish to use the above .desktop files, then simply run this script from your terminal
+# Running this script within your terminal or with the .desktop file helps prevent lingering background wine processes
 
 # Configure the environment
 # Add additional environment variables here as needed
