@@ -747,7 +747,10 @@ getdirs() {
 ############################################################################
 
 # Check that the system is optimized for Star Citizen
-# Accepts an optional string argument, "quiet", which causes the preflight check to only output problems that must be fixed
+# Accepts an optional string argument, "lutris" or "wine"
+# This argument is used by the install functions to indicate which
+# Preflight Check functions should be called and cause the Preflight Check
+# to only output problems that must be fixed
 preflight_check() {
     # Initialize variables
     unset preflight_pass
@@ -760,15 +763,27 @@ preflight_check() {
     unset preflight_fail_string
     unset preflight_pass_string
     unset preflight_fix_results_string
+    unset install_mode
     retval=0
 
-    # Capture optional argument
-    output_mode="$1"
+    # Capture optional argument that determines which install function called us
+    install_mode="$1"
+
+    # Check the optional argument for valid values
+    if [ -n "$install_mode" ] && [ "$install_mode" != "wine" ] && [ "$install_mode" != "lutris" ]; then
+        debug_print exit "Script error: Unexpected argument passed to the preflight_check function. Aborting."
+    fi
 
     # Call the optimization functions to perform the checks
-    lutris_check
+    if [ "$install_mode" != "wine" ]; then
+        # Don't check for lutris if called from the wine install function
+        lutris_check
+    fi
     wine_check
-    winetricks_check
+    if [ "$install_mode" != "lutris" ]; then
+        # Don't check for winetricks if called from the lutris install function
+        winetricks_check
+    fi
     memory_check
     avx_check
     mapcount_check
@@ -814,8 +829,8 @@ preflight_check() {
 
     # Display the results of the preflight check
     if [ -z "$preflight_fail_string" ]; then
-        # If output mode is quiet, we won't bother the user when all checks pass
-        if [ "$output_mode" != "quiet" ]; then
+        # If install_mode was set by an install function, we won't bother the user when all checks pass
+        if [ -z "$install_mode" ]; then
             # All checks pass!
             message info "$message_heading\n\nYour system is optimized for Star Citizen!\n\n$preflight_pass_string"
         fi
@@ -883,7 +898,7 @@ lutris_check() {
     lutris_detect
 
     if [ "$lutris_installed" = "false" ]; then
-        preflight_fail+=("Lutris does not appear to be installed.\nFor manual installations, this may be ignored.")
+        preflight_fail+=("Lutris does not appear to be installed.\nFor non-Lutris installs, this may be ignored.")
         return 1
     fi
 
@@ -949,7 +964,7 @@ winetricks_check() {
         if [ "$winetricks_required" != "$winetricks_current" ] &&
            [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
             # Winetricks is out of date
-            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
+            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nIf installing the game with Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
             # Add the function that will be called to update winetricks
             preflight_action_funcs+=("winetricks_update")
             # Add info for manually running the update
@@ -2409,7 +2424,7 @@ install_game_lutris() {
     fi
 
     # Call the preflight check
-    preflight_check "quiet"
+    preflight_check "lutris"
     if [ "$?" -eq 1 ]; then
         # There were errors
         install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
@@ -2471,7 +2486,7 @@ install_game_wine() {
     fi
 
     # Call the preflight check
-    preflight_check "quiet"
+    preflight_check "wine"
     if [ "$?" -eq 1 ]; then
         # There were errors
         install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
