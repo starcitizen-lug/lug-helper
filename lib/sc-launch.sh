@@ -17,6 +17,7 @@
 # Configure the environment
 # Add additional environment variables here as needed
 export WINEPREFIX="$HOME/Games/star-citizen"
+#export WINEPATH="/path/to/custom/wine/bin/wine64"
 export EOS_USE_ANTICHEATCLIENTNULL=1
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=1073741824
