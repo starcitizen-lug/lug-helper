@@ -17,7 +17,6 @@
 # Configure the environment
 # Add additional environment variables here as needed
 export WINEPREFIX="$HOME/Games/star-citizen"
-#export WINEPATH="/path/to/custom/wine/bin/wine64"
 export EOS_USE_ANTICHEATCLIENTNULL=1
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=1073741824
@@ -25,18 +24,24 @@ export radv_zero_vram="true"
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
+#############################################
 # Run optional prelaunch and postexit scripts
+#############################################
 # To use, update the game install paths here, then create the scripts with your desired actions in them
 #
 # "$HOME/Games/star-citizen/sc-prelaunch.sh"
 # trap "$HOME/Games/star-citizen/sc-postexit.sh" EXIT
 
+#################
 # Launch the game
-#
+#################
 # To enable feral gamemode, replace the launch line below with:
 # gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 #
 # To enable gamescope and feral gamemode, replace the launch line below with the desired gamescope arguments. For example:
 # gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+#
+# To use a custom wine runner, simply call its binary
+# /path/to/custom/runner/bin/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 
 wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
