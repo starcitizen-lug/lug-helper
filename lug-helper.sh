@@ -2545,7 +2545,6 @@ install_game_wine() {
         if [ ! -f "$tmp_dir/$rsi_installer" ]; then
             # Something went wrong with the download and the file doesn't exist
             message error "Something went wrong; the installer could not be downloaded!"
-            debug_print continue "Download failed! File not found: $tmp_dir/$rsi_installer"
             return 1
         fi
 
@@ -2553,12 +2552,15 @@ install_game_wine() {
         tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
 
         # Run the installer
+        export WINEPREFIX="$install_dir"
         debug_print continue "Preparing the wine prefix..."
-        WINEPREFIX="$install_dir" winecfg -v win11 >"$tmp_install_log" 2>&1 &&
-        debug_print continue "Installing dxvk and powershell..."
-        WINEPREFIX="$install_dir" winetricks dxvk powershell >>"$tmp_install_log" 2>&1
-        debug_print continue "Launching the RSI Installer..."
-        WINEPREFIX="$install_dir" wine "$tmp_dir/$rsi_installer" >>"$tmp_install_log" 2>&1
+        winecfg -v win11 >"$tmp_install_log" 2>&1 &&
+
+        debug_print continue "Installing dxvk and powershell, please wait..."
+        winetricks dxvk powershell >>"$tmp_install_log" 2>&1
+
+        debug_print continue "Installing the launcher, please wait..."
+        wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
         if [ "$?" -eq 1 ]; then
             # User cancelled or there was an error
@@ -2566,8 +2568,13 @@ install_game_wine() {
                 debug_print continue "Deleting $install_dir..."
                 rm -r --interactive=never "$install_dir"
             fi
+            wineserver -k
             return 0
         fi
+
+        # Kill the wine process after installation
+        # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
+        wineserver -k
 
         # Save the install location to the Helper's config files
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"{winedir,gamedir}.conf 2>/dev/null
@@ -2576,6 +2583,12 @@ install_game_wine() {
             game_path="$wine_prefix/$default_install_path/$sc_base_dir"
         fi
         getdirs
+
+        # Verify that we have an installed game path
+        if [ -z "$game_path" ]; then
+            message error "Something went wrong during installation. Unable to locate the expected game path. Aborting."
+            return 1
+        fi
 
         # Copy game launch script to the wine prefix root directory
         debug_print continue "Copying game launch script to ${install_dir}..."
