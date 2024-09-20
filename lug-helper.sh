@@ -2564,14 +2564,19 @@ install_game_wine() {
         # Create a temporary log file
         tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
 
-        # Run the installer
+        # Create the new prefix
         export WINEPREFIX="$install_dir"
         debug_print continue "Preparing the wine prefix..."
         winecfg -v win11 >"$tmp_install_log" 2>&1 &&
 
+        # Add registry key that prevents wine from creating unnecessary file type associations
+        wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N >"$tmp_install_log" 2>&1
+
+        # Install powershell
         debug_print continue "Installing dxvk and powershell, please wait..."
         winetricks dxvk powershell >>"$tmp_install_log" 2>&1
 
+        # Run the installer
         debug_print continue "Installing the launcher, please wait..."
         wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
