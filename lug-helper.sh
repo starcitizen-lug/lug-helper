@@ -595,6 +595,7 @@ menu_loop_done() {
 }
 
 # Get paths to the user's wine prefix, game directory, and a backup directory
+# Returns 3 if the user was asked to select new directories
 getdirs() {
     # Sanity checks
     if [ ! -d "$conf_dir" ]; then
@@ -605,12 +606,16 @@ getdirs() {
         mkdir -p "$conf_dir/$conf_subdir"
     fi
 
+    # Initialize a return value
+    retval=0
+
     # Check if the config files already exist
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
         wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
         if [ ! -d "$wine_prefix" ]; then
             debug_print continue "The saved wine prefix does not exist, ignoring."
             wine_prefix=""
+            rm --interactive=never "${conf_dir:?}/$conf_subdir/$wine_conf"
         fi
     fi
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
@@ -620,6 +625,7 @@ getdirs() {
         if [ ! -d "$(dirname "$game_path")" ] || [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
             debug_print continue "Unexpected game path found in config file, ignoring."
             game_path=""
+            rm --interactive=never "${conf_dir:?}/$conf_subdir/$game_conf"
         fi
     fi
 
@@ -709,6 +715,9 @@ getdirs() {
                 fi
             fi
         fi
+
+        # Set a return code to indicate to other functions in this script that the user had to select new directories here
+        retval=3
     fi
 
     # Save the paths to config files
@@ -739,6 +748,8 @@ getdirs() {
     dxvk_cache="$game_path/$game_version/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
     backup_path="$conf_dir/$conf_subdir"
+
+    return "$retval"
 }
 
 
@@ -2185,7 +2196,9 @@ switch_prefix() {
     # Check if the config file exists
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ] && [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         getdirs
-        if message question "The Helper is currently targeting this Star Citizen install\nWould you like to change it?\n\n$wine_prefix"; then
+        # Above will return code 3 if the user had to select new directories. This can happen if the stored directories are now invalid.
+        # We check this so we don't prompt the user to set directories twice here.
+        if [ "$?" -ne 3 ] && message question "The Helper is currently targeting this Star Citizen install\nWould you like to change it?\n\n$wine_prefix"; then
             reset_helper "switchprefix"
             # Prompt the user for a new set of game paths
             getdirs
@@ -2389,10 +2402,10 @@ display_wiki() {
 # Delete the helper's config directory
 reset_helper() {
     if [ "$1" = "switchprefix" ]; then
-        # This gets called by the switch_prefix function
+        # This gets called by the switch_prefix and install_wine functions
         # We only want to delete configs related to the game path in order to target a different game install
-        debug_print continue "Deleting $conf_dir/$conf_subdir/{winedir,gamedir}.conf..."
-        rm --interactive=never "${conf_dir:?}/$conf_subdir/"{winedir,gamedir}.conf
+        debug_print continue "Deleting $conf_dir/$conf_subdir/{$wine_conf,$game_conf}..."
+        rm --interactive=never "${conf_dir:?}/$conf_subdir/"{"$wine_conf","$game_conf"}
     elif message question "All config files will be deleted from:\n\n$conf_dir/$conf_subdir\n\nDo you want to proceed?"; then
         # Called normally by the user, wipe all the things!
         debug_print continue "Deleting $conf_dir/$conf_subdir/*.conf..."
@@ -2577,7 +2590,7 @@ install_game_wine() {
         wineserver -k
 
         # Save the install location to the Helper's config files
-        rm --interactive=never "${conf_dir:?}/$conf_subdir/"{winedir,gamedir}.conf 2>/dev/null
+        reset_helper "switchprefix"
         wine_prefix="$install_dir"
         if [ -d "$wine_prefix/$default_install_path" ]; then
             game_path="$wine_prefix/$default_install_path/$sc_base_dir"
