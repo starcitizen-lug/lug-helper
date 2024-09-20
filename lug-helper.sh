@@ -2570,7 +2570,7 @@ install_game_wine() {
         winecfg -v win11 >"$tmp_install_log" 2>&1 &&
 
         # Add registry key that prevents wine from creating unnecessary file type associations
-        wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N >"$tmp_install_log" 2>&1
+        wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >"$tmp_install_log" 2>&1
 
         # Install powershell
         debug_print continue "Installing dxvk and powershell, please wait..."
