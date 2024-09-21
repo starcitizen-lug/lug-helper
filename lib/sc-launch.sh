@@ -12,7 +12,6 @@
 #############################################################################################
 #
 # If you do not wish to use the above .desktop files, then simply run this script from your terminal
-# Running this script within your terminal or with the .desktop file helps prevent lingering background wine processes
 
 # Configure the environment
 # Add additional environment variables here as needed
@@ -28,9 +27,14 @@ export radv_zero_vram="true"
 # Run optional prelaunch and postexit scripts
 #############################################
 # To use, update the game install paths here, then create the scripts with your desired actions in them
+# Replace the trap line below with the one provided here
 #
 # "$HOME/Games/star-citizen/sc-prelaunch.sh"
-# trap "$HOME/Games/star-citizen/sc-postexit.sh" EXIT
+# trap "wineserver -k; $HOME/Games/star-citizen/sc-postexit.sh" EXIT
+
+# Kill the wine prefix when this script exits
+# This makes sure there will be no lingering background wine processes
+trap "wineserver -k" EXIT
 
 #################
 # Launch the game
