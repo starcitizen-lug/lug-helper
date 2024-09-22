@@ -258,33 +258,35 @@ try_exec() {
         exit 0
     fi
 
-    retval=0
     # Use pollkit's pkexec for gui authentication with a fallback to sudo
     if [ -x "$(command -v pkexec)" ]; then
         pkexec sh -c "$1"
 
         # Check the exit status
-        statuscode="$?"
-        if [ "$statuscode" -eq 126 ] || [ "$statuscode" -eq 127 ]; then
+        if [ "$?" -eq 126 ] || [ "$?" -eq 127 ]; then
             # User cancel or error
-            retval=1
+            debug_print continue "pkexec returned an error. Falling back to sudo..."
+        else
+            # Successful execution, return here
+            return 0
         fi
-    elif [ -x "$(command -v sudo)" ]; then
+    fi
+    # Fall back to sudo if pkexec is unavailable or returned an error
+    if [ -x "$(command -v sudo)" ]; then
         sudo sh -c "$1"
 
         # Check the exit status
-        statuscode="$?"
-        if [ "$statuscode" -eq 1 ]; then
+        if [ "$?" -eq 1 ]; then
             # Error
-            retval=1
+            return 1
         fi
     else
         # We don't know how to perform this operation with elevated privileges
         printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with the required privileges.\n"
-        retval=1
+        return 1
     fi
 
-    return "$retval"
+    return 0
 }
 
 # Echo a formatted debug message to the terminal and optionally exit
