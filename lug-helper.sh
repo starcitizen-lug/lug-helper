@@ -1476,6 +1476,8 @@ download_select_install() {
         # Format for grep extended regex (ie: "word1|word2|word3")
         if [ "$download_type" = "runner" ] && [ "$contributor_name" = "GloriousEggroll" ]; then
             filter_keywords="lol|diablo"
+        elif [ "$download_type" = "runner" ] && [ "$contributor_name" = "Kron4ek" ]; then
+            filter_keywords="x86|wow64"
         else
             filter_keywords="oh hi there. this is just placeholder text. how are you today?"
         fi
