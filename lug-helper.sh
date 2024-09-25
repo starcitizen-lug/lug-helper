@@ -2740,7 +2740,7 @@ if [ -x "$(command -v zenity)" ]; then
         else
             # zenity 4.x+ menu sizing
             menu_option_height="45"
-            menu_text_height_zenity4="90"
+            menu_text_height_zenity4="120"
             menu_height_max="800"
         fi
     else
