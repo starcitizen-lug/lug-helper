@@ -2660,7 +2660,7 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. The install log was written to "$tmp_install_log"\n\nTo launch the game, run the following launch script in a terminal:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
+        message info "Installation has finished. The install log was written to "$tmp_install_log"\n\nTo launch the game, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
     fi   
 }
 
