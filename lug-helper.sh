@@ -2577,11 +2577,11 @@ install_game_wine() {
         wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >"$tmp_install_log" 2>&1
 
         # Install powershell
-        debug_print continue "Installing dxvk and powershell, please wait..."
+        debug_print continue "Installing dxvk and powershell. Please wait, this may take a moment..."
         winetricks dxvk powershell >>"$tmp_install_log" 2>&1
 
         # Run the installer
-        debug_print continue "Installing the launcher, please wait..."
+        debug_print continue "Installing the launcher. Please wait, this may take a moment..."
         wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
         if [ "$?" -eq 1 ]; then
