@@ -19,6 +19,9 @@ export WINEPREFIX="$HOME/Games/star-citizen"
 export EOS_USE_ANTICHEATCLIENTNULL=1
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=1073741824
+# Extra Nvidia cache options
+#export __GL_SHADER_DISK_CACHE_PATH="/path/you/want/for/your/cache"
+#export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=true
 export radv_zero_vram="true"
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
