@@ -2578,7 +2578,7 @@ install_game_wine() {
 
         # Install powershell
         debug_print continue "Installing dxvk and powershell. Please wait, this may take a moment..."
-        winetricks dxvk powershell >>"$tmp_install_log" 2>&1
+        winetricks -q dxvk powershell >>"$tmp_install_log" 2>&1
 
         # Run the installer
         debug_print continue "Installing the launcher. Please wait, this may take a moment..."
