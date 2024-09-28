@@ -2406,7 +2406,7 @@ display_wiki() {
 # Delete the helper's config directory
 reset_helper() {
     if [ "$1" = "switchprefix" ]; then
-        # This gets called by the switch_prefix and install_wine functions
+        # This gets called by the switch_prefix and install_game_wine functions
         # We only want to delete configs related to the game path in order to target a different game install
         debug_print continue "Deleting $conf_dir/$conf_subdir/{$wine_conf,$game_conf}..."
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"{"$wine_conf","$game_conf"}
