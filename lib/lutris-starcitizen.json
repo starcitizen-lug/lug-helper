@@ -66,8 +66,6 @@
             "__GL_SHADER_DISK_CACHE": 1,
             "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
             "EOS_USE_ANTICHEATCLIENTNULL": 1,
-            "WINE_HIDE_NVIDIA_GPU": 1,
-            "radv_zero_vram": "true",
             "GAMEID": "umu-starcitizen",
             "STORE": "none",
             "PROTONPATH": "GE-Proton"
