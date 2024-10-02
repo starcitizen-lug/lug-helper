@@ -51,6 +51,15 @@
           },
           {
             "task": {
+              "app": "arial win11",
+              "arch": "win64",
+              "description": "Installing wine components",
+              "name": "winetricks",
+              "prefix": "$GAMEDIR"
+            }
+          },
+          {
+            "task": {
               "arch": "win64",
               "args": "/S",
               "description": "Installing client",

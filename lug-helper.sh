@@ -2577,8 +2577,8 @@ install_game_wine() {
         wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >"$tmp_install_log" 2>&1
 
         # Install powershell
-        debug_print continue "Installing dxvk and powershell. Please wait, this may take a moment..."
-        winetricks -q dxvk powershell >>"$tmp_install_log" 2>&1
+        debug_print continue "Installing wine components. Please wait, this may take a moment..."
+        winetricks -q arial dxvk powershell >>"$tmp_install_log" 2>&1
 
         # Run the installer
         debug_print continue "Installing the launcher. Please wait, this may take a moment..."
