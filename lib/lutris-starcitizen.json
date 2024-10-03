@@ -51,7 +51,7 @@
           },
           {
             "task": {
-              "app": "arial tahoma win11",
+              "app": "arial tahoma win10",
               "arch": "win64",
               "description": "Installing wine components",
               "name": "winetricks",
