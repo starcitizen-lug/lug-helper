@@ -2128,6 +2128,7 @@ maintenance_menu() {
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
         prefix_msg="Target a different Star Citizen installation"
+        powershell_msg="Install PowerShell into Wine prefix"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
         vidcache_msg="Delete my DXVK cache"
@@ -2136,9 +2137,9 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2668,9 +2669,9 @@ install_game_wine() {
 install_powershell() {
     if message question "Run the Preflight Check to update winetricks before proceeding!\n\nDo you want to continue?"; then
         getdirs
-        debug_print continue "Launching winetricks to install PowerShell into ${wine_prefix}..."
-        WINEPREFIX="$wine_prefix" winetricks powershell
-        message info "PowerShell operation complete. See terminal output for details.\n\nIf nothing happened, your winetricks is out of date."
+        debug_print continue "Installing PowerShell into ${wine_prefix}..."
+        WINEPREFIX="$wine_prefix" winetricks -q powershell
+        message info "PowerShell operation complete. See terminal output for details."
     fi
 }
 
@@ -2933,7 +2934,6 @@ while true; do
     preflight_msg="Preflight Check (System Optimization)"
     install_msg_lutris="Install Star Citizen with Lutris"
     install_msg_wine="Install Star Citizen with Wine"
-    powershell_msg="Install PowerShell into Wine prefix"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -2941,9 +2941,9 @@ while true; do
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$powershell_msg" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "install_powershell" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
