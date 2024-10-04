@@ -20,7 +20,7 @@
 #####################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
 export WINEDLLOVERRIDES=winemenubuilder.exe=d # Prevent updates from overwriting our .desktop entries
-export EOS_USE_ANTICHEATCLIENTNULL=1
+#export EOS_USE_ANTICHEATCLIENTNULL=1
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=1073741824
 # Extra Nvidia cache options

@@ -750,6 +750,8 @@ getdirs() {
     dxvk_cache="$game_path/$game_version/StarCitizen.dxvk-cache"
     # Where to store backed up keybinds
     backup_path="$conf_dir/$conf_subdir"
+    # Windows-formatted path to the RSI directory on wine's Z:\ drive
+    rsi_path="Z:$(dirname "$game_path" | sed 's|/|\\|g')"
 
     return "$retval"
 }
@@ -2486,7 +2488,14 @@ install_game_lutris() {
             debug_print exit "Script error: Unknown condition for install_version in install_game_lutris() function. Aborting."
         fi
 
-        message info "The installation will continue in Lutris. The debug log will be written to $tmp_install_log"
+        eacfix_path="Z:\home\\${USER}\Games\star-citizen\drive_c\Program Files\Roberts Space Industries"
+
+        # Format eacfix_path for zenity. Double backslashes
+        if [ "$use_zenity" -eq 1 ]; then
+            eacfix_path="$(echo "$eacfix_path" | sed 's|\\|\\\\|g')"
+        fi
+
+        message info "The installation will continue in Lutris. The debug log will be written to $tmp_install_log\n\nEasy Anticheat Fix:\n\nAfter installation, paste the following Game Location into your RSI Launcher's settings\nEdit the path as needed if you installed to a different directory:\n\n$eacfix_path"
     fi
 }
 
@@ -2578,11 +2587,11 @@ install_game_wine() {
         wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >"$tmp_install_log" 2>&1
 
         # Install powershell
-        debug_print continue "Installing wine components. Please wait, this may take a moment..."
+        debug_print continue "Installing wine components. Please wait; this will take a moment..."
         winetricks -q arial tahoma dxvk powershell >>"$tmp_install_log" 2>&1
 
         # Run the installer
-        debug_print continue "Installing the launcher. Please wait, this may take a moment..."
+        debug_print continue "Installing the launcher. Please wait; this will take a moment..."
         wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
         if [ "$?" -eq 1 ]; then
@@ -2661,7 +2670,12 @@ install_game_wine() {
             update-desktop-database "$HOME/.local/share/applications"
         fi
 
-        message info "Installation has finished. The install log was written to "$tmp_install_log"\n\nTo launch the game, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n$installed_launch_script\n\nYou may also use the following .desktop files if wine installed them:\n$home_desktop_file\n$localshare_desktop_file"
+        # Format rsi_path for zenity. Double backslashes
+        if [ "$use_zenity" -eq 1 ]; then
+            rsi_path="$(echo "$rsi_path" | sed 's|\\|\\\\|g')"
+        fi
+
+        message info "Installation has finished. The install log was written to "$tmp_install_log"\n\nNext Steps:\n\n1. Easy Anticheat Fix: Paste this Game Location into the RSI Launcher's settings:\n     $rsi_path\n\n2. To start the RSI Launcher, run the following launch script in a terminal\n     Edit the environment variables in the script as needed:\n     $installed_launch_script\n\n3. You may also use the following .desktop files if wine installed them:\n     $home_desktop_file\n     $localshare_desktop_file"
     fi   
 }
 
