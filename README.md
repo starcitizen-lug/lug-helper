@@ -20,11 +20,11 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Checks that the hard open file descriptors limit is set to at least 524288.
     - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
 
+`Install Star Citizen with Wine`
+- Installs Star Citizen using the system's Wine without Lutris
+
 `Install Star Citizen with Lutris`
 - Launches Lutris and installs Star Citizen
-
-`Install Star Citizen with Wine`
-- Installs Star Citizen without Lutris, just using the system Wine
 
 `Install PowerShell into Wine prefix`
 - Uses winetricks to install PowerShell
@@ -81,7 +81,10 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 _Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
 _Optional Dependencies: **zenity** (for GUI)_  
 
-## Contributors
+## Made with <3
+#### Author:
+- https://github.com/the-sane
+#### Contributors:
 - https://github.com/Termuellinator
 - https://github.com/pstn
 - https://github.com/gort818
@@ -89,6 +92,7 @@ _Optional Dependencies: **zenity** (for GUI)_
 - https://github.com/Wrzlprnft
 - https://github.com/ananace
 - https://github.com/LovingMelody
+- https://github.com/mactan-sc
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
 
 ## Contributing
