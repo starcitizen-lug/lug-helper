@@ -2946,8 +2946,8 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
-    install_msg_lutris="Install Star Citizen with Lutris"
     install_msg_wine="Install Star Citizen with Wine"
+    install_msg_lutris="Install Star Citizen with Lutris"
     runners_msg="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
@@ -2955,9 +2955,9 @@ while true; do
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_lutris" "$install_msg_wine" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_wine" "$install_msg_lutris" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_lutris" "install_game_wine" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_wine" "install_game_lutris" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
