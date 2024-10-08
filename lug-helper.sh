@@ -68,11 +68,11 @@ if [ ! -x "$(command -v curl)" ]; then
     notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n- cut\n- numfmt\n" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n- cut\n- numfmt\n" --icon=dialog-warning
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- chmod\n- sort\n- basename\n- realpath\n- dirname\n- cut\n- numfmt\n" --icon=dialog-warning
     exit 1
 fi
 if [ ! -x "$(command -v xargs)" ]; then
@@ -216,9 +216,6 @@ dxvk_sources=(
 
 ######## Requirements ######################################################
 
-# winetricks minimum version
-winetricks_required="20240105-next"
-
 # lutris minimum version
 lutris_required="0.5.17"
 
@@ -235,8 +232,12 @@ lug_wiki="https://starcitizen-lug.github.io"
 # NixOS section in Wiki
 lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos"
 
-# RSI Installer version
+# RSI Installer version and url
 rsi_installer="RSI Launcher-Setup-2.0.5.exe"
+rsi_installer_url="https://install.robertsspaceindustries.com/rel/2/$rsi_installer"
+
+# Winetricks download url
+winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
@@ -795,10 +796,6 @@ preflight_check() {
         lutris_check
     fi
     wine_check
-    if [ "$install_mode" != "lutris" ]; then
-        # Don't check for winetricks if called from the lutris install function
-        winetricks_check
-    fi
     memory_check
     avx_check
     mapcount_check
@@ -970,35 +967,6 @@ wine_check() {
     else
         preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
     fi
-}
-
-# Check the installed winetricks version
-winetricks_check() {
-    if [ -x "$(command -v winetricks)" ]; then
-        winetricks_current="$(winetricks --version 2>/dev/null | awk '{print $1}')"
-        if [ "$winetricks_required" != "$winetricks_current" ] &&
-           [ "$winetricks_current" = "$(printf "%s\n%s" "$winetricks_current" "$winetricks_required" | sort -V | head -n1)" ]; then
-            # Winetricks is out of date
-            preflight_fail+=("Winetricks is out of date.\nVersion $winetricks_required or newer is required.\nIf installing the game with Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
-            # Add the function that will be called to update winetricks
-            preflight_action_funcs+=("winetricks_update")
-            # Add info for manually running the update
-            preflight_manual+=("To manually update winetricks, run 'sudo winetricks --self-update'")
-        else
-            # Winetricks meets the minimum required version
-            preflight_pass+=("Winetricks is installed and sufficiently up to date.")
-        fi
-    else
-        # Winetricks is not installed
-        preflight_fail+=("Winetricks does not appear to be installed.\nVersion $winetricks_required or newer is required.\nIf installing the game through Lutris, this can be ignored.\nCheck that Use System Winetricks is disabled in Lutris Runner Options.")
-    fi
-}
-
-# Run the winetricks self-updater
-winetricks_update() {
-    debug_print continue "Running winetricks self-updater..."
-    preflight_actions+=('winetricks --self-update')
-    preflight_fix_results+=("Winetricks has been updated. See terminal output for details.")
 }
 
 # Check system memory and swap space
@@ -2587,12 +2555,21 @@ install_game_wine() {
         mkdir -p "$install_dir"
 
         # Download RSI installer to tmp
-        download_file "https://install.robertsspaceindustries.com/rel/2/$rsi_installer" "$rsi_installer" "installer"
+        download_file "$rsi_installer_url" "$rsi_installer" "installer"
 
         # Sanity check
         if [ ! -f "$tmp_dir/$rsi_installer" ]; then
             # Something went wrong with the download and the file doesn't exist
             message error "Something went wrong; the installer could not be downloaded!"
+            return 1
+        fi
+
+        # Download winetricks
+        download_winetricks
+
+        # Abort if the winetricks download failed
+        if [ "$?" -eq 1 ]; then
+            message error "Unable to install Star Citizen without winetricks. Aborting."
             return 1
         fi
 
@@ -2609,7 +2586,7 @@ install_game_wine() {
 
         # Install powershell
         debug_print continue "Installing wine components. Please wait; this will take a moment..."
-        winetricks -q arial tahoma dxvk powershell >>"$tmp_install_log" 2>&1
+        "$winetricks_bin" -q arial tahoma dxvk powershell >>"$tmp_install_log" 2>&1
 
         # Run the installer
         debug_print continue "Installing the launcher. Please wait; this will take a moment..."
@@ -2700,15 +2677,43 @@ install_game_wine() {
     fi   
 }
 
+# Download winetricks to a temporary file
+download_winetricks() {
+        download_file "$winetricks_url" "winetricks" "winetricks"
+
+        # Sanity check
+        if [ ! -f "$tmp_dir/winetricks" ]; then
+            # Something went wrong with the download and the file doesn't exist
+            message error "Something went wrong; winetricks could not be downloaded!"
+            return 1
+        fi
+
+    # Save the path to the downloaded binary
+    winetricks_bin="$tmp_dir/winetricks"
+
+    # Make it executable
+    chmod +x "$winetricks_bin"
+}
+
 # Install powershell verb into the game's wine prefix
 install_powershell() {
-    if message question "Run the Preflight Check to update winetricks before proceeding!\n\nDo you want to continue?"; then
-        getdirs
-        if [ "$?" -ne 1 ]; then
-            debug_print continue "Installing PowerShell into ${wine_prefix}..."
-            WINEPREFIX="$wine_prefix" winetricks -q powershell
-            message info "PowerShell operation complete. See terminal output for details."
-        fi
+    # Download winetricks
+    download_winetricks
+
+    # Abort if the winetricks download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to install powershell without winetricks. Aborting."
+        return 1
+    fi
+
+    # Update directories
+    getdirs
+
+    # Install powershell
+    if [ "$?" -ne 1 ]; then
+        debug_print continue "Installing PowerShell into ${wine_prefix}..."
+        WINEPREFIX="$wine_prefix" "$winetricks_bin" -q powershell
+        message info "PowerShell operation complete. See terminal output for details."
     fi
 }
 
