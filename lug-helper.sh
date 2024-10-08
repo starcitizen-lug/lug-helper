@@ -2528,23 +2528,48 @@ install_game_wine() {
             install_dir="$HOME/Games/star-citizen"
         else
             if [ "$use_zenity" -eq 1 ]; then
-                message info "On the following screen, select your Star Citizen install location.\n\nA new subdirectory named 'star-citizen' will be created in the selected location."
+                if message options "Create my own prefix dir" "Continue" "After clicking Continue, select your Star Citizen install location.\nA new subdirectory named 'star-citizen' will be created in the selected location. This will be your wine prefix.\n\nIf you know what you are doing and want to create your own prefix directory, choose \"Create my own prefix dir\""; then
+                    # Default, create the star-citizen directory
+                    install_prefix="star-citizen"
+                else
+                    # User will create their own prefix directory
+                    install_prefix=""
+                fi
 
                 # Get the install path from the user
-                install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
-                if [ "$?" -eq -1 ]; then
-                    message error "An unexpected error has occurred. The Helper is unable to proceed."
-                    return 1
-                elif [ -z "$install_dir" ]; then
-                    # User clicked cancel
-                    message warning "Installation cancelled."
-                    return 1
-                fi
+                while true; do
+                    install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+
+                    if [ "$?" -eq -1 ]; then
+                        message error "An unexpected error has occurred. The Helper is unable to proceed."
+                        return 1
+                    fi
+                    if [ -z "$install_dir" ]; then
+                        # User clicked cancel
+                        message warning "Installation cancelled."
+                        return 1
+                    fi
+
+                    # Add the wine prefix subdirectory to the install path
+                    if [ -n "$install_prefix" ]; then
+                        install_dir="$install_dir/$install_prefix"
+                    fi
+
+                    # Sanity check the chosen directory a bit to catch some possible mistakes
+                    if [ "$install_dir" = "/" ] || [ "$install_dir" = "$HOME" ] || [ "$install_dir" = "$HOME/Games" ]; then
+                        if message question "Something seems off! This directory will become your wine prefix. Are you really sure this is what you want?\n\n$install_dir"; then
+                            break
+                        fi
+                    else
+                        # All good, break out of the loop and continue
+                        break
+                    fi
+                done
             else
                 # No Zenity, use terminal-based menus
                 clear
                 # Get the install path from the user
-                printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games\n\nA new subdirectory named 'star-citizen' will be created in the location entered.\n\n"
+                printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games/star-citizen\n\n"
                 while read -rp "Install path: " install_dir; do
                     if [ -z "$install_dir" ]; then
                         printf "Invalid directory. Please try again.\n\n"
@@ -2557,9 +2582,6 @@ install_game_wine() {
                     fi
                 done
             fi
-
-            # Set the game subdirectory
-            install_dir="$install_dir/star-citizen"
         fi
 
         # Create the game path
@@ -2683,9 +2705,11 @@ install_game_wine() {
 install_powershell() {
     if message question "Run the Preflight Check to update winetricks before proceeding!\n\nDo you want to continue?"; then
         getdirs
-        debug_print continue "Installing PowerShell into ${wine_prefix}..."
-        WINEPREFIX="$wine_prefix" winetricks -q powershell
-        message info "PowerShell operation complete. See terminal output for details."
+        if [ "$?" -ne 1 ]; then
+            debug_print continue "Installing PowerShell into ${wine_prefix}..."
+            WINEPREFIX="$wine_prefix" winetricks -q powershell
+            message info "PowerShell operation complete. See terminal output for details."
+        fi
     fi
 }
 
