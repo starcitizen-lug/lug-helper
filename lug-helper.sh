@@ -661,23 +661,23 @@ getdirs() {
                     game_path="$wine_prefix/$default_install_path/$sc_base_dir"
                 else
                     message info "Unable to detect the default game install path!\n\n$wine_prefix/$default_install_path/$sc_base_dir\n\nDid you change the install location in the RSI Setup?\nDoing that is generally a bad idea but, if you are sure you want to proceed,\nselect your '$sc_base_dir' game directory on the next screen"
-                    while game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/$default_install_path" 2>/dev/null)"; do
+                    while true; do
+                        game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/$default_install_path" 2>/dev/null)"
+
                         if [ "$?" -eq -1 ]; then
                             message error "An unexpected error has occurred. The Helper is unable to proceed."
+                            return 1
+                        elif [ -z "$game_path" ]; then
+                            # User clicked cancel or something else went wrong
+                            message warning "Operation cancelled.\nNo changes have been made to your game."
                             return 1
                         elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
                             message warning "You must select the base game directory named '$sc_base_dir'\n\nie. [prefix]/drive_c/Program Files/Roberts Space Industries/StarCitizen"
                         else
-                            # All good or cancel
+                            # All good
                             break
                         fi
                     done
-
-                    if [ -z "$game_path" ]; then
-                        # User clicked cancel
-                        message warning "Operation cancelled.\nNo changes have been made to your game."
-                        return 1
-                    fi
                 fi
             fi
         else
@@ -2543,9 +2543,8 @@ install_game_wine() {
                     if [ "$?" -eq -1 ]; then
                         message error "An unexpected error has occurred. The Helper is unable to proceed."
                         return 1
-                    fi
-                    if [ -z "$install_dir" ]; then
-                        # User clicked cancel
+                    elif [ -z "$install_dir" ]; then
+                        # User clicked cancel or something else went wrong
                         message warning "Installation cancelled."
                         return 1
                     fi
