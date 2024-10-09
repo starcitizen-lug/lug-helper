@@ -2089,9 +2089,16 @@ maintenance_menu() {
     # Loop the menu until the user selects quit
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
+        # Fetch wine prefix
+        if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+            maint_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+        else
+            maint_prefix="Not configured"
+        fi
+
         # Configure the menu
-        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nYou may choose from the following options:"
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki\n\nWine prefix:</b> $maint_prefix"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $maint_prefix"
         menu_text_height="140"
         menu_type="radiolist"
 
@@ -2974,9 +2981,9 @@ fi
 # Loop the main menu until the user selects quit
 while true; do
     # Configure the menu
-    menu_text_zenity="$menu_heading_zenity\n\nYou may choose from the following options:"
-    menu_text_terminal="$menu_heading_terminal\nYou may choose from the following options:"
-    menu_text_height="150"
+    menu_text_zenity="$menu_heading_zenity"
+    menu_text_terminal="$menu_heading_terminal"
+    menu_text_height="120"
     menu_type="radiolist"
 
     # Configure the menu options
