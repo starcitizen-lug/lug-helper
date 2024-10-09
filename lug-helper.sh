@@ -2576,17 +2576,24 @@ install_game_wine() {
         # Create a temporary log file
         tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
 
-        # Create the new prefix
+        debug_print continue "Installation log file created at $tmp_install_log"
+
+        # Create the new prefix and install powershell
         export WINEPREFIX="$install_dir"
-        debug_print continue "Preparing the wine prefix..."
-        winecfg -v win11 >"$tmp_install_log" 2>&1 &&
+        debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
+        "$winetricks_bin" -q arial tahoma dxvk powershell win11 >>"$tmp_install_log" 2>&1
+
+        if [ "$?" -eq 1 ]; then
+            if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
+                debug_print continue "Deleting $install_dir..."
+                rm -r --interactive=never "$install_dir"
+            fi
+            wineserver -k
+            return 1
+        fi
 
         # Add registry key that prevents wine from creating unnecessary file type associations
-        wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >"$tmp_install_log" 2>&1
-
-        # Install powershell
-        debug_print continue "Installing wine components. Please wait; this will take a moment..."
-        "$winetricks_bin" -q arial tahoma dxvk powershell >>"$tmp_install_log" 2>&1
+        wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
 
         # Run the installer
         debug_print continue "Installing the launcher. Please wait; this will take a moment..."
@@ -2594,7 +2601,7 @@ install_game_wine() {
 
         if [ "$?" -eq 1 ]; then
             # User cancelled or there was an error
-            if message question "Installation aborted. The install log was written to\n"$tmp_install_log"\n\nDo you want to delete\n${install_dir}?"; then
+            if message question "Installation aborted. The install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
                 debug_print continue "Deleting $install_dir..."
                 rm -r --interactive=never "$install_dir"
             fi
@@ -2673,7 +2680,7 @@ install_game_wine() {
             rsi_path="$(echo "$rsi_path" | sed 's|\\|\\\\|g')"
         fi
 
-        message info "Installation has finished. The install log was written to "$tmp_install_log"\n\nNext Steps:\n\n1. Easy Anticheat Fix: Paste this Game Location into the RSI Launcher's settings:\n     $rsi_path\n\n2. To start the RSI Launcher, run the following launch script in a terminal\n     Edit the environment variables in the script as needed:\n     $installed_launch_script\n\n3. You may also use the following .desktop files if wine installed them:\n     $home_desktop_file\n     $localshare_desktop_file"
+        message info "Installation has finished. The install log was written to $tmp_install_log\n\nNext Steps:\n\n1. Easy Anticheat Fix: Paste this Game Location into the RSI Launcher's settings:\n     $rsi_path\n\n2. To start the RSI Launcher, run the following launch script in a terminal\n     Edit the environment variables in the script as needed:\n     $installed_launch_script\n\n3. You may also use the following .desktop files if wine installed them:\n     $home_desktop_file\n     $localshare_desktop_file"
     fi   
 }
 
