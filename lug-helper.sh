@@ -153,6 +153,7 @@ shaders_subdirs=(
 ######## Bundled Files #####################################################
 
 # Use logo installed by a packaged version of this script if available
+# /usr/share/pixmaps/lug-logo.png
 # Otherwise, default to the logo in the same directory
 if [ -f "$(dirname "$helper_dir")/share/pixmaps/lug-logo.png" ]; then
     lug_logo="$(dirname "$helper_dir")/share/pixmaps/lug-logo.png"
@@ -160,6 +161,17 @@ elif [ -f "$helper_dir/lug-logo.png" ]; then
     lug_logo="$helper_dir/lug-logo.png"
 else
     lug_logo="info"
+fi
+
+# Use rsi launcher icon installed by a packaged version of this script if available
+# /usr/share/icons/rsi-icon.ico
+# Otherwise, default to the icon in the same directory
+if [ -f "$(dirname "$helper_dir")/share/icons/rsi-icon.ico" ]; then
+    rsi_icon="$(dirname "$helper_dir")/share/icons/rsi-icon.ico"
+elif [ -f "$helper_dir/rsi-icon.ico" ]; then
+    rsi_icon="$helper_dir/rsi-icon.ico"
+else
+    rsi_icon=""
 fi
 
 # Use Lutris install json installed by a packaged version of this script if available
@@ -2644,6 +2656,13 @@ install_game_wine() {
 
         # Modify the .desktop files installed by wine to exec the game launch script
         debug_print continue "Updating .desktop files installed by wine..."
+
+        # Copy the bundled RSI icon to the Helper's config directory
+        if [ -f "$rsi_icon" ]; then
+            cp "$rsi_icon" "$conf_dir/$conf_subdir/"
+        fi
+
+        # Modify $HOME/Desktop/RSI Launcher.desktop
         home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
         if [ -f "$home_desktop_file" ]; then
             # Replace the exec line with our launch script
@@ -2653,6 +2672,8 @@ install_game_wine() {
             sed -i '/^Exec=/s/$/"/' "$home_desktop_file"
             # Escape spaces in path line
             sed -i '/^Path=/s/ /\\\s/g' "$home_desktop_file"
+            # Replace icon
+            sed -i "s|^Icon=.*|Icon=$conf_dir/$conf_subdir/rsi-icon.ico|" "$home_desktop_file"
             # Make it start in a terminal
             echo "Terminal=true" >> "$home_desktop_file"
             debug_print continue "Updated $home_desktop_file"
@@ -2660,6 +2681,7 @@ install_game_wine() {
             debug_print continue "Unable to find $home_desktop_file"
         fi
 
+        # Modify $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
         localshare_desktop_file="$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
         if [ -f "$localshare_desktop_file" ]; then
             # Replace the exec line with our launch script
@@ -2669,6 +2691,8 @@ install_game_wine() {
             sed -i '/^Exec=/s/$/"/' "$localshare_desktop_file"
             # Escape spaces in path line
             sed -i '/^Path=/s/ /\\\s/g' "$localshare_desktop_file"
+            # Replace icon
+            sed -i "s|^Icon=.*|Icon=$conf_dir/$conf_subdir/rsi-icon.ico|" "$localshare_desktop_file"
             # Make it start in a terminal
             echo "Terminal=true" >> "$localshare_desktop_file"
             debug_print continue "Updated $localshare_desktop_file"
