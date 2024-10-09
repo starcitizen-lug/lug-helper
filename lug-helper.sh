@@ -184,10 +184,11 @@ fi
 
 # Use game launch script installed by a packaged version of this script if available
 # Otherwise, default to the launch script in the lib directory
-if [ -f "$(dirname "$helper_dir")/share/lug-helper/sc-launch.sh" ]; then
-    launch_script="$(dirname "$helper_dir")/share/lug-helper/sc-launch.sh"
+wine_launch_script_name="sc-launch.sh"
+if [ -f "$(dirname "$helper_dir")/share/lug-helper/$wine_launch_script_name" ]; then
+    wine_launch_script="$(dirname "$helper_dir")/share/lug-helper/$wine_launch_script_name"
 else
-    launch_script="$helper_dir/lib/sc-launch.sh"
+    wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
 fi
 
 ######## Runners ###########################################################
@@ -502,6 +503,7 @@ menu() {
         # Format the options array for Zenity by adding
         # TRUE or FALSE to indicate default selections
         # ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
+        unset zen_options
         for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
             if [ "$i" -eq 0 ]; then
                 # Set the first element
@@ -1162,14 +1164,14 @@ filelimit_confirm() {
 ######## begin download functions ##########################################
 ############################################################################
 
-# Manage downloads. Called by a dedicated download type manage function, ie runner_manage()
+# Manage downloads. Called by a dedicated download type manage function, ie runner_manage_lutris()
 #
 # This function expects the following variables to be set:
 #
 # - The string download_sources is a formatted array containing the URLs
 #   of items to download. It should be pointed to the appropriate
 #   array set at the top of the script using indirect expansion.
-#   See runner_sources at the top and runner_manage() for examples.
+#   See runner_sources at the top and runner_manage_lutris() for examples.
 # - The array download_dirs should contain the locations the downloaded item
 #   will be installed to. Must be formatted in pairs of ("[type]" "[directory]")
 # - The string "download_menu_heading" should contain the type of item
@@ -1181,7 +1183,7 @@ filelimit_confirm() {
 # This function also expects one string argument containing the type of item to
 # be downloaded.  ie. runner or dxvk.
 #
-# See runner_manage() for a configuration example.
+# See runner_manage_lutris() for a configuration example.
 download_manage() {
     # This function expects a string to be passed as an argument
     if [ -z "$1" ]; then
@@ -1256,10 +1258,55 @@ download_manage() {
     done
 }
 
-# Configure the download_manage function for runners
-runner_manage() {
+# Configure the download_manage function for non-Lutris wine runners
+runner_manage_wine() {
+    # We'll want to instruct the user on how to use the downloaded runner
+    # Valid options are "none", "info", "configure-lutris", or "configure-wine"
+    post_download_type="configure-wine"
+
+    # Use indirect expansion to point download_sources
+    # to the runner_sources array set at the top of the script
+    declare -n download_sources=runner_sources
+
+    # Get directories so we know where the wine prefix is
+    getdirs
+
+    # Set the download directory for wine runners
+    # Unlike Lutris, only installting to one directory is supported
+    # Do not include multiple download destinations in this array
+    # Must be formatted in pairs of ("[type]" "[directory]")
+    download_dirs=("wine" "$wine_prefix/runners")
+
+    # Configure the text displayed in the menus
+    download_menu_heading="Wine Runners"
+    download_menu_description="The runners listed below are wine builds created for Star Citizen"
+    download_menu_height="140"
+
+    # Configure the post install and delete messages
+    # Format:
+    # post_install_msg is displayed below the header
+    # post_delete_msg is displayed with no header
+    post_install_msg_heading="Download Complete"
+    post_install_msg="The launch script needs to be updated\n\nWould you like to automatically configure it to use this runner?"
+    post_delete_msg="The launch script needs to be updated\n\nWould you like to automatically revert to using your system wine?"
+    # Set the string sed will match against when editing the launch script
+    # This will be used to detect the appropriate variable and replace its value
+    # with the path to the downloaded item
+    post_download_sed_string="wine_exec="
+    # Set the value of the above variable that will be restored after a runner is deleted
+    # In this case, we want to revert to calling system wine
+    post_delete_restore_value="wine"
+
+    # Call the download_manage function with the above configuration
+    # The argument passed to the function is used for special handling
+    # and displayed in the menus and dialogs.
+    download_manage "runner"
+}
+
+# Configure the download_manage function for Lutris runners
+runner_manage_lutris() {
     # Lutris will need to be configured and restarted after modifying runners
-    # Valid options are "none", "info", or "configure-lutris"
+    # Valid options are "none", "info", "configure-lutris", or "configure-wine"
     post_download_type="configure-lutris"
 
     # Use indirect expansion to point download_sources
@@ -1281,12 +1328,13 @@ runner_manage() {
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
     download_menu_height="140"
 
-    # Configure the post download message
+    # Configure the post install and delete messages
     # Format:
-    # A header is automatically displayed that reads: Download Complete
-    # post_download_msg is displayed below the header
-    post_download_msg_heading="Download Complete"
-    post_download_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted if necessary."
+    # post_install_msg is displayed below the header
+    # post_delete_msg is displayed with no header
+    post_install_msg_heading="Download Complete"
+    post_install_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted if necessary."
+    post_delete_msg="Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
     # with the name of the downloaded item
@@ -1298,10 +1346,10 @@ runner_manage() {
     download_manage "runner"
 }
 
-# Configure the download_manage function for dxvks
-dxvk_manage() {
+# Configure the download_manage function for Lutris dxvks
+dxvk_manage_lutris() {
     # Lutris will need to be configured and restarted after modifying dxvks
-    # Valid options are "none", "info", or "configure-lutris"
+    # Valid options are "none", "info", "configure-lutris", or "configure-wine"
     post_download_type="configure-lutris"
 
     # Use indirect expansion to point download_sources
@@ -1323,12 +1371,13 @@ dxvk_manage() {
     download_menu_description="The DXVK versions below may improve performance"
     download_menu_height="140"
 
-    # Configure the post download message
+    # Configure the post install and delete messages
     # Format:
-    # A header is automatically displayed that reads: Download Complete
-    # post_download_msg is displayed below the header
-    post_download_msg_heading="Download Complete"
-    post_download_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted if necessary."
+    # post_install_msg is displayed below the header
+    # post_delete_msg is displayed with no header
+    post_install_msg_heading="Download Complete"
+    post_install_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted if necessary."
+    post_delete_msg="Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"
     # Set the string sed will match against when editing Lutris yml configs
     # This will be used to detect the appropriate yml key and replace its value
     # with the name of the downloaded item
@@ -1738,7 +1787,7 @@ download_install() {
             fi
         done
 
-        # Store the final name of the downloaded directory
+        # Store the final name of the downloaded item
         downloaded_item_name="$download_basename"
         # Mark success for triggering post-download actions
         download_action_success="installed"
@@ -1765,7 +1814,7 @@ download_install() {
             fi
         done
 
-        # Store the final name of the downloaded directory
+        # Store the final name of the downloaded item
         downloaded_item_name="$download_basename"
         # Mark success for triggering post-download actions
         download_action_success="installed"
@@ -1806,6 +1855,10 @@ download_select_delete() {
 
     # Find all installed items in the download destinations
     for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
+        # Skip if the directory doesn't exist
+        if [ ! -d "${download_dirs[i]}" ]; then
+            continue
+        fi
         # Loop through all download destinations
         # Odd numbered elements will contain the download destination's path
         for item in "${download_dirs[i]}"/*; do
@@ -1827,6 +1880,12 @@ download_select_delete() {
         menu_options+=("${installed_item_names[i]}")
         menu_actions+=("download_delete $i")
     done
+
+    # Print a message and return if no installed items were found
+    if [ "${#menu_options[@]}" -eq 0 ]; then
+        message info "No installed ${download_type}s found."
+        return 0
+    fi
 
     # Complete the menu by adding the option to go back to the previous menu
     menu_options+=("$goback")
@@ -1897,10 +1956,12 @@ download_delete() {
 # Perform post-download actions or display a message/instructions
 #
 # The following variables are expected to be set before calling this function:
-# - post_download_type (string. "none", "info", or "configure-lutris")
-# - post_download_msg_heading (string)
-# - post_download_msg (string)
-# - post_download_sed_string (string. For type configure-lutris)
+# - post_download_type (string. "none", "info", "configure-lutris", "configure-wine")
+# - post_install_msg_heading (string)
+# - post_install_msg (string)
+# - post_delete_msg (string)
+# - post_download_sed_string (string. For types configure-lutris and configure-wine)
+# - post_delete_restore_value (string. For type configure-wine)
 # - download_action_success (string. Set automatically in install/delete functions)
 # - downloaded_item_name (string. For installs only. Set automatically in download_install function)
 # - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
@@ -1912,28 +1973,39 @@ download_delete() {
 #
 # Message display format:
 # A header is automatically displayed that reads: Download Complete
-# post_download_msg is displayed below the header
+# post_install_msg is displayed below the header
 post_download() {
     # Sanity checks
     if [ -z "$post_download_type" ]; then
         debug_print exit "Script error: The string 'post_download_type' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_download_msg_heading" ]; then
-        debug_print exit "Script error: The string 'post_download_msg_heading' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_download_msg" ]; then
-        debug_print exit "Script error: The string 'post_download_msg' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_install_msg_heading" ]; then
+        debug_print exit "Script error: The string 'post_install_msg_heading' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_install_msg" ]; then
+        debug_print exit "Script error: The string 'post_install_msg' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_delete_msg" ]; then
+        debug_print exit "Script error: The string 'post_delete_msg' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
         debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-wine" ]; then
+        debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
+    elif [ -z "$post_delete_restore_value" ] && [ "$post_download_type" = "configure-wine" ]; then
+        debug_print exit "Script error: The string 'post_delete_restore_value' was not set before calling the post_download function. Aborting."
+    fi
+
+    # Return if we don't have anything to do
+    if [ "$post_download_type" = "none" ]; then
+        return 0
     fi
 
     # Configure the message heading and format it for zenity
     if [ "$use_zenity" -eq 1 ]; then
-        post_download_msg_heading="<b>$post_download_msg_heading</b>"
+        post_install_msg_heading="<b>$post_install_msg_heading</b>"
     fi
 
     # Display appropriate post-download message
     if [ "$post_download_type" = "info" ]; then
             # Just displaying an informational message
-            message info "$post_download_msg_heading\n\n$post_download_msg"
+            message info "$post_install_msg_heading\n\n$post_install_msg"
     elif [ "$post_download_type" = "configure-lutris" ]; then
         # We need to configure and restart Lutris
         unset lutris_game_ymls
@@ -1945,7 +2017,7 @@ post_download() {
         # We handle installs and deletions differently
         if [ "$download_action_success" = "installed" ]; then
             # We are installing something for Lutris
-            if message question "$post_download_msg_heading\n\n$post_download_msg"; then
+            if message question "$post_install_msg_heading\n\n$post_install_msg"; then
                 # Cylce through all Lutris config files for Star Citizen and configure the downloaded item
                 for (( i=0; i<"${#lutris_game_ymls[@]}"; i++ )); do
                     # Replace the appropriate key:value line if it exists
@@ -1960,7 +2032,7 @@ post_download() {
 
                 # Lutris needs to be restarted after making changes
                 if [ "$(pgrep -f lutris)" ]; then
-                    # For installations, we ask the user if we can configure and restart Lutris in the post_download_msg
+                    # For installations, we ask the user if we can configure and restart Lutris in the post_install_msg
                     lutris_restart
                 fi
             fi
@@ -1974,9 +2046,40 @@ post_download() {
             done
 
             # Lutris needs to be restarted after making changes
-            if [ "$(pgrep -f lutris)" ] && message question "Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"; then
+            if [ "$(pgrep -f lutris)" ] && message question "$post_delete_msg"; then
                 # For deletions, we ask the user if it's okay to restart Lutris here
                 lutris_restart
+            fi
+        else
+            debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
+        fi
+    elif [ "$post_download_type" = "configure-wine" ]; then
+        # We handle installs and deletions differently
+        if [ "$download_action_success" = "installed" ]; then
+            # We are installing a wine version and updating the launch script to use it
+            if message question "$post_install_msg_heading\n\n$post_install_msg"; then
+                # Make sure we can locate the launch script
+                if [ -f "$wine_prefix/$wine_launch_script_name" ]; then
+                    # Replace the specified variable
+                    sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin/wine\"|" "$wine_prefix/$wine_launch_script_name"
+                else
+                    message error "Unable to find $wine_prefix/$wine_launch_script_name"
+                fi
+            else
+                message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
+            fi
+        elif [ "$download_action_success" = "deleted" ]; then
+            # We deleted a custom wine version and need to revert the launch script to use the system wine
+            if message question "$post_delete_msg"; then
+                # Make sure we can locate the launch script
+                if [ -f "$wine_prefix/$wine_launch_script_name" ]; then
+                    # Restore the specified variable
+                    sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${post_delete_restore_value}\"|" "$wine_prefix/$wine_launch_script_name"
+                else
+                    message error "Unable to find $wine_prefix/$wine_launch_script_name"
+                fi
+            else
+                message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
         else
             debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
@@ -2494,8 +2597,8 @@ install_game_wine() {
         return 1
     fi
     # Check if the install script exists
-    if [ ! -f "$launch_script" ]; then
-        message warning "Game launch script not found!\n\n$launch_script\n\nIt is included in our official releases here:\n$releases_url"
+    if [ ! -f "$wine_launch_script" ]; then
+        message warning "Game launch script not found!\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
         return 1
     fi
 
@@ -2648,11 +2751,11 @@ install_game_wine() {
 
         # Copy game launch script to the wine prefix root directory
         debug_print continue "Copying game launch script to ${install_dir}..."
-        cp "$launch_script" "$install_dir"
-        installed_launch_script="$install_dir/$(basename "$launch_script")"
+        cp "$wine_launch_script" "$install_dir"
+        installed_launch_script="$install_dir/$wine_launch_script_name"
 
         # Update WINEPREFIX in game launch script
-        sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$install_dir/$(basename "$launch_script")"
+        sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
 
         # Modify the .desktop files installed by wine to exec the game launch script
         debug_print continue "Updating .desktop files installed by wine..."
@@ -2867,8 +2970,9 @@ if [ "$#" -gt 0 ]; then
 Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
   -i, --install [lutris|wine]   Install Star Citizen (default: lutris)
-  -m, --manage-runners          Install or remove Lutris runners
-  -k, --manage-dxvk             Install or remove Lutris DXVK versions
+  -m, --manage-wine-runners     Install or remove Wine runners
+  -l, --manage-lutris-runners   Install or remove Lutris runners
+  -k, --manage-lutris-dxvk      Install or remove Lutris DXVK versions
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
   -s, --delete-shaders          Delete Star Citizen shaders
   -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
@@ -2898,11 +3002,14 @@ Usage: lug-helper <options>
                 # Shift forward one argument
                 shift
                 ;;
-            --manage-runners | -m )
-                cargs+=("runner_manage")
+            --manage-wine-runners | -m )
+                cargs+=("runner_manage_wine")
                 ;;
-            --manage-dxvk | -k )
-                cargs+=("dxvk_manage")
+            --manage-lutris-runners | -l )
+                cargs+=("runner_manage_lutris")
+                ;;
+            --manage-lutris-dxvk | -k )
+                cargs+=("dxvk_manage_lutris")
                 ;;
             --delete-user-folder | -u )
                 cargs+=("rm_userdir")
@@ -3013,17 +3120,18 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     install_msg_wine="Install Star Citizen with Wine"
+    runners_msg_wine="Manage Wine Runners"
     install_msg_lutris="Install Star Citizen with Lutris"
-    runners_msg="Manage Lutris Runners"
+    runners_msg_lutris="Manage Lutris Runners"
     dxvk_msg="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_wine" "$install_msg_lutris" "$runners_msg" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$install_msg_lutris" "$runners_msg_lutris" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_wine" "install_game_lutris" "runner_manage" "dxvk_manage" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "install_game_lutris" "runner_manage_lutris" "dxvk_manage_lutris" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option

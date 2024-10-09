@@ -30,6 +30,14 @@ export __GL_SHADER_DISK_CACHE_SIZE=1073741824
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
+#####################################################
+# Configure the wine binary to be used
+#
+# To use a custom wine runner, set its path here
+# wine_exec="/path/to/custom/runner/bin/wine"
+#####################################################
+wine_exec="wine"
+
 #############################################
 # Run optional prelaunch and postexit scripts
 #############################################
@@ -47,12 +55,9 @@ trap "wineserver -k" EXIT
 # Launch the game
 #################
 # To enable feral gamemode, replace the launch line below with:
-# gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+# gamemoderun "$wine_exec" "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 #
 # To enable gamescope and feral gamemode, replace the launch line below with the desired gamescope arguments. For example:
-# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
-#
-# To use a custom wine runner, simply call its binary
-# /path/to/custom/runner/bin/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_exec" "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 
-wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+"$wine_exec" "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
