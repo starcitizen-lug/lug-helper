@@ -2522,12 +2522,12 @@ install_game_lutris() {
     # Check if Lutris is installed
     lutris_detect
     if [ "$lutris_installed" = "false" ]; then
-        message warning "Lutris is required but does not appear to be installed."
+        message error "Lutris is required but does not appear to be installed."
         return 1
     fi
     # Check if the install script exists
     if [ ! -f "$lutris_install_script" ]; then
-        message warning "Lutris install script not found!\n\n$lutris_install_script\n\nIt is included in our official releases here:\n$releases_url"
+        message error "Lutris install script not found! Unable to proceed.\n\n$lutris_install_script\n\nIt is included in our official releases here:\n$releases_url"
         return 1
     fi
 
@@ -2589,7 +2589,7 @@ install_game_wine() {
     fi
     # Check if the install script exists
     if [ ! -f "$wine_launch_script" ]; then
-        message warning "Game launch script not found!\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
+        message error "Game launch script not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
         return 1
     fi
 
