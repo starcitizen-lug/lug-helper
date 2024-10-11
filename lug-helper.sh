@@ -2706,7 +2706,7 @@ install_game_wine() {
         # Create the new prefix and install powershell
         export WINEPREFIX="$install_dir"
         debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
-        "$winetricks_bin" -q arial tahoma dxvk powershell win11 >>"$tmp_install_log" 2>&1
+        "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
 
         if [ "$?" -eq 1 ]; then
             if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
