@@ -2763,8 +2763,9 @@ install_game_wine() {
         # Modify the .desktop files installed by wine to exec the game launch script
         debug_print continue "Updating .desktop files installed by wine..."
 
-        # Copy the bundled RSI icon to the Helper's config directory
+        # Copy the bundled RSI Launcher icon to the .local icons directory
         if [ -f "$rsi_icon" ]; then
+            mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps" && 
             cp "$rsi_icon" "$HOME/.local/share/icons/hicolor/256x256/apps"
         fi
 
