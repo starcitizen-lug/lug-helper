@@ -99,5 +99,5 @@ _Optional Dependencies: **zenity** (for GUI)_
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
 
 ## Contributing
-See the [Contributor's Guide](https://github.com/starcitizen-lug/lug-helper/wiki/Contributors-Guide) for a high level overview of the script
+See the [Contributor's Guide](https://github.com/starcitizen-lug/lug-helper/wiki/Contributors-Guide) for a high level overview of the script  
 Packagers, please see the [Packager's Guide](https://github.com/starcitizen-lug/lug-helper/wiki/Packagers-Guide)
