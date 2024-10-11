@@ -152,11 +152,11 @@ shaders_subdirs=(
 
 ######## Bundled Files #####################################################
 
-# Use logo installed by a packaged version of this script if available
-# /usr/share/pixmaps/lug-logo.png
+# Use script logo installed by a packaged version of this script if available
+# /usr/share/icons/hicolor/256x256/apps/lug-logo.png
 # Otherwise, default to the logo in the same directory
-if [ -f "$(dirname "$helper_dir")/share/pixmaps/lug-logo.png" ]; then
-    lug_logo="$(dirname "$helper_dir")/share/pixmaps/lug-logo.png"
+if [ -f "$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/lug-logo.png" ]; then
+    lug_logo="$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/lug-logo.png"
 elif [ -f "$helper_dir/lug-logo.png" ]; then
     lug_logo="$helper_dir/lug-logo.png"
 else
@@ -164,17 +164,17 @@ else
 fi
 
 # Use rsi launcher icon installed by a packaged version of this script if available
-# /usr/share/icons/rsi-icon.ico
+# /usr/share/icons/hicolor/256x256/apps/rsi-launcher.png
 # Otherwise, default to the icon in the same directory
-if [ -f "$(dirname "$helper_dir")/share/icons/rsi-icon.ico" ]; then
-    rsi_icon="$(dirname "$helper_dir")/share/icons/rsi-icon.ico"
-elif [ -f "$helper_dir/rsi-icon.ico" ]; then
-    rsi_icon="$helper_dir/rsi-icon.ico"
+rsi_icon_name="rsi-launcher.png"
+if [ -f "$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
+    rsi_icon="$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/$rsi_icon_name"
 else
-    rsi_icon=""
+    rsi_icon="$helper_dir/$rsi_icon_name"
 fi
 
 # Use Lutris install json installed by a packaged version of this script if available
+# /usr/share/lug-helper/lutris-starcitizen.json
 # Otherwise, default to the json in the lib directory
 if [ -f "$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json" ]; then
     lutris_install_script="$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json"
@@ -2765,7 +2765,7 @@ install_game_wine() {
 
         # Copy the bundled RSI icon to the Helper's config directory
         if [ -f "$rsi_icon" ]; then
-            cp "$rsi_icon" "$conf_dir/$conf_subdir/"
+            cp "$rsi_icon" "$HOME/.local/share/icons/hicolor/256x256/apps"
         fi
 
         # Modify $HOME/Desktop/RSI Launcher.desktop
@@ -2779,7 +2779,7 @@ install_game_wine() {
             # Escape spaces in path line
             sed -i '/^Path=/s/ /\\\s/g' "$home_desktop_file"
             # Replace icon
-            sed -i "s|^Icon=.*|Icon=$conf_dir/$conf_subdir/rsi-icon.ico|" "$home_desktop_file"
+            sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$home_desktop_file"
             # Make it start in a terminal
             echo "Terminal=true" >> "$home_desktop_file"
             debug_print continue "Updated $home_desktop_file"
@@ -2798,7 +2798,7 @@ install_game_wine() {
             # Escape spaces in path line
             sed -i '/^Path=/s/ /\\\s/g' "$localshare_desktop_file"
             # Replace icon
-            sed -i "s|^Icon=.*|Icon=$conf_dir/$conf_subdir/rsi-icon.ico|" "$localshare_desktop_file"
+            sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$localshare_desktop_file"
             # Make it start in a terminal
             echo "Terminal=true" >> "$localshare_desktop_file"
             debug_print continue "Updated $localshare_desktop_file"
