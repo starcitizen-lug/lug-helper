@@ -2057,12 +2057,18 @@ post_download() {
             # We are installing a wine version and updating the launch script to use it
             if message question "$post_install_msg_heading\n\n$post_install_msg"; then
                 # Make sure we can locate the launch script
-                if [ -f "$wine_prefix/$wine_launch_script_name" ]; then
-                    # Replace the specified variable
-                    sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin/wine\"|" "$wine_prefix/$wine_launch_script_name"
-                else
+                if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
                     message error "Unable to find $wine_prefix/$wine_launch_script_name"
+                    return 1
                 fi
+                # Make sure the launch script has the appropriate string to be replaced
+                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
+                    message error "Unable to to find a required variable in\n$wine_prefix/$wine_launch_script_name\n\nYour launch script may be out of date and will need to be edited manually!"
+                    return 1
+                fi
+
+                # Replace the specified variable
+                sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin/wine\"|" "$wine_prefix/$wine_launch_script_name"
             else
                 message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
@@ -2070,12 +2076,18 @@ post_download() {
             # We deleted a custom wine version and need to revert the launch script to use the system wine
             if message question "$post_delete_msg"; then
                 # Make sure we can locate the launch script
-                if [ -f "$wine_prefix/$wine_launch_script_name" ]; then
-                    # Restore the specified variable
-                    sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${post_delete_restore_value}\"|" "$wine_prefix/$wine_launch_script_name"
-                else
+                if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
                     message error "Unable to find $wine_prefix/$wine_launch_script_name"
+                    return 1
                 fi
+                # Make sure the launch script has the appropriate string to be replaced
+                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
+                    message error "Unable to to find a required variable in\n$wine_prefix/$wine_launch_script_name\n\nYour launch script may be out of date and will need to be edited manually!"
+                    return 1
+                fi
+
+                # Restore the specified variable
+                sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${post_delete_restore_value}\"|" "$wine_prefix/$wine_launch_script_name"
             else
                 message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
