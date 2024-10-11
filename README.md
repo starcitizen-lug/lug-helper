@@ -26,11 +26,11 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Install Star Citizen with Lutris`
 - Launches Lutris and installs Star Citizen
 
-`Install PowerShell into Wine prefix`
-- Uses winetricks to install PowerShell
+`Manage Wine Runners (non-Lutris)`
+- Quickly install and delete custom Wine runners
 
 `Manage Lutris Runners`
-- Quickly install and delete Lutris wine runners
+- Quickly install and delete Lutris runners
 
 `Manage Lutris DXVK Versions`
 - Quickly install and delete DXVK versions for Lutris
@@ -39,8 +39,11 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Switch the helper between LIVE/PTU/EPTU`
   - Target the LIVE, PTU, or EPTU installation for all operations.  Defaults to LIVE on each run.
 
-`Target a different Star Citizen installation`
-- Select a different wine prefix for the Helper to target in its operations  
+- `Target a different Star Citizen installation`
+  - Select a different wine prefix for the Helper to target in its operations  
+
+- `Install PowerShell into Wine prefix`
+  - Uses winetricks to install PowerShell
 
 - `Delete my Star Citizen USER folder and preserve my keybinds`
   - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
