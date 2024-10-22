@@ -183,6 +183,7 @@ else
 fi
 
 # Use game launch script installed by a packaged version of this script if available
+# /usr/share/lug-helper/sc-launch.sh
 # Otherwise, default to the launch script in the lib directory
 wine_launch_script_name="sc-launch.sh"
 if [ -f "$(dirname "$helper_dir")/share/lug-helper/$wine_launch_script_name" ]; then
@@ -229,7 +230,10 @@ dxvk_sources=(
 
 ######## Requirements ######################################################
 
-# lutris minimum version
+# Wine minimum version
+wine_required="9.4"
+
+# Lutris minimum version
 lutris_required="0.5.17"
 
 # Minimum amount of RAM in GiB
@@ -972,12 +976,24 @@ lutris_detect() {
     fi
 }
 
-# Check if WINE is installed
+# Check the system Wine version
 wine_check() {
-    if [ -x "$(command -v wine)" ]; then
-        preflight_pass+=("Wine is installed on your system.")
-    else
+    if [ ! -x "$(command -v wine)" ]; then
         preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
+        return 1
+    fi
+
+    # Get the current wine version
+    wine_current="$(wine --version 2>/dev/null | awk '{print $1}' | awk -F '-' '{print $2}')"
+
+    # Check it against the required version
+    if [ -z "$wine_current" ]; then
+        preflight_fail+=("Unable to detect Wine version info.\nVersion $wine_required or newer is required.")
+    elif [ "$wine_required" != "$wine_current" ] &&
+        [ "$wine_current" = "$(printf "%s\n%s" "$wine_current" "$wine_required" | sort -V | head -n1)" ]; then
+        preflight_fail+=("Wine is out of date.\nVersion $wine_required or newer is required.")
+    else
+        preflight_pass+=("Wine is installed and sufficiently up to date.")
     fi
 }
 
