@@ -392,7 +392,7 @@ message() {
         esac
 
         # Display the message
-        zenity "${margs[@]}""$@" --width="420" --title="Star Citizen LUG Helper" 2>/dev/null
+        zenity "${margs[@]}""$@" --width="420" --title="Star Citizen LUG Helper"
     else
         # Fall back to text-based messages when zenity is not available
         case "$1" in
@@ -527,7 +527,7 @@ menu() {
         done
 
         # Display the zenity radio button menu
-        choice="$(zenity --list --"$menu_type" --width="510" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --column="" --column="Option" "${zen_options[@]}" 2>/dev/null)"
+        choice="$(zenity --list --"$menu_type" --width="510" --height="$menu_height" --text="$menu_text_zenity" --title="Star Citizen LUG Helper" --hide-header --cancel-label "$cancel_label" --column="" --column="Option" "${zen_options[@]}")"
 
         # Match up choice with an element in menu_options
         matched="false"
