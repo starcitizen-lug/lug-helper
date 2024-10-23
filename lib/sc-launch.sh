@@ -22,11 +22,14 @@ export WINEPREFIX="$HOME/Games/star-citizen"
 export WINEDLLOVERRIDES=winemenubuilder.exe=d # Prevent updates from overwriting our .desktop entries
 export WINEDEBUG=-all # Cut down on console debug messages
 export EOS_USE_ANTICHEATCLIENTNULL=1
+# Nvidia cache options
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=1073741824
-# Extra Nvidia cache options
-#export __GL_SHADER_DISK_CACHE_PATH="/path/you/want/for/your/cache"
-#export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=true
+export __GL_SHADER_DISK_CACHE_PATH="$WINEPREFIX"
+export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=true
+# Mesa (AMD/Intel) Shader Cache Options
+export MESA_SHADER_CACHE_DIR="$WINEPREFIX"
+export MESA_SHADER_CACHE_MAX_SIZE=10G
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
