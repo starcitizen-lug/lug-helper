@@ -210,6 +210,11 @@ runner_sources=(
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
 )
 
+# Set the default runner to install when the system wine doesn't meet requirements
+# default_runner_source corresponds to an even number index in runner_sources above
+default_runner="wine-9.20-amd64.tar.xz"
+default_runner_source=0
+
 ######## DXVK ##############################################################
 
 # Lutris native dxvk directory
@@ -977,10 +982,18 @@ lutris_detect() {
 }
 
 # Check the system Wine version
+# Tells the preflight check whether or not wine is installed
+# Additionally sets system_wine_ok if system wine meets the minimum version requirement
 wine_check() {
+    # Initialize variable
+    system_wine_ok="false"
+
+    # Is wine installed?
     if [ ! -x "$(command -v wine)" ]; then
         preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
         return 1
+    else
+        preflight_pass+=("Wine is installed on your system.")
     fi
 
     # Get the current wine version
@@ -988,12 +1001,17 @@ wine_check() {
 
     # Check it against the required version
     if [ -z "$wine_current" ]; then
-        preflight_fail+=("Unable to detect Wine version info.\nVersion $wine_required or newer is required.")
+        system_wine_ok="false"
     elif [ "$wine_required" != "$wine_current" ] &&
         [ "$wine_current" = "$(printf "%s\n%s" "$wine_current" "$wine_required" | sort -V | head -n1)" ]; then
-        preflight_fail+=("Wine is out of date.\nVersion $wine_required or newer is required.")
+        system_wine_ok="false"
     else
-        preflight_pass+=("Wine is installed and sufficiently up to date.")
+        system_wine_ok="true"
+    fi
+
+    # Check for wow64 wines
+    if [ ! -x "$(command -v wine-preloader)" ] || [ -L "$(command -v wine64-preloader)" ]; then
+        system_wine_ok="false"
     fi
 }
 
@@ -1410,8 +1428,7 @@ dxvk_manage_lutris() {
 # - download_type (string)
 # - download_dirs (array)
 download_select_install() {
-    # This function expects an element number for the sources array
-    # to be passed in as an argument
+    # This function expects an element number for the sources array to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The download_select_install function expects a numerical argument. Aborting."
     fi
@@ -1841,6 +1858,8 @@ download_install() {
     debug_print continue "Cleaning up $tmp_dir/$download_filename..."
     rm --interactive=never "${tmp_dir:?}/$download_filename"
     rm -r "${tmp_dir:?}/$download_basename"
+
+    return 0
 }
 
 # List installed items for deletion. Called by download_manage()
@@ -2621,7 +2640,7 @@ install_game_wine() {
         return 1
     fi
 
-    # Call the preflight check
+    # Call the preflight check and confirm the user is ready to proceed
     preflight_check "wine"
     if [ "$?" -eq 1 ]; then
         # There were errors
@@ -2630,219 +2649,277 @@ install_game_wine() {
         # No errors
         install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAll Preflight Checks have passed\nAre you ready to continue?"
     fi
+    if ! message question "$install_question"; then
+        return 1
+    fi
 
-    if message question "$install_question"; then
-        if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
-            # Set the default install path
-            install_dir="$HOME/Games/star-citizen"
-        else
-            if [ "$use_zenity" -eq 1 ]; then
-                if message options "Create my own prefix dir" "Continue" "After clicking Continue, select your Star Citizen install location.\nA new subdirectory named 'star-citizen' will be created in the selected location. This will be your wine prefix.\n\nIf you know what you are doing and want to create your own prefix directory, choose \"Create my own prefix dir\""; then
-                    # Default, create the star-citizen directory
-                    install_prefix="star-citizen"
-                else
-                    # User will create their own prefix directory
-                    install_prefix=""
+    # Get the install path from the user
+    if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
+        # Set the default install path
+        install_dir="$HOME/Games/star-citizen"
+    else
+        if [ "$use_zenity" -eq 1 ]; then
+            if message options "Create my own prefix dir" "Continue" "After clicking Continue, select your Star Citizen install location.\nA new subdirectory named 'star-citizen' will be created in the selected location. This will be your wine prefix.\n\nIf you know what you are doing and want to create your own prefix directory, choose \"Create my own prefix dir\""; then
+                # Default, create the star-citizen directory
+                install_prefix="star-citizen"
+            else
+                # User will create their own prefix directory
+                install_prefix=""
+            fi
+
+            # Get the install path from the user
+            while true; do
+                install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+
+                if [ "$?" -eq -1 ]; then
+                    message error "An unexpected error has occurred. The Helper is unable to proceed."
+                    return 1
+                elif [ -z "$install_dir" ]; then
+                    # User clicked cancel or something else went wrong
+                    message warning "Installation cancelled."
+                    return 1
                 fi
 
-                # Get the install path from the user
-                while true; do
-                    install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+                # Add the wine prefix subdirectory to the install path
+                if [ -n "$install_prefix" ]; then
+                    install_dir="$install_dir/$install_prefix"
+                fi
 
-                    if [ "$?" -eq -1 ]; then
-                        message error "An unexpected error has occurred. The Helper is unable to proceed."
-                        return 1
-                    elif [ -z "$install_dir" ]; then
-                        # User clicked cancel or something else went wrong
-                        message warning "Installation cancelled."
-                        return 1
-                    fi
-
-                    # Add the wine prefix subdirectory to the install path
-                    if [ -n "$install_prefix" ]; then
-                        install_dir="$install_dir/$install_prefix"
-                    fi
-
-                    # Sanity check the chosen directory a bit to catch some possible mistakes
-                    if [ "$install_dir" = "/" ] || [ "$install_dir" = "$HOME" ] || [ "$install_dir" = "$HOME/Games" ]; then
-                        if message question "Something seems off! This directory will become your wine prefix. Are you really sure this is what you want?\n\n$install_dir"; then
-                            break
-                        fi
-                    else
-                        # All good, break out of the loop and continue
+                # Sanity check the chosen directory a bit to catch some possible mistakes
+                if [ "$install_dir" = "/" ] || [ "$install_dir" = "$HOME" ] || [ "$install_dir" = "$HOME/Games" ]; then
+                    if message question "Something seems off! This directory will become your wine prefix. Are you really sure this is what you want?\n\n$install_dir"; then
                         break
                     fi
-                done
-            else
-                # No Zenity, use terminal-based menus
-                clear
-                # Get the install path from the user
-                printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games/star-citizen\n\n"
-                while read -rp "Install path: " install_dir; do
-                    if [ -z "$install_dir" ]; then
-                        printf "Invalid directory. Please try again.\n\n"
-                    elif [ ! -d "$install_dir" ]; then
-                        if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
-                            break
-                        fi
-                    else
+                else
+                    # All good, break out of the loop and continue
+                    break
+                fi
+            done
+        else
+            # No Zenity, use terminal-based menus
+            clear
+            # Get the install path from the user
+            printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games/star-citizen\n\n"
+            while read -rp "Install path: " install_dir; do
+                if [ -z "$install_dir" ]; then
+                    printf "Invalid directory. Please try again.\n\n"
+                elif [ ! -d "$install_dir" ]; then
+                    if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
                         break
                     fi
-                done
-            fi
+                else
+                    break
+                fi
+            done
         fi
+    fi
 
-        # Create the game path
-        mkdir -p "$install_dir"
+    # Create the game path
+    mkdir -p "$install_dir"
 
-        # Download RSI installer to tmp
-        download_file "$rsi_installer_url" "$rsi_installer" "installer"
+    # If we can't use the system wine, we'll need to have the user select a custom wine runner to use
+    wine_bin="wine"
+    if [ "$system_wine_ok" = "true" ]; then
+        debug_print continue "Your system Wine does not meet the minimum requirements for Star Citizen!"
+        debug_print continue "A custom wine runner will be automatically downloaded and used."
 
-        # Sanity check
-        if [ ! -f "$tmp_dir/$rsi_installer" ]; then
-            # Something went wrong with the download and the file doesn't exist
-            message error "Something went wrong; the installer could not be downloaded!"
+        download_dirs=("wine" "$install_dir/runners")
+
+        # Install the default wine runner into the prefix
+        download_wine
+        # Make sure the wine download worked
+        if [ "$?" -eq 1 ]; then
+            message error "Something went wrong while installing ${default_runner}!\nGame installation cannot proceed."
             return 1
         fi
 
-        # Download winetricks
-        download_winetricks
+        wine_bin="$install_dir/runners/$downloaded_item_name/bin/wine"
+    fi
 
-        # Abort if the winetricks download failed
-        if [ "$?" -eq 1 ]; then
-            message error "Unable to install Star Citizen without winetricks. Aborting."
-            return 1
+    # Download winetricks
+    download_winetricks
+    # Abort if the winetricks download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to install Star Citizen without winetricks. Aborting."
+        return 1
+    fi
+
+    # Download RSI installer to tmp
+    download_file "$rsi_installer_url" "$rsi_installer" "installer"
+    # Sanity check
+    if [ ! -f "$tmp_dir/$rsi_installer" ]; then
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong; the installer could not be downloaded!"
+        return 1
+    fi
+
+    # Create a temporary log file
+    tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
+    debug_print continue "Installation log file created at $tmp_install_log"
+
+    # Create the new prefix and install powershell
+    export WINEPREFIX="$install_dir"
+    debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
+    "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
+
+    if [ "$?" -eq 1 ]; then
+        if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
+            debug_print continue "Deleting $install_dir..."
+            rm -r --interactive=never "$install_dir"
         fi
-
-        # Create a temporary log file
-        tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
-
-        debug_print continue "Installation log file created at $tmp_install_log"
-
-        # Create the new prefix and install powershell
-        export WINEPREFIX="$install_dir"
-        debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
-        "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
-
-        if [ "$?" -eq 1 ]; then
-            if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
-                debug_print continue "Deleting $install_dir..."
-                rm -r --interactive=never "$install_dir"
-            fi
-            wineserver -k
-            return 1
-        fi
-
-        # Add registry key that prevents wine from creating unnecessary file type associations
-        wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
-
-        # Run the installer
-        debug_print continue "Installing the launcher. Please wait; this will take a moment..."
-        wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
-
-        if [ "$?" -eq 1 ]; then
-            # User cancelled or there was an error
-            if message question "Installation aborted. The install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
-                debug_print continue "Deleting $install_dir..."
-                rm -r --interactive=never "$install_dir"
-            fi
-            wineserver -k
-            return 0
-        fi
-
-        # Kill the wine process after installation
-        # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
         wineserver -k
+        return 1
+    fi
 
-        # Save the install location to the Helper's config files
-        reset_helper "switchprefix"
-        wine_prefix="$install_dir"
-        if [ -d "$wine_prefix/$default_install_path" ]; then
-            game_path="$wine_prefix/$default_install_path/$sc_base_dir"
+    # Add registry key that prevents wine from creating unnecessary file type associations
+    "$wine_bin" reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
+
+    # Run the installer
+    debug_print continue "Installing the launcher. Please wait; this will take a moment..."
+    "$wine_bin" "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
+
+    if [ "$?" -eq 1 ]; then
+        # User cancelled or there was an error
+        if message question "Installation aborted. The install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
+            debug_print continue "Deleting $install_dir..."
+            rm -r --interactive=never "$install_dir"
         fi
-        getdirs
+        wineserver -k
+        return 0
+    fi
 
-        # Verify that we have an installed game path
-        if [ -z "$game_path" ]; then
-            message error "Something went wrong during installation. Unable to locate the expected game path. Aborting."
-            return 1
-        fi
+    # Kill the wine process after installation
+    # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
+    wineserver -k
 
-        # Copy game launch script to the wine prefix root directory
-        debug_print continue "Copying game launch script to ${install_dir}..."
-        cp "$wine_launch_script" "$install_dir"
-        installed_launch_script="$install_dir/$wine_launch_script_name"
+    # Save the install location to the Helper's config files
+    reset_helper "switchprefix"
+    wine_prefix="$install_dir"
+    if [ -d "$wine_prefix/$default_install_path" ]; then
+        game_path="$wine_prefix/$default_install_path/$sc_base_dir"
+    fi
+    getdirs
 
-        # Update WINEPREFIX in game launch script
-        sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
+    # Verify that we have an installed game path
+    if [ -z "$game_path" ]; then
+        message error "Something went wrong during installation. Unable to locate the expected game path. Aborting."
+        return 1
+    fi
 
-        # Modify the .desktop files installed by wine to exec the game launch script
-        debug_print continue "Updating .desktop files installed by wine..."
+    # Copy game launch script to the wine prefix root directory
+    debug_print continue "Copying game launch script to ${install_dir}..."
+    cp "$wine_launch_script" "$install_dir"
+    installed_launch_script="$install_dir/$wine_launch_script_name"
 
-        # Copy the bundled RSI Launcher icon to the .local icons directory
-        if [ -f "$rsi_icon" ]; then
-            mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps" && 
-            cp "$rsi_icon" "$HOME/.local/share/icons/hicolor/256x256/apps"
-        fi
+    # Update WINEPREFIX in game launch script
+    sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
 
-        # Modify $HOME/Desktop/RSI Launcher.desktop
-        home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
-        if [ -f "$home_desktop_file" ]; then
-            # Replace the exec line with our launch script
-            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$home_desktop_file"
-            # Quote exec line
-            sed -i '/^Exec=/s/=/="/' "$home_desktop_file"
-            sed -i '/^Exec=/s/$/"/' "$home_desktop_file"
-            # Escape spaces in path line
-            sed -i '/^Path=/s/ /\\\s/g' "$home_desktop_file"
-            # Replace icon
-            sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$home_desktop_file"
-            # Make it start in a terminal
-            echo "Terminal=true" >> "$home_desktop_file"
-            debug_print continue "Updated $home_desktop_file"
-        else
-            debug_print continue "Unable to find $home_desktop_file"
-        fi
+    # Update Wine binary in game launch script
+    if [ "$wine_bin" != "wine" ]; then
+        post_download_sed_string="wine_exec="
+        sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_bin}\"|" "$installed_launch_script"
+    fi
 
-        # Modify $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
-        localshare_desktop_file="$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
-        if [ -f "$localshare_desktop_file" ]; then
-            # Replace the exec line with our launch script
-            sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$localshare_desktop_file"
-            # Quote exec line
-            sed -i '/^Exec=/s/=/="/' "$localshare_desktop_file"
-            sed -i '/^Exec=/s/$/"/' "$localshare_desktop_file"
-            # Escape spaces in path line
-            sed -i '/^Path=/s/ /\\\s/g' "$localshare_desktop_file"
-            # Replace icon
-            sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$localshare_desktop_file"
-            # Make it start in a terminal
-            echo "Terminal=true" >> "$localshare_desktop_file"
-            debug_print continue "Updated $localshare_desktop_file"
-        else
-            debug_print continue "Unable to find $localshare_desktop_file"
-        fi
+    # Modify the .desktop files installed by wine to exec the game launch script
+    debug_print continue "Updating .desktop files installed by wine..."
 
-        # Update the .desktop file database if the command is available
-        if [ -x "$(command -v update-desktop-database)" ]; then
-            debug_print continue "Running update-desktop-database..."
-            update-desktop-database "$HOME/.local/share/applications"
-        fi
+    # Copy the bundled RSI Launcher icon to the .local icons directory
+    if [ -f "$rsi_icon" ]; then
+        mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps" && 
+        cp "$rsi_icon" "$HOME/.local/share/icons/hicolor/256x256/apps"
+    fi
 
-        message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
-    fi   
+    # Modify $HOME/Desktop/RSI Launcher.desktop
+    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+    if [ -f "$home_desktop_file" ]; then
+        # Replace the exec line with our launch script
+        sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$home_desktop_file"
+        # Quote exec line
+        sed -i '/^Exec=/s/=/="/' "$home_desktop_file"
+        sed -i '/^Exec=/s/$/"/' "$home_desktop_file"
+        # Escape spaces in path line
+        sed -i '/^Path=/s/ /\\\s/g' "$home_desktop_file"
+        # Replace icon
+        sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$home_desktop_file"
+        # Make it start in a terminal
+        echo "Terminal=true" >> "$home_desktop_file"
+        debug_print continue "Updated $home_desktop_file"
+    else
+        debug_print continue "Unable to find $home_desktop_file"
+    fi
+
+    # Modify $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
+    localshare_desktop_file="$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
+    if [ -f "$localshare_desktop_file" ]; then
+        # Replace the exec line with our launch script
+        sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$localshare_desktop_file"
+        # Quote exec line
+        sed -i '/^Exec=/s/=/="/' "$localshare_desktop_file"
+        sed -i '/^Exec=/s/$/"/' "$localshare_desktop_file"
+        # Escape spaces in path line
+        sed -i '/^Path=/s/ /\\\s/g' "$localshare_desktop_file"
+        # Replace icon
+        sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$localshare_desktop_file"
+        # Make it start in a terminal
+        echo "Terminal=true" >> "$localshare_desktop_file"
+        debug_print continue "Updated $localshare_desktop_file"
+    else
+        debug_print continue "Unable to find $localshare_desktop_file"
+    fi
+
+    # Update the .desktop file database if the command is available
+    if [ -x "$(command -v update-desktop-database)" ]; then
+        debug_print continue "Running update-desktop-database..."
+        update-desktop-database "$HOME/.local/share/applications"
+    fi
+
+    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
+}
+
+# Download a default wine runner for use by the non-lutris installer
+# Expects download_dirs to be set before calling
+download_wine() {
+    if [ "${#download_dirs[@]}" -eq 0 ]; then
+        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_wine function. Aborting."
+    fi
+
+    # Set up variables needed for the download functions, quick and dirty
+    # For more details, see their usage in the download_select_install and download_install functions
+    declare -n download_sources=runner_sources
+    download_type="runner"
+    download_versions=("$default_runner")
+    contributor_name="${download_sources[$default_runner_source]}"
+    contributor_url="${download_sources[$default_runner_source+1]}"
+    case "$contributor_url" in
+        https://api.github.com/*)
+            download_url_type="github"
+            ;;
+        https://gitlab.com/api/v4/projects/*)
+            download_url_type="gitlab"
+            ;;
+        *)
+            debug_print exit "Script error:  Unknown api/url format in ${download_type}_sources array. Aborting."
+            ;;
+    esac
+
+    # Call the download_install function with the above options to install the default wine runner
+    download_install 0
+
+    if [ "$?" -eq 1 ]; then
+        return 1
+    fi
 }
 
 # Download winetricks to a temporary file
 download_winetricks() {
-        download_file "$winetricks_url" "winetricks" "winetricks"
+    download_file "$winetricks_url" "winetricks" "winetricks"
 
-        # Sanity check
-        if [ ! -f "$tmp_dir/winetricks" ]; then
-            # Something went wrong with the download and the file doesn't exist
-            message error "Something went wrong; winetricks could not be downloaded!"
-            return 1
-        fi
+    # Sanity check
+    if [ ! -f "$tmp_dir/winetricks" ]; then
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong; winetricks could not be downloaded!"
+        return 1
+    fi
 
     # Save the path to the downloaded binary
     winetricks_bin="$tmp_dir/winetricks"
