@@ -17,7 +17,7 @@
       "notes": "Performance may be choppy for the first couple minutes after visiting a new place or performing a new activity while shaders compile. Subsequent arrival should not be choppy.\r\n\r\nTo prevent crashes in areas with lots of geometry, the game needs a resource limit named \"vm.max_map_count\" increased. See our wiki's Quick Start Guide for more information and instructions.\r\n\r\nSee you in the 'verse!",
       "credits": "",
       "created_at": "2023-03-24T06:40:19.908354Z",
-      "updated_at": "2024-10-10T16:20:45.454396Z",
+      "updated_at": "2024-10-23T00:59:56.388496Z",
       "draft": false,
       "published": true,
       "published_by": null,
