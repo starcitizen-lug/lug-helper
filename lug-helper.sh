@@ -2719,7 +2719,7 @@ install_game_wine() {
 
     # If we can't use the system wine, we'll need to have the user select a custom wine runner to use
     wine_bin="wine"
-    if [ "$system_wine_ok" = "true" ]; then
+    if [ "$system_wine_ok" = "false" ]; then
         debug_print continue "Your system Wine does not meet the minimum requirements for Star Citizen!"
         debug_print continue "A custom wine runner will be automatically downloaded and used."
 
