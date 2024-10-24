@@ -45,14 +45,22 @@ wine_exec="wine"
 # Run optional prelaunch and postexit scripts
 #############################################
 # To use, update the game install paths here, then create the scripts with your desired actions in them
-# Replace the trap line below with the one provided here
+# Replace the trap line in the section below with the example provided here
 #
 # "$HOME/Games/star-citizen/sc-prelaunch.sh"
-# trap "wineserver -k; $HOME/Games/star-citizen/sc-postexit.sh" EXIT
+# trap "update_check; wineserver -k; $HOME/Games/star-citizen/sc-postexit.sh" EXIT
 
+#############################################
+# It's a trap!
+#############################################
 # Kill the wine prefix when this script exits
 # This makes sure there will be no lingering background wine processes
-trap "wineserver -k" EXIT
+update_check() {
+    while winedbg --command "info proc" | grep -qi setup; do
+        sleep 2
+    done
+}
+trap "update_check; wineserver -k" EXIT
 
 #################
 # Launch the game
