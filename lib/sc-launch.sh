@@ -56,7 +56,7 @@ wine_exec="wine"
 # Kill the wine prefix when this script exits
 # This makes sure there will be no lingering background wine processes
 update_check() {
-    while winedbg --command "info proc" | grep -qi setup; do
+    while winedbg --command "info proc" | grep -qi "rsi.*setup"; do
         sleep 2
     done
 }
