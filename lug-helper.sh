@@ -1,43 +1,15 @@
 #!/usr/bin/env bash
 
 ############################################################################
-# Star Citizen's Linux Users Group Helper Script
+# Star Citizen Linux Users Group Helper Script
 ############################################################################
 #
 # Greetings, Space Penguin!
 #
+# This script is designed to help you run Star Citizen on Linux.
 #
-# This script is designed to help you manage and optimize
-# Star Citizen on Linux.
-#
-# Features:
-#
-# - Check your system for optimal settings and
-#   change them as needed to prevent crashes.
-#
-# - Install Star Citizen using a bundled Lutris install script
-#
-# - Easily install and remove Lutris wine Runners and DXVK versions.
-#
-# - Qickly wipe your Star Citizen USER folder as is recommended
-#   by CIG after major version updates.
-#   It will back up your exported keybinds, delete your USER folder,
-#   then restore your keybind file(s).
-#
-# - Get a random participating LUG member's Star Citizen referral code.
-#
-# - Supports both the LIVE and PTU environments.
-#
-# - Zenity menus are used for a GUI experience with a fallback to
-#   terminal-based menus where Zenity is unavailable.
-#
-#
-# To export your keybinds from within the game, go to
-# Options->Keybindings->Control Profiles->Save Control Settings
-#
-# To import your keybinds from within the game, select them from the list:
-# Options->Keybindings->Control Profiles
-#
+# Please see the project's github repo for more information:
+# https://github.com/starcitizen-lug/lug-helper
 #
 # made with <3
 # Author: https://github.com/the-sane
@@ -51,7 +23,6 @@
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 #
-# Copyright (C) 2020-2024 https://github.com/the-sane
 # License: GPLv3.0
 ############################################################################
 
