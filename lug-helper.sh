@@ -156,38 +156,40 @@ rsi_icon_name="rsi-launcher.png"
 wine_launch_script_name="sc-launch.sh"
 lug_logo="info"
 
+# Default to files in the Helper directory for a git download
+lug_logo="$helper_dir/lug-logo.png"
+rsi_icon="$helper_dir/$rsi_icon_name"
+lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
+wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
+
 # Build our array of search paths, supporting packaged versions of this script
 # Search XDG_DATA_DIRS and fall back to /usr/share/
-# Prefer files in the Helper directory for downloads from git
-IFS=':' read -r -a data_dirs_array <<< "$helper_dir:$XDG_DATA_DIRS:/usr/share/"
+IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS:/usr/share/"
 
 # Locate our files in the search array
 for searchdir in "${data_dirs_array[@]}"; do
+    # Check if we've found all our files and break the loop
+    if [ -f "$lug_logo" ] && [ -f "$rsi_icon" ] && [ -f "$lutris_install_script" ] && [ -f "$wine_launch_script" ]; then
+        break
+    fi
+
     # lug-logo.png
-    if [ -f "$searchdir/lug-logo.png" ]; then
-        lug_logo="$searchdir/lug-logo.png"
-    elif [ -f "$searchdir/icons/hicolor/256x256/apps/lug-logo.png" ]; then
+    if [ ! -f "$lug_logo" ] && [ -f "$searchdir/icons/hicolor/256x256/apps/lug-logo.png" ]; then
         lug_logo="$searchdir/icons/hicolor/256x256/apps/lug-logo.png"
     fi
 
     # rsi-launcher.png
-    if [ -f "$searchdir/$rsi_icon_name" ]; then
-        rsi_icon="$searchdir/$rsi_icon_name"
-    elif [ -f "$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
+    if [ ! -f "$rsi_icon" ] && [ -f "$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
         rsi_icon="$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name"
     fi
 
     # lutris-starcitizen.json
-    if [ -f "$searchdir/lib/lutris-starcitizen.json" ]; then
-        lutris_install_script="$searchdir/lib/lutris-starcitizen.json"
-    elif [ -f "$searchdir/lug-helper/lutris-starcitizen.json" ]; then
+    if [ ! -f "$lutris_install_script" ] && [ -f "$searchdir/lug-helper/lutris-starcitizen.json" ]; then
         lutris_install_script="$searchdir/lug-helper/lutris-starcitizen.json"
     fi
 
     # sc-launch.sh
-    if [ -f "$searchdir/lib/$wine_launch_script_name" ]; then
-        wine_launch_script="$searchdir/lib/$wine_launch_script_name"
-    elif [ -f "$searchdir/lug-helper/$wine_launch_script_name" ]; then
+    if [ ! -f "$wine_launch_script" ] && [ -f "$searchdir/lug-helper/$wine_launch_script_name" ]; then
         wine_launch_script="$searchdir/lug-helper/$wine_launch_script_name"
     fi
 done
