@@ -561,9 +561,7 @@ menu() {
             # so we can't differentiate between those two states
 
             # Convert choice string to array elements for checklists
-            ifsBAK="$IFS"
-            IFS='|' read -a choices <<< "$choice"
-            IFS="$ifsBAK"
+            IFS='|' read -r -a choices <<< "$choice"
 
             # Fetch the function to be called
             function_call="$(echo "${menu_actions[0]}" | awk '{print $1}')"
