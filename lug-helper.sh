@@ -152,45 +152,54 @@ shaders_subdirs=(
 
 ######## Bundled Files #####################################################
 
-# Use script logo installed by a packaged version of this script if available
-# /usr/share/icons/hicolor/256x256/apps/lug-logo.png
-# Otherwise, default to the logo in the same directory
-if [ -f "$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/lug-logo.png" ]; then
-    lug_logo="$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/lug-logo.png"
-elif [ -f "$helper_dir/lug-logo.png" ]; then
-    lug_logo="$helper_dir/lug-logo.png"
-else
-    lug_logo="info"
-fi
-
-# Use rsi launcher icon installed by a packaged version of this script if available
-# /usr/share/icons/hicolor/256x256/apps/rsi-launcher.png
-# Otherwise, default to the icon in the same directory
 rsi_icon_name="rsi-launcher.png"
-if [ -f "$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
-    rsi_icon="$(dirname "$helper_dir")/share/icons/hicolor/256x256/apps/$rsi_icon_name"
-else
-    rsi_icon="$helper_dir/$rsi_icon_name"
-fi
-
-# Use Lutris install json installed by a packaged version of this script if available
-# /usr/share/lug-helper/lutris-starcitizen.json
-# Otherwise, default to the json in the lib directory
-if [ -f "$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json" ]; then
-    lutris_install_script="$(dirname "$helper_dir")/share/lug-helper/lutris-starcitizen.json"
-else
-    lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
-fi
-
-# Use game launch script installed by a packaged version of this script if available
-# /usr/share/lug-helper/sc-launch.sh
-# Otherwise, default to the launch script in the lib directory
 wine_launch_script_name="sc-launch.sh"
-if [ -f "$(dirname "$helper_dir")/share/lug-helper/$wine_launch_script_name" ]; then
-    wine_launch_script="$(dirname "$helper_dir")/share/lug-helper/$wine_launch_script_name"
-else
-    wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
-fi
+
+# Read paths from XDG_DATA_DIRS into an array
+IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS"
+
+# Check for files installed by a packaged version of this script
+# Attempt to use XDG_DATA_DIRS with a fallback to /usr/share/
+# Prefer files in the Helper directory for downloads from git
+for (( i=0; i<"${#data_dirs_array[@]}"; i++ )); do
+    # /usr/share/icons/hicolor/256x256/apps/lug-logo.png
+    if [ -f "$helper_dir/lug-logo.png" ]; then
+        lug_logo="$helper_dir/lug-logo.png"
+    elif [ -f "${data_dirs_array[i]}/icons/hicolor/256x256/apps/lug-logo.png" ]; then
+        lug_logo="${data_dirs_array[i]}/icons/hicolor/256x256/apps/lug-logo.png"
+    elif [ -f "/usr/share/icons/hicolor/256x256/apps/lug-logo.png" ]; then
+        lug_logo="/usr/share/icons/hicolor/256x256/apps/lug-logo.png"
+    else
+        lug_logo="info"
+    fi
+
+    # /usr/share/icons/hicolor/256x256/apps/rsi-launcher.png
+    if [ -f "$helper_dir/$rsi_icon_name" ]; then
+        rsi_icon="$helper_dir/$rsi_icon_name"
+    elif [ -f "${data_dirs_array[i]}/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
+        rsi_icon="${data_dirs_array[i]}/icons/hicolor/256x256/apps/$rsi_icon_name"
+    else
+        rsi_icon="/usr/share/icons/hicolor/256x256/apps/$rsi_icon_name"
+    fi
+
+    # /usr/share/lug-helper/lutris-starcitizen.json
+    if [ -f "$helper_dir/lib/lutris-starcitizen.json" ]; then
+        lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
+    elif [ -f "${data_dirs_array[i]}/lug-helper/lutris-starcitizen.json" ]; then
+        lutris_install_script="${data_dirs_array[i]}/lug-helper/lutris-starcitizen.json"
+    else
+        lutris_install_script="/usr/share/lug-helper/lutris-starcitizen.json"
+    fi
+
+    # /usr/share/lug-helper/sc-launch.sh
+    if [ -f "$helper_dir/lib/$wine_launch_script_name" ]; then
+        wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
+    elif [ -f "${data_dirs_array[i]}/lug-helper/$wine_launch_script_name" ]; then
+        wine_launch_script="${data_dirs_array[i]}/lug-helper/$wine_launch_script_name"
+    else
+        wine_launch_script="/usr/share/lug-helper/$wine_launch_script_name"
+    fi
+done
 
 ######## Runners ###########################################################
 
