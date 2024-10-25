@@ -154,10 +154,8 @@ shaders_subdirs=(
 
 rsi_icon_name="rsi-launcher.png"
 wine_launch_script_name="sc-launch.sh"
-lug_logo="info"
 
 # Default to files in the Helper directory for a git download
-lug_logo="$helper_dir/lug-logo.png"
 rsi_icon="$helper_dir/$rsi_icon_name"
 lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
 wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
@@ -169,13 +167,8 @@ IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS:/usr/share/"
 # Locate our files in the search array
 for searchdir in "${data_dirs_array[@]}"; do
     # Check if we've found all our files and break the loop
-    if [ -f "$lug_logo" ] && [ -f "$rsi_icon" ] && [ -f "$lutris_install_script" ] && [ -f "$wine_launch_script" ]; then
+    if [ -f "$rsi_icon" ] && [ -f "$lutris_install_script" ] && [ -f "$wine_launch_script" ]; then
         break
-    fi
-
-    # lug-logo.png
-    if [ ! -f "$lug_logo" ] && [ -f "$searchdir/icons/hicolor/256x256/apps/lug-logo.png" ]; then
-        lug_logo="$searchdir/icons/hicolor/256x256/apps/lug-logo.png"
     fi
 
     # rsi-launcher.png
