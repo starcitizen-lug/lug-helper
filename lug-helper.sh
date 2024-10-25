@@ -154,50 +154,41 @@ shaders_subdirs=(
 
 rsi_icon_name="rsi-launcher.png"
 wine_launch_script_name="sc-launch.sh"
+lug_logo="info"
 
-# Read paths from XDG_DATA_DIRS into an array
-IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS"
-
-# Check for files installed by a packaged version of this script
-# Attempt to use XDG_DATA_DIRS with a fallback to /usr/share/
+# Build our array of search paths, supporting packaged versions of this script
+# Search XDG_DATA_DIRS and fall back to /usr/share/
 # Prefer files in the Helper directory for downloads from git
-for (( i=0; i<"${#data_dirs_array[@]}"; i++ )); do
-    # /usr/share/icons/hicolor/256x256/apps/lug-logo.png
-    if [ -f "$helper_dir/lug-logo.png" ]; then
-        lug_logo="$helper_dir/lug-logo.png"
-    elif [ -f "${data_dirs_array[i]}/icons/hicolor/256x256/apps/lug-logo.png" ]; then
-        lug_logo="${data_dirs_array[i]}/icons/hicolor/256x256/apps/lug-logo.png"
-    elif [ -f "/usr/share/icons/hicolor/256x256/apps/lug-logo.png" ]; then
-        lug_logo="/usr/share/icons/hicolor/256x256/apps/lug-logo.png"
-    else
-        lug_logo="info"
+IFS=':' read -r -a data_dirs_array <<< "$helper_dir:$XDG_DATA_DIRS:/usr/share/"
+
+# Locate our files in the search array
+for searchdir in "${data_dirs_array[@]}"; do
+    # lug-logo.png
+    if [ -f "$searchdir/lug-logo.png" ]; then
+        lug_logo="$searchdir/lug-logo.png"
+    elif [ -f "$searchdir/icons/hicolor/256x256/apps/lug-logo.png" ]; then
+        lug_logo="$searchdir/icons/hicolor/256x256/apps/lug-logo.png"
     fi
 
-    # /usr/share/icons/hicolor/256x256/apps/rsi-launcher.png
-    if [ -f "$helper_dir/$rsi_icon_name" ]; then
-        rsi_icon="$helper_dir/$rsi_icon_name"
-    elif [ -f "${data_dirs_array[i]}/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
-        rsi_icon="${data_dirs_array[i]}/icons/hicolor/256x256/apps/$rsi_icon_name"
-    else
-        rsi_icon="/usr/share/icons/hicolor/256x256/apps/$rsi_icon_name"
+    # rsi-launcher.png
+    if [ -f "$searchdir/$rsi_icon_name" ]; then
+        rsi_icon="$searchdir/$rsi_icon_name"
+    elif [ -f "$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
+        rsi_icon="$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name"
     fi
 
-    # /usr/share/lug-helper/lutris-starcitizen.json
-    if [ -f "$helper_dir/lib/lutris-starcitizen.json" ]; then
-        lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
-    elif [ -f "${data_dirs_array[i]}/lug-helper/lutris-starcitizen.json" ]; then
-        lutris_install_script="${data_dirs_array[i]}/lug-helper/lutris-starcitizen.json"
-    else
-        lutris_install_script="/usr/share/lug-helper/lutris-starcitizen.json"
+    # lutris-starcitizen.json
+    if [ -f "$searchdir/lib/lutris-starcitizen.json" ]; then
+        lutris_install_script="$searchdir/lib/lutris-starcitizen.json"
+    elif [ -f "$searchdir/lug-helper/lutris-starcitizen.json" ]; then
+        lutris_install_script="$searchdir/lug-helper/lutris-starcitizen.json"
     fi
 
-    # /usr/share/lug-helper/sc-launch.sh
-    if [ -f "$helper_dir/lib/$wine_launch_script_name" ]; then
-        wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
-    elif [ -f "${data_dirs_array[i]}/lug-helper/$wine_launch_script_name" ]; then
-        wine_launch_script="${data_dirs_array[i]}/lug-helper/$wine_launch_script_name"
-    else
-        wine_launch_script="/usr/share/lug-helper/$wine_launch_script_name"
+    # sc-launch.sh
+    if [ -f "$searchdir/lib/$wine_launch_script_name" ]; then
+        wine_launch_script="$searchdir/lib/$wine_launch_script_name"
+    elif [ -f "$searchdir/lug-helper/$wine_launch_script_name" ]; then
+        wine_launch_script="$searchdir/lug-helper/$wine_launch_script_name"
     fi
 done
 
