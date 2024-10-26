@@ -231,7 +231,7 @@ winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/s
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/$repo/releases"
-current_version="v3.0.1"
+current_version="v3.1"
 
 ############################################################################
 ############################################################################
