@@ -1002,10 +1002,74 @@ wine_check() {
         system_wine_ok="true"
     fi
 
-    # Check for wow64 wines
-    if [ ! -x "$(command -v wine-preloader)" ] || [ -L "$(command -v wine64-preloader)" ]; then
-        system_wine_ok="false"
+    # If system wine passes the above checks, also check for the new wow64 mode that currently does not work
+    if [ "$system_wine_ok" = "true" ]; then
+        # Get paths to wine and wineserver binaries
+        wine_bin="$(command -v wine)"
+        wineserver_bin="$(command -v wineserver)"
+        wineboot_bin="$(command -v wineboot)"
+
+        # Determine the architecture of wine binary
+        wine_binary_arch="$(get_file_arch "${wine_bin}")"
+
+        # If unable to determine architecture, attempt alternative methods
+        if [ -z "${wine_binary_arch}" ]; then
+            if [ -x "${wineboot_bin}" ]; then
+                wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
+                if [ -x "${wine_bin_dir}/wine" ]; then
+                    wine_binary_arch="$(get_file_arch "${wine_bin_dir}/wine")"
+                fi
+            fi
+        fi
+
+        # Determine the architecture of wineserver binary
+        wineserver_binary_arch="$(get_file_arch "${wineserver_bin}")"
+
+        if [ -z "${wineserver_binary_arch}" ]; then
+            if [ -x "${wineboot_bin}" ]; then
+                wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
+                if [ -x "${wine_bin_dir}/wineserver64" ]; then
+                    wineserver_binary_arch="$(get_file_arch "${wine_bin_dir}/wineserver64")"
+                elif [ -x "${wine_bin_dir}/wineserver32" ]; then
+                    wineserver_binary_arch="$(get_file_arch "${wine_bin_dir}/wineserver32")"
+                elif [ -x "${wine_bin_dir}/wineserver" ]; then
+                    wineserver_binary_arch="$(get_file_arch "${wine_bin_dir}/wineserver")"
+                fi
+            fi
+        fi
+
+        # Check for the new WOW64, 32bit, or unknown states and then fail the check
+        if [ "${wineserver_binary_arch}" = "${wine_binary_arch}" ] || [ -z "${wineserver_binary_arch}" ] || [ -z "${wine_binary_arch}" ]; then
+            system_wine_ok="false"
+        fi
     fi
+}
+
+# Function to determine the architecture of a binary file using 'od'
+# Used for wine_check above to check the system wine architecture
+get_file_arch() {
+    case "$(od -An -t x1 -j 0x12 -N 1 "$1" 2>/dev/null | tr -d '[:space:]')" in
+        "3e")
+            # x86_64
+            echo "64bit"
+            ;;
+        "03"|"06")
+            # i386
+            echo "32bit"
+            ;;
+        "b7")
+            # aarch64
+            echo "64bit"
+            ;;
+        "28")
+            # aarch32
+            echo "32bit"
+            ;;
+        *)
+            # Unknown
+            echo ""
+            ;;
+    esac
 }
 
 # Check system memory and swap space
