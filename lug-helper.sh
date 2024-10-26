@@ -40,11 +40,11 @@ if [ ! -x "$(command -v curl)" ]; then
     notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v od)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through notify-send
-    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- sort\n- basename\n- realpath\n- dirname\n- cut\n- numfmt\n" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following coreutils packages are installed:\n- mktemp\n- chmod\n- sort\n- basename\n- realpath\n- dirname\n- cut\n- numfmt\n" --icon=dialog-warning
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that coreutils is installed!" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that coreutils is installed!" --icon=dialog-warning
     exit 1
 fi
 if [ ! -x "$(command -v xargs)" ]; then
@@ -982,43 +982,43 @@ wine_check() {
         wineboot_bin="$(command -v wineboot)"
 
         # Determine the architecture of wine binary
-        wine_binary_arch="$(get_file_arch "${wine_bin}")"
+        wine_bin_arch="$(get_file_arch "${wine_bin}")"
 
         # If unable to determine architecture, attempt alternative methods
-        if [ -z "${wine_binary_arch}" ]; then
+        if [ -z "${wine_bin_arch}" ]; then
             if [ -x "${wineboot_bin}" ]; then
                 wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
                 if [ -x "${wine_bin_dir}/wine" ]; then
-                    wine_binary_arch="$(get_file_arch "${wine_bin_dir}/wine")"
+                    wine_bin_arch="$(get_file_arch "${wine_bin_dir}/wine")"
                 fi
             fi
         fi
 
         # Determine the architecture of wineserver binary
-        wineserver_binary_arch="$(get_file_arch "${wineserver_bin}")"
+        wineserver_bin_arch="$(get_file_arch "${wineserver_bin}")"
 
-        if [ -z "${wineserver_binary_arch}" ]; then
+        if [ -z "${wineserver_bin_arch}" ]; then
             if [ -x "${wineboot_bin}" ]; then
                 wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
                 if [ -x "${wine_bin_dir}/wineserver64" ]; then
-                    wineserver_binary_arch="$(get_file_arch "${wine_bin_dir}/wineserver64")"
+                    wineserver_bin_arch="$(get_file_arch "${wine_bin_dir}/wineserver64")"
                 elif [ -x "${wine_bin_dir}/wineserver32" ]; then
-                    wineserver_binary_arch="$(get_file_arch "${wine_bin_dir}/wineserver32")"
+                    wineserver_bin_arch="$(get_file_arch "${wine_bin_dir}/wineserver32")"
                 elif [ -x "${wine_bin_dir}/wineserver" ]; then
-                    wineserver_binary_arch="$(get_file_arch "${wine_bin_dir}/wineserver")"
+                    wineserver_bin_arch="$(get_file_arch "${wine_bin_dir}/wineserver")"
                 fi
             fi
         fi
 
         # Check for the new WOW64, 32bit, or unknown states and then fail the check
-        if [ "${wineserver_binary_arch}" = "${wine_binary_arch}" ] || [ -z "${wineserver_binary_arch}" ] || [ -z "${wine_binary_arch}" ]; then
+        if [ "${wineserver_bin_arch}" = "${wine_bin_arch}" ] || [ -z "${wineserver_bin_arch}" ] || [ -z "${wine_bin_arch}" ]; then
             system_wine_ok="false"
         fi
     fi
 }
 
-# Function to determine the architecture of a binary file using 'od'
-# Used for wine_check above to check the system wine architecture
+# Determine the architecture of a binary file
+# Used for wine_check above to check the system wine
 get_file_arch() {
     case "$(od -An -t x1 -j 0x12 -N 1 "$1" 2>/dev/null | tr -d '[:space:]')" in
         "3e")
