@@ -20,6 +20,7 @@
 # Contributor: https://github.com/Wrzlprnft
 # Contributor: https://github.com/LovingMelody
 # Contributor: https://github.com/mactan-sc
+# Contributor: https://github.com/ProjectSynchro
 # Runner Downloader inspired by:
 # https://github.com/richardtatum/sc-runner-updater
 #

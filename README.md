@@ -96,6 +96,7 @@ _Optional Dependencies: **zenity** (for GUI)_
 - https://github.com/ananace
 - https://github.com/LovingMelody
 - https://github.com/mactan-sc
+- https://github.com/ProjectSynchro
 - Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
 
 ## Contributing
