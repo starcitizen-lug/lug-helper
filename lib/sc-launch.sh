@@ -33,13 +33,13 @@ export MESA_SHADER_CACHE_MAX_SIZE=10G
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
-#####################################################
-# Configure the wine binary to be used
+################################################################
+# Configure the wine binaries to be used
 #
-# To use a custom wine runner, set its path here
-# wine_exec="/path/to/custom/runner/bin/wine"
-#####################################################
-wine_exec="wine"
+# To use a custom wine runner, set the path to its bin directory
+# wine_path="/path/to/custom/runner/bin"
+################################################################
+wine_path="$(command -v wine | xargs dirname)"
 
 #############################################
 # Run optional prelaunch and postexit scripts
@@ -47,8 +47,8 @@ wine_exec="wine"
 # To use, update the game install paths here, then create the scripts with your desired actions in them
 # Replace the trap line in the section below with the example provided here
 #
-# "$HOME/Games/star-citizen/sc-prelaunch.sh"
-# trap "update_check; wineserver -k; $HOME/Games/star-citizen/sc-postexit.sh" EXIT
+# "$WINEPREFIX/sc-prelaunch.sh"
+# trap "update_check; \"$wine_path\"/wineserver -k; \"$WINEPREFIX\"/sc-postexit.sh" EXIT
 
 #############################################
 # It's a trap!
@@ -56,19 +56,19 @@ wine_exec="wine"
 # Kill the wine prefix when this script exits
 # This makes sure there will be no lingering background wine processes
 update_check() {
-    while winedbg --command "info proc" | grep -qi "rsi.*setup"; do
+    while "$wine_path"/winedbg --command "info proc" | grep -qi "rsi.*setup"; do
         sleep 2
     done
 }
-trap "update_check; wineserver -k" EXIT
+trap "update_check; \"$wine_path\"/wineserver -k" EXIT
 
 #################
 # Launch the game
 #################
 # To enable feral gamemode, replace the launch line below with:
-# gamemoderun "$wine_exec" "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+# gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 #
 # To enable gamescope and feral gamemode, replace the launch line below with the desired gamescope arguments. For example:
-# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_exec" "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 
-"$wine_exec" "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+"$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"

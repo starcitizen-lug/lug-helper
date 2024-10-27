@@ -1360,10 +1360,10 @@ runner_manage_wine() {
     # Set the string sed will match against when editing the launch script
     # This will be used to detect the appropriate variable and replace its value
     # with the path to the downloaded item
-    post_download_sed_string="wine_exec="
+    post_download_sed_string="wine_path="
     # Set the value of the above variable that will be restored after a runner is deleted
     # In this case, we want to revert to calling system wine
-    post_delete_restore_value="wine"
+    post_delete_restore_value='$(command -v wine | xargs dirname)'
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -2139,7 +2139,7 @@ post_download() {
                 fi
 
                 # Replace the specified variable
-                sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin/wine\"|" "$wine_prefix/$wine_launch_script_name"
+                sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin\"|" "$wine_prefix/$wine_launch_script_name"
             else
                 message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
@@ -2158,7 +2158,7 @@ post_download() {
                 fi
 
                 # Restore the specified variable
-                sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${post_delete_restore_value}\"|" "$wine_prefix/$wine_launch_script_name"
+                sed -i "s#^${post_download_sed_string}.*#${post_download_sed_string}\"${post_delete_restore_value}\"#" "$wine_prefix/$wine_launch_script_name"
             else
                 message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
