@@ -40,7 +40,7 @@ if [ ! -x "$(command -v curl)" ]; then
     notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v od)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v od)" ] || [ ! -x "$(command -v readlink)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that coreutils is installed!" 1>&2
@@ -2754,7 +2754,7 @@ install_game_wine() {
     mkdir -p "$install_dir"
 
     # If we can't use the system wine, we'll need to have the user select a custom wine runner to use
-    wine_bin="wine"
+    wine_path="$(command -v wine | xargs dirname)"
     if [ "$system_wine_ok" = "false" ]; then
         debug_print continue "Your system Wine does not meet the minimum requirements for Star Citizen!"
         debug_print continue "A custom wine runner will be automatically downloaded and used."
@@ -2769,7 +2769,7 @@ install_game_wine() {
             return 1
         fi
 
-        wine_bin="$install_dir/runners/$downloaded_item_name/bin/wine"
+        wine_path="$install_dir/runners/$downloaded_item_name/bin"
     fi
 
     # Download winetricks
@@ -2803,16 +2803,16 @@ install_game_wine() {
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
-        wineserver -k
+        "$wine_path"/wineserver -k
         return 1
     fi
 
     # Add registry key that prevents wine from creating unnecessary file type associations
-    "$wine_bin" reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
+    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
 
     # Run the installer
     debug_print continue "Installing the launcher. Please wait; this will take a moment..."
-    "$wine_bin" "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
+    "$wine_path"/wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
     if [ "$?" -eq 1 ]; then
         # User cancelled or there was an error
@@ -2820,13 +2820,13 @@ install_game_wine() {
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
-        wineserver -k
+        "$wine_path"/wineserver -k
         return 0
     fi
 
     # Kill the wine process after installation
     # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
-    wineserver -k
+    "$wine_path"/wineserver -k
 
     # Save the install location to the Helper's config files
     reset_helper "switchprefix"
@@ -2851,9 +2851,9 @@ install_game_wine() {
     sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
 
     # Update Wine binary in game launch script
-    if [ "$wine_bin" != "wine" ]; then
-        post_download_sed_string="wine_exec="
-        sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_bin}\"|" "$installed_launch_script"
+    if [ "$wine_path" != "$(command -v wine | xargs dirname)" ]; then
+        post_download_sed_string="wine_path="
+        sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
     fi
 
     # Modify the .desktop files installed by wine to exec the game launch script
