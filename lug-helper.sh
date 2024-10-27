@@ -54,6 +54,13 @@ if [ ! -x "$(command -v xargs)" ]; then
     notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following findutils packages are installed:\n- xargs\n" --icon=dialog-warning
     exit 1
 fi
+if [ ! -x "$(command -v cabextract)" ] || [ ! -x "$(command -v unzip)" ]; then
+    # winetricks dependencies
+    # Print to stderr and also try warning the user through notify-send
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that winetricks is installed.\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that winetricks is installed.\n" --icon=dialog-warning
+    exit 1
+fi
 
 # Checks for NixOS for NixOS specific options
 if (grep '^NAME=NixOS' /etc/os-release -q 2> /dev/null ); then
