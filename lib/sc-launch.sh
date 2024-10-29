@@ -14,10 +14,10 @@
 # If you do not wish to use the above .desktop files, then simply run this script from your terminal
 
 
-#####################################################
+################################################################
 # Configure the environment
 # Add additional environment variables here as needed
-#####################################################
+################################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
 export WINEDLLOVERRIDES=winemenubuilder.exe=d # Prevent updates from overwriting our .desktop entries
 export WINEDEBUG=-all # Cut down on console debug messages
@@ -41,6 +41,15 @@ export MESA_SHADER_CACHE_MAX_SIZE=10G
 ################################################################
 wine_path="$(command -v wine | xargs dirname)"
 
+# Drop us into a shell that contains the current environment
+# This is useful for getting a wine control panel, debugging, etc.
+# Usage: ./sc-launch.sh shell
+if [ "$1" = "shell" ]; then
+    export PATH="$wine_path:$PATH"
+    /usr/bin/env bash
+    exit 0
+fi
+
 #############################################
 # Run optional prelaunch and postexit scripts
 #############################################
@@ -62,9 +71,9 @@ update_check() {
 }
 trap "update_check; \"$wine_path\"/wineserver -k" EXIT
 
-#################
+#############################################
 # Launch the game
-#################
+#############################################
 # To enable feral gamemode, replace the launch line below with:
 # gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 #
