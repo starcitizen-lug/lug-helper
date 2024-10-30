@@ -1360,7 +1360,7 @@ runner_manage_wine() {
     # Set the string sed will match against when editing the launch script
     # This will be used to detect the appropriate variable and replace its value
     # with the path to the downloaded item
-    post_download_sed_string="wine_path="
+    post_download_sed_string="export wine_path="
     # Set the value of the above variable that will be restored after a runner is deleted
     # In this case, we want to revert to calling system wine
     post_delete_restore_value="$(command -v wine | xargs dirname)"
@@ -2301,6 +2301,7 @@ maintenance_menu() {
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
         prefix_msg="Target a different Star Citizen installation"
+        launcher_msg="Update game launch script (non-Lutris)"
         powershell_msg="Install PowerShell into Wine prefix"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
         shaders_msg="Delete my shaders (Do this after each game update)"
@@ -2310,9 +2311,9 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "update_launcher" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2384,6 +2385,40 @@ switch_prefix() {
     else
         # Prompt the user for game paths
         getdirs
+    fi
+}
+
+# Update the non-Lutris game launch script if necessary
+update_launcher() {
+    getdirs
+
+    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        message warning "Game launch script not found! If you're using Lutris, you don't need to update this\n\n$wine_prefix/$wine_launch_script_name"
+        return 1
+    fi
+
+    current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
+    latest_launcher_ver="$(grep "^# version:" $wine_launch_script | awk '{print $3}')"
+
+    if [ "$latest_launcher_ver" != "$current_launcher_ver" ] &&
+       [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$latest_launcher_ver" | sort -V | head -n1)" ]; then
+
+        # Backup the file
+        cp "$wine_prefix/$wine_launch_script_name" "$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
+        # Backup the variables we know we need
+        bak_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}')"
+        bak_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}')"
+
+        # Copy in the new launch script
+        cp "$wine_launch_script" "$wine_prefix"
+
+        # Restore the variables
+        sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=$bak_wineprefix|" "$wine_prefix/$wine_launch_script_name"
+        sed -i "s#^export wine_path=.*#export wine_path=$bak_winepath#" "$wine_prefix/$wine_launch_script_name"
+
+        message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
+    else
+        message info "Your game launch script is already up to date!"
     fi
 }
 
@@ -2852,10 +2887,10 @@ install_game_wine() {
     installed_launch_script="$install_dir/$wine_launch_script_name"
 
     # Update WINEPREFIX in game launch script
-    sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
+    sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
 
     # Update Wine binary in game launch script
-    post_download_sed_string="wine_path="
+    post_download_sed_string="export wine_path="
     sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
 
     # Modify the .desktop files installed by wine to exec the game launch script

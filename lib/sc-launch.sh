@@ -17,7 +17,7 @@
 # If you do not wish to use the above .desktop files, simply run this script
 # from your terminal.
 #
-# version: 1.0
+# version: 1.3
 ################################################################################
 
 ################################################################
@@ -43,9 +43,9 @@ export MESA_SHADER_CACHE_MAX_SIZE=10G
 # Configure the wine binaries to be used
 #
 # To use a custom wine runner, set the path to its bin directory
-# wine_path="/path/to/custom/runner/bin"
+# export wine_path="/path/to/custom/runner/bin"
 ################################################################
-wine_path="$(command -v wine | xargs dirname)"
+export wine_path="$(command -v wine | xargs dirname)"
 
 #############################################
 # Get a shell
