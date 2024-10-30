@@ -55,7 +55,7 @@ export wine_path="$(command -v wine | xargs dirname)"
 # Usage: ./sc-launch.sh shell
 if [ "$1" = "shell" ]; then
     export PATH="$wine_path:$PATH"
-    /usr/bin/env bash
+    echo "Entering Wine prefix maintenance shell. Type 'exit' when done."; cd "$WINEPREFIX"; /usr/bin/env bash --norc
     exit 0
 fi
 
