@@ -1363,7 +1363,7 @@ runner_manage_wine() {
     post_download_sed_string="wine_path="
     # Set the value of the above variable that will be restored after a runner is deleted
     # In this case, we want to revert to calling system wine
-    post_delete_restore_value='$(command -v wine | xargs dirname)'
+    post_delete_restore_value="$(command -v wine | xargs dirname)"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -2851,10 +2851,8 @@ install_game_wine() {
     sed -i "s|^export WINEPREFIX.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
 
     # Update Wine binary in game launch script
-    if [ "$wine_path" != "$(command -v wine | xargs dirname)" ]; then
-        post_download_sed_string="wine_path="
-        sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
-    fi
+    post_download_sed_string="wine_path="
+    sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
 
     # Modify the .desktop files installed by wine to exec the game launch script
     debug_print continue "Updating .desktop files installed by wine..."
