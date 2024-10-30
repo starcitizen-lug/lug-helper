@@ -2405,9 +2405,21 @@ update_launcher() {
 
         # Backup the file
         cp "$wine_prefix/$wine_launch_script_name" "$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
+
         # Backup the variables we know we need
         bak_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}')"
         bak_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}')"
+
+        # If wineprefix isn't found in the file, something is wrong and we shouldn't proceed
+        if [ -z "$bak_wineprefix" ]; then
+            message error "The WINEPREFIX env var was not found in your launch script. Unable to proceed!\n\n$wine_prefix/$wine_launch_script_name"
+            return 1
+        fi
+
+        # If wine_path is empty, it may be an older version of the launch script. Default to system wine
+        if [ -z "$bak_winepath" ]; then
+            bak_winepath="$(command -v wine | xargs dirname)"
+        fi
 
         # Copy in the new launch script
         cp "$wine_launch_script" "$wine_prefix"
