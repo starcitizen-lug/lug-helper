@@ -54,16 +54,17 @@ export wine_path="$(command -v wine | xargs dirname)"
 # This is useful for getting a wine control panel, debugging, etc.
 # Usage: ./sc-launch.sh shell
 if [ "$1" = "shell" ]; then
-    export PATH="$wine_path:$PATH"
-    echo "Entering Wine prefix maintenance shell. Type 'exit' when done."; cd "$WINEPREFIX"; /usr/bin/env bash --norc
-    exit 0
+    echo "Entering Wine prefix maintenance shell. Type 'exit' when done."
+    export PATH="$wine_path:$PATH"; export PS1="Wine: "
+    cd "$WINEPREFIX"; /usr/bin/env bash --norc; exit 0
 fi
 
 #############################################
 # Run optional prelaunch and postexit scripts
 #############################################
 # To use, update the game install paths here, create the scripts with your
-# desired actions in them, then place them in your prefix directory.
+# desired actions in them, then place them in your prefix directory:
+# sc-prelaunch.sh and sc-postexit.sh
 # Replace the trap line in the section below with the example provided here
 #
 # "$WINEPREFIX/sc-prelaunch.sh"
