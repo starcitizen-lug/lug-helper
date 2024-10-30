@@ -2844,6 +2844,10 @@ install_game_wine() {
 
     # Copy game launch script to the wine prefix root directory
     debug_print continue "Copying game launch script to ${install_dir}..."
+    if [ -f "$install_dir/$wine_launch_script_name" ]; then
+        # Back it up if it already exists
+        cp "$install_dir/$wine_launch_script_name" "$install_dir/$(basename "$wine_launch_script_name" .sh).bak"
+    fi
     cp "$wine_launch_script" "$install_dir"
     installed_launch_script="$install_dir/$wine_launch_script_name"
 
