@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 
-# This script configures and launches Star Citizen
-# It is installed by the LUG Helper when the game is installed with Wine (not Lutris)
+################################################################################
+# This script configures and launches Star Citizen.
+# It is installed by the LUG Helper for a non-Lutris installation.
 #
-# The following .desktop files are added by wine during installation and then modified by the LUG Helper to call this script
-# They are automatically detected by most desktop environments for easy game launching
+# The following .desktop files are added by wine during installation and then
+# modified by the LUG Helper to call this script.
+# They are automatically detected by most desktop environments for easy game
+# launching.
 #
-#############################################################################################
+################################################################################
 # $HOME/Desktop/RSI Launcher.desktop
 # $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
-#############################################################################################
+################################################################################
 #
-# If you do not wish to use the above .desktop files, then simply run this script from your terminal
-
+# If you do not wish to use the above .desktop files, simply run this script
+# from your terminal.
+#
+# version: 1.0
+################################################################################
 
 ################################################################
 # Configure the environment
@@ -41,6 +47,9 @@ export MESA_SHADER_CACHE_MAX_SIZE=10G
 ################################################################
 wine_path="$(command -v wine | xargs dirname)"
 
+#############################################
+# Get a shell
+#############################################
 # Drop us into a shell that contains the current environment
 # This is useful for getting a wine control panel, debugging, etc.
 # Usage: ./sc-launch.sh shell
@@ -53,7 +62,8 @@ fi
 #############################################
 # Run optional prelaunch and postexit scripts
 #############################################
-# To use, update the game install paths here, then create the scripts with your desired actions in them
+# To use, update the game install paths here, create the scripts with your
+# desired actions in them, then place them in your prefix directory.
 # Replace the trap line in the section below with the example provided here
 #
 # "$WINEPREFIX/sc-prelaunch.sh"
@@ -77,7 +87,8 @@ trap "update_check; \"$wine_path\"/wineserver -k" EXIT
 # To enable feral gamemode, replace the launch line below with:
 # gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 #
-# To enable gamescope and feral gamemode, replace the launch line below with the desired gamescope arguments. For example:
+# To enable gamescope and feral gamemode, replace the launch line below with the
+# desired gamescope arguments. For example:
 # gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
 
 "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
