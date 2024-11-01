@@ -35,7 +35,7 @@ export __GL_SHADER_DISK_CACHE_PATH="$WINEPREFIX"
 export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=true
 # Mesa (AMD/Intel) Shader Cache Options
 export MESA_SHADER_CACHE_DIR="$WINEPREFIX"
-export MESA_SHADER_CACHE_MAX_SIZE=10G
+export MESA_SHADER_CACHE_MAX_SIZE="10G"
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
