@@ -75,7 +75,7 @@
             "__GL_SHADER_DISK_CACHE": 1,
             "__GL_SHADER_DISK_CACHE_SIZE": 1073741824,
             "__GL_SHADER_DISK_CACHE_PATH": "$GAMEDIR",
-            "__GL_SHADER_DISK_CACHE_SKIP_CLEANUP": true,
+            "__GL_SHADER_DISK_CACHE_SKIP_CLEANUP": 1,
             "MESA_SHADER_CACHE_DIR": "$GAMEDIR",
             "MESA_SHADER_CACHE_MAX_SIZE": "10G",
             "EOS_USE_ANTICHEATCLIENTNULL": 1,
