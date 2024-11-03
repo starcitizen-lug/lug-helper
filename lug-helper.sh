@@ -43,8 +43,8 @@ fi
 if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v od)" ] || [ ! -x "$(command -v readlink)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through notify-send
-    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that coreutils is installed!" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that coreutils is installed!" --icon=dialog-warning
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that coreutils is installed!\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that coreutils is installed!\n" --icon=dialog-warning
     exit 1
 fi
 if [ ! -x "$(command -v xargs)" ]; then
@@ -57,8 +57,8 @@ fi
 if [ ! -x "$(command -v cabextract)" ] || [ ! -x "$(command -v unzip)" ]; then
     # winetricks dependencies
     # Print to stderr and also try warning the user through notify-send
-    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that winetricks is installed.\n" 1>&2
-    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that winetricks is installed.\n" --icon=dialog-warning
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that the following winetricks dependencies (or winetricks itself) are installed:\n- cabextract\n- unzip\n" 1>&2
+    notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that the following winetricks dependencies (or winetricks itself) are installed:\n- cabextract\n- unzip\n" --icon=dialog-warning
     exit 1
 fi
 
