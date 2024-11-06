@@ -17,7 +17,7 @@
 # If you do not wish to use the above .desktop files, simply run this script
 # from your terminal.
 #
-# version: 1.3
+# version: 1.4
 ################################################################################
 
 ################################################################
@@ -25,6 +25,8 @@
 # Add additional environment variables here as needed
 ################################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
+launch_log="$WINEPREFIX/sc-launch.log"
+
 export WINEDLLOVERRIDES=winemenubuilder.exe=d # Prevent updates from overwriting our .desktop entries
 export WINEDEBUG=-all # Cut down on console debug messages
 export EOS_USE_ANTICHEATCLIENTNULL=1
@@ -33,9 +35,10 @@ export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=10737418240
 export __GL_SHADER_DISK_CACHE_PATH="$WINEPREFIX"
 export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1
-# Mesa (AMD/Intel) Shader Cache Options
+# Mesa (AMD/Intel) shader cache options
 export MESA_SHADER_CACHE_DIR="$WINEPREFIX"
 export MESA_SHADER_CACHE_MAX_SIZE="10G"
+# Optional HUDs
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
@@ -86,10 +89,10 @@ trap "update_check; \"$wine_path\"/wineserver -k" EXIT
 # Launch the game
 #############################################
 # To enable feral gamemode, replace the launch line below with:
-# gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+# gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
 #
 # To enable gamescope and feral gamemode, replace the launch line below with the
 # desired gamescope arguments. For example:
-# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
 
-"$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe"
+"$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1

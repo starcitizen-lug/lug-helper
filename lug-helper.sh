@@ -2926,8 +2926,6 @@ install_game_wine() {
         sed -i '/^Path=/s/ /\\\s/g' "$home_desktop_file"
         # Replace icon
         sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$home_desktop_file"
-        # Make it start in a terminal
-        echo "Terminal=true" >> "$home_desktop_file"
         debug_print continue "Updated $home_desktop_file"
     else
         debug_print continue "Unable to find $home_desktop_file"
@@ -2945,8 +2943,6 @@ install_game_wine() {
         sed -i '/^Path=/s/ /\\\s/g' "$localshare_desktop_file"
         # Replace icon
         sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$localshare_desktop_file"
-        # Make it start in a terminal
-        echo "Terminal=true" >> "$localshare_desktop_file"
         debug_print continue "Updated $localshare_desktop_file"
     else
         debug_print continue "Unable to find $localshare_desktop_file"
