@@ -2841,7 +2841,7 @@ install_game_wine() {
     debug_print continue "Installation log file created at $tmp_install_log"
 
     # Create the new prefix and install powershell
-    export WINE="$wine_path"/wine
+    export WINE="$wine_path/wine"
     export WINEPREFIX="$install_dir"
     debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
