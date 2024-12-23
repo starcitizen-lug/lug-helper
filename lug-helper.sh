@@ -1003,6 +1003,7 @@ wine_check() {
         # Determine the architecture of wineserver binary
         wineserver_bin_arch="$(get_file_arch "${wineserver_bin}")"
 
+        # If unable to determine architecture, attempt alternative methods
         if [ -z "${wineserver_bin_arch}" ]; then
             if [ -x "${wineboot_bin}" ]; then
                 wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
