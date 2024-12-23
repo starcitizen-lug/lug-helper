@@ -1893,7 +1893,7 @@ download_install() {
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_filename..."
     rm --interactive=never "${tmp_dir:?}/$download_filename"
-    rm -r "${tmp_dir:?}/$download_basename"
+    rm -r --interactive=never "${tmp_dir:?}/$download_basename"
 
     return 0
 }
