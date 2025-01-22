@@ -232,7 +232,8 @@ rsi_installer="RSI Launcher-Setup-2.1.1.exe"
 rsi_installer_url="https://install.robertsspaceindustries.com/rel/2/$rsi_installer"
 
 # Winetricks download url
-winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
+winetricks_version="20250102"
+winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/$winetricks_version/src/winetricks"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
