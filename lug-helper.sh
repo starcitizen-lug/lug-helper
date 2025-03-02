@@ -141,7 +141,7 @@ wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
 
 # Build our array of search paths, supporting packaged versions of this script
 # Search XDG_DATA_DIRS and fall back to /usr/share/
-IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS:/usr/share/"
+IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS:/usr/share/:$helper_dir"
 
 # Locate our files in the search array
 for searchdir in "${data_dirs_array[@]}"; do
