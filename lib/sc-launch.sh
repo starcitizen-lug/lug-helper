@@ -57,7 +57,9 @@ export wine_path="$(command -v wine | xargs dirname)"
 # This is useful for getting a wine control panel, debugging, etc.
 # Usage: ./sc-launch.sh shell
 if [ "$1" = "shell" ]; then
-    echo "Entering Wine prefix maintenance shell. Type 'exit' when done."
+    echo "Entering Wine prefix maintenance shell"
+    echo "Useful commands: winecfg, wine control joy.cpl, wineserver -k"
+    echo "Type 'exit' when done."
     export PATH="$wine_path:$PATH"; export PS1="Wine: "
     cd "$WINEPREFIX"; /usr/bin/env bash --norc; exit 0
 fi
