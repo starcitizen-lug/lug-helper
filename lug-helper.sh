@@ -2303,18 +2303,20 @@ maintenance_menu() {
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
         prefix_msg="Target a different Star Citizen installation"
         launcher_msg="Update game launch script (non-Lutris)"
+        launchscript_msg="Edit launch script"
+        shell_msg="Launch Wine prefix maintenance shell"
         powershell_msg="Install PowerShell into Wine prefix"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
-        shaders_msg="Delete my shaders (Do this after each game update)"
+        shaders_msg="Delete my shaders"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$shell_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "update_launcher" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_launchscript" "launch_shell" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2432,6 +2434,61 @@ update_launcher() {
         message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
     else
         message info "Your game launch script is already up to date!"
+    fi
+}
+
+# Launch a Wine prefix maintenance shell using our launch script's shell argument
+launch_shell ()
+{
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu
+        # or there was an error
+        return 0
+    fi
+
+    # Make sure the launch script exists
+    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        message error "Unable to find $wine_prefix/$wine_launch_script_name"
+        return 1
+    fi
+
+    # Check if the launch script is the correct version
+    current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
+    req_launcher_ver="1.0"
+
+    if [ "$req_launcher_ver" != "$current_launcher_ver" ] &&
+       [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$req_launcher_ver" | sort -V | head -n1)" ]; then
+        message error "Your launch script is out of date!\nPlease update your launch script before proceeding."
+        return 1
+    fi
+
+    # Launch a wine shell using the launch script
+    "$wine_prefix/$wine_launch_script_name" shell
+}
+
+# Edit the launch script
+edit_launchscript() {
+    # Get/Set directory paths
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled and wants to return to the main menu
+        # or there was an error
+        return 0
+    fi
+
+    # Make sure the launch script exists
+    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        message error "Unable to find $wine_prefix/$wine_launch_script_name"
+        return 1
+    fi
+
+    # Open the launch script in the user's preferred editor
+    if [ -x "$(command -v xdg-open)" ]; then
+        xdg-open "$wine_prefix/$wine_launch_script_name"
+    else
+        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n$wine_prefix/$wine_launch_script_name"
     fi
 }
 
