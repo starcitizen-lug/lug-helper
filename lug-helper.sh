@@ -3091,6 +3091,28 @@ install_powershell() {
     fi
 }
 
+# Update dxvk for native wine installs
+dxvk_update_wine() {
+    # Download winetricks
+    download_winetricks
+
+    # Abort if the winetricks download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to install powershell without winetricks. Aborting."
+        return 1
+    fi
+
+    # Update directories
+    getdirs
+
+    # Update dxvk
+    if [ "$?" -ne 1 ]; then
+        debug_print continue "Updating DXVK in ${wine_prefix}..."
+        WINEPREFIX="$wine_prefix" "$winetricks_bin" -f dxvk
+        message info "DXVK update complete. See terminal output for details."
+    fi
+}
+
 # Format some URLs for Zenity
 format_urls() {
     if [ "$use_zenity" -eq 1 ]; then
@@ -3353,18 +3375,19 @@ while true; do
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
     install_msg_wine="Install Star Citizen with Wine"
-    install_msg_lutris="Install Star Citizen with Lutris"
     runners_msg_wine="Manage Wine Runners (non-Lutris)"
+    dxvk_msg_wine="Update DXVK (non-Lutris)"
+    install_msg_lutris="Install Star Citizen with Lutris"
     runners_msg_lutris="Manage Lutris Runners"
-    dxvk_msg="Manage Lutris DXVK Versions"
+    dxvk_msg_lutris="Manage Lutris DXVK Versions"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_wine" "$install_msg_lutris" "$runners_msg_wine" "$runners_msg_lutris" "$dxvk_msg" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$install_msg_lutris" "$runners_msg_lutris" "$dxvk_msg_lutris" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_wine" "install_game_lutris" "runner_manage_wine" "runner_manage_lutris" "dxvk_manage_lutris" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_update_wine" "install_game_lutris" "runner_manage_lutris" "dxvk_manage_lutris" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
