@@ -1349,7 +1349,7 @@ runner_manage_wine() {
     # Configure the text displayed in the menus
     download_menu_heading="Wine Runners (non-Lutris)"
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
-    download_menu_height="140"
+    download_menu_height="320"
 
     # Configure the post install and delete messages
     # Format:
@@ -1395,7 +1395,7 @@ runner_manage_lutris() {
     # Configure the text displayed in the menus
     download_menu_heading="Lutris Runners"
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
-    download_menu_height="140"
+    download_menu_height="320"
 
     # Configure the post install and delete messages
     # Format:
@@ -1438,7 +1438,7 @@ dxvk_manage_lutris() {
     # Configure the text displayed in the menus
     download_menu_heading="Lutris DXVK Versions"
     download_menu_description="The DXVK versions below may improve performance"
-    download_menu_height="140"
+    download_menu_height="320"
 
     # Configure the post install and delete messages
     # Format:
@@ -1612,7 +1612,7 @@ download_select_install() {
     # Configure the menu
     menu_text_zenity="Select the $download_type you want to install:"
     menu_text_terminal="Select the $download_type you want to install:"
-    menu_text_height="60"
+    menu_text_height="320"
     menu_type="radiolist"
     goback="Return to the $download_type management menu"
     unset menu_options
@@ -1915,7 +1915,7 @@ download_select_delete() {
     # Configure the menu
     menu_text_zenity="Select the $download_type(s) you want to remove:"
     menu_text_terminal="Select the $download_type you want to remove:"
-    menu_text_height="60"
+    menu_text_height="320"
     menu_type="checklist"
     goback="Return to the $download_type management menu"
     unset installed_items
@@ -2296,7 +2296,7 @@ maintenance_menu() {
         # Configure the menu
         menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki\n\nWine prefix:</b> $maint_prefix"
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $maint_prefix"
-        menu_text_height="140"
+        menu_text_height="340"
         menu_type="radiolist"
 
         # Configure the menu options
@@ -2338,7 +2338,7 @@ version_menu(){
     # Configure the menu
     menu_text_zenity="Select the game version the Helper will target:"
     menu_text_terminal="Select the game version the Helper will target:"
-    menu_text_height="60"
+    menu_text_height="240"
     menu_type="radiolist"
     goback="Cancel"
 
@@ -3178,8 +3178,8 @@ if [ -x "$(command -v zenity)" ]; then
             menu_height_max="400"
         else
             # zenity 4.x+ menu sizing
-            menu_option_height="45"
-            menu_text_height_zenity4="120"
+            menu_option_height="26"
+            menu_text_height_zenity4="0"
             menu_height_max="800"
         fi
     else
@@ -3381,7 +3381,7 @@ while true; do
     # Configure the menu
     menu_text_zenity="$menu_heading_zenity"
     menu_text_terminal="$menu_heading_terminal"
-    menu_text_height="120"
+    menu_text_height="320"
     menu_type="radiolist"
 
     # Configure the menu options
