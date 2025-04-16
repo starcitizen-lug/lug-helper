@@ -2316,7 +2316,7 @@ maintenance_menu() {
         # Set the options to be displayed in the menu
         menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$shell_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_launchscript" "launch_shell" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_wine_launch_script" "launch_wine_shell" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2438,7 +2438,7 @@ update_launcher() {
 }
 
 # Launch a Wine prefix maintenance shell using our launch script's shell argument
-launch_shell ()
+launch_wine_shell ()
 {
     # Get/Set directory paths
     getdirs
@@ -2469,7 +2469,7 @@ launch_shell ()
 }
 
 # Edit the launch script
-edit_launchscript() {
+edit_wine_launch_script() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
@@ -3227,7 +3227,10 @@ Usage: lug-helper <options>
   -i, --install [lutris|wine]   Install Star Citizen (default: lutris)
   -m, --manage-wine-runners     Install or remove Wine runners
   -l, --manage-lutris-runners   Install or remove Lutris runners
+  -o, --update-wine-dxvk        Update DXVK for native Wine installs
   -k, --manage-lutris-dxvk      Install or remove Lutris DXVK versions
+  -e, --wine-shell              Open a Wine maintenance shell
+  -a, --edit-launch-script      Edit the native Wine install launch script
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
   -s, --delete-shaders          Delete Star Citizen shaders
   -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
@@ -3263,8 +3266,17 @@ Usage: lug-helper <options>
             --manage-lutris-runners | -l )
                 cargs+=("runner_manage_lutris")
                 ;;
+            --update-wine-dxvk | -o )
+                cargs+=("dxvk_update_wine")
+                ;;
             --manage-lutris-dxvk | -k )
                 cargs+=("dxvk_manage_lutris")
+                ;;
+            --wine-shell | -e )
+                cargs+=("launch_wine_shell")
+                ;;
+            --edit-launch-script | -a )
+                cargs+=("edit_wine_launch_script")
                 ;;
             --delete-user-folder | -u )
                 cargs+=("rm_userdir")
