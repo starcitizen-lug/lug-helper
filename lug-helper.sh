@@ -3237,8 +3237,9 @@ Usage: lug-helper <options>
   -l, --manage-lutris-runners   Install or remove Lutris runners
   -o, --update-wine-dxvk        Update DXVK for native Wine installs
   -k, --manage-lutris-dxvk      Install or remove Lutris DXVK versions
-  -e, --wine-shell              Open a Wine maintenance shell
-  -a, --edit-launch-script      Edit the native Wine install launch script
+  -e, --edit-launch-script      Edit the native Wine install launch script
+  -a, --wine-config             Launch winecfg for the game's prefix
+  -b, --wine-controllers        Launch Wine controllers configuration
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
   -s, --delete-shaders          Delete Star Citizen shaders
   -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
@@ -3280,11 +3281,14 @@ Usage: lug-helper <options>
             --manage-lutris-dxvk | -k )
                 cargs+=("dxvk_manage_lutris")
                 ;;
-            --wine-shell | -e )
-                cargs+=("launch_wine_shell")
-                ;;
-            --edit-launch-script | -a )
+            --edit-launch-script | -e )
                 cargs+=("edit_wine_launch_script")
+                ;;
+            --wine-config | -a )
+                cargs+=("call_launch_script config")
+                ;;
+            --wine-controllers | -b )
+                cargs+=("call_launch_script controllers")
                 ;;
             --delete-user-folder | -u )
                 cargs+=("rm_userdir")
