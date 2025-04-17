@@ -117,16 +117,6 @@ live_dir="LIVE"
 ptu_dir="PTU"
 eptu_dir="EPTU"
 
-# Location in the WINE prefix where shaders are stored
-appdata_path="drive_c/users/$USER/AppData/Local/Star Citizen"
-
-# The shaders subdirectory name
-shaders_subdirs=(
-    "shaders"
-    "Shaders"
-    "VulkanShaderCache"
-)
-
 # Remaining directory paths are set at the end of the getdirs() function
 
 ######## Bundled Files #####################################################
@@ -738,8 +728,6 @@ getdirs() {
     fi
     # The location within the USER directory to which the game exports keybinds
     keybinds_dir="$user_dir/Controls/Mappings"
-    # Shaders directory
-    shaders_dir="$wine_prefix/$appdata_path"
     # Custom characters directory
     custom_characters_dir="$user_dir/CustomCharacters"
     # dxvk cache file
@@ -2617,11 +2605,6 @@ display_dirs() {
     # Star Citizen installation
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         dirs_list+="Star Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")\n\n"
-    fi
-
-    # Star Citizen shaders path
-    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dirs_list+="Star Citizen shaders:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")/$appdata_path\n\n"
     fi
 
     # Lutris runners
