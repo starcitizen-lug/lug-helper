@@ -2308,16 +2308,15 @@ maintenance_menu() {
         controllers_msg="Open Wine controller configuration"
         powershell_msg="Install PowerShell into Wine prefix"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
-        shaders_msg="Delete my shaders"
         vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$userdir_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "rm_userdir" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2574,32 +2573,6 @@ rm_userdir() {
 
         message info "Your Star Citizen USER directory has been cleaned up!\n\nExported keybinds can be re-imported in-game from:\nOptions->Keybindings->Control Profiles\n\nSaved characters can be selected in the character creator"
     fi
-}
-
-# Delete the shaders directory
-rm_shaders() {
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu, or error
-        return 0
-    fi
-
-    # Loop through all possible shader directories
-    for appdata_dir in "$shaders_dir"/*; do
-        # Loop through the shaders subdir array
-        for shaders_subdir in "${shaders_subdirs[@]}"; do
-            if [ -d "$appdata_dir/$shaders_subdir" ]; then
-                # If a shaders directory is found, delete it
-                if message question "The following directory will be deleted:\n\n$appdata_dir/$shaders_subdir\n\nDo you want to proceed?"; then
-                    debug_print continue "Deleting $appdata_dir/$shaders_subdir..."
-                    rm -r --interactive=never "${appdata_dir:?}/$shaders_subdir"
-                fi
-            fi
-        done
-    done
-
-    message info "Shader operations completed"
 }
 
 # Delete DXVK cache
@@ -3241,7 +3214,6 @@ Usage: lug-helper <options>
   -a, --wine-config             Launch winecfg for the game's prefix
   -b, --wine-controllers        Launch Wine controllers configuration
   -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
-  -s, --delete-shaders          Delete Star Citizen shaders
   -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
   -t, --target [live|ptu|eptu]  Target LIVE/PTU/EPTU (default: live)
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
@@ -3292,9 +3264,6 @@ Usage: lug-helper <options>
                 ;;
             --delete-user-folder | -u )
                 cargs+=("rm_userdir")
-                ;;
-            --delete-shaders | -s )
-                cargs+=("rm_shaders")
                 ;;
             --delete-dxvk-cache | -c )
                 cargs+=("rm_dxvkcache")
