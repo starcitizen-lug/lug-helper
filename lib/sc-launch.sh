@@ -17,7 +17,7 @@
 # If you do not wish to use the above .desktop files, simply run this script
 # from your terminal.
 #
-# version: 1.4
+# version: 1.5
 ################################################################################
 
 ################################################################
@@ -51,18 +51,25 @@ export MESA_SHADER_CACHE_MAX_SIZE="10G"
 export wine_path="$(command -v wine | xargs dirname)"
 
 #############################################
-# Get a shell
+# Command line arguments
 #############################################
-# Drop us into a shell that contains the current environment
-# This is useful for getting a wine control panel, debugging, etc.
+# shell - Drop into a Wine maintenance shell
+# config - Wine configuration
+# controllers - Game controller configuration
 # Usage: ./sc-launch.sh shell
-if [ "$1" = "shell" ]; then
-    echo "Entering Wine prefix maintenance shell"
-    echo "Useful commands: winecfg, wine control joy.cpl, wineserver -k"
-    echo "Type 'exit' when done."
-    export PATH="$wine_path:$PATH"; export PS1="Wine: "
-    cd "$WINEPREFIX"; /usr/bin/env bash --norc; exit 0
-fi
+case "$1" in
+    "shell")
+        echo "Entering Wine prefix maintenance shell. Type 'exit' when done."
+        export PATH="$wine_path:$PATH"; export PS1="Wine: "
+        cd "$WINEPREFIX"; /usr/bin/env bash --norc; exit 0
+        ;;
+    "config")
+        /usr/bin/env bash --norc -c "winecfg"; exit 0
+        ;;
+    "controllers")
+        /usr/bin/env bash --norc -c "wine control joy.cpl"; exit 0
+        ;;
+esac
 
 #############################################
 # Run optional prelaunch and postexit scripts
