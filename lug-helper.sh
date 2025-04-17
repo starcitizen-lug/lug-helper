@@ -170,7 +170,7 @@ runner_sources=(
 
 # Set the default runner to install when the system wine doesn't meet requirements
 # default_runner_source corresponds to an even number index in runner_sources above
-default_runner="wine-9.21-amd64.tar.xz"
+default_runner="wine-9.22-amd64.tar.xz"
 default_runner_source=0
 
 ######## DXVK ##############################################################
