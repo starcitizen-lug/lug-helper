@@ -2302,9 +2302,10 @@ maintenance_menu() {
         # Configure the menu options
         version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
         prefix_msg="Target a different Star Citizen installation"
-        launcher_msg="Update game launch script (non-Lutris)"
+        launcher_msg="Update launch script (non-Lutris)"
         launchscript_msg="Edit launch script"
-        shell_msg="Launch Wine prefix maintenance shell"
+        config_msg="Open Wine prefix configuration"
+        controllers_msg="Open Wine controller configuration"
         powershell_msg="Install PowerShell into Wine prefix"
         userdir_msg="Delete my user folder and preserve keybinds/characters"
         shaders_msg="Delete my shaders"
@@ -2314,9 +2315,9 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$shell_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$userdir_msg" "$shaders_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_wine_launch_script" "launch_wine_shell" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "rm_userdir" "rm_shaders" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2437,9 +2438,16 @@ update_launcher() {
     fi
 }
 
-# Launch a Wine prefix maintenance shell using our launch script's shell argument
-launch_wine_shell ()
+# Call our launch script and pass it the given command line argument
+call_launch_script()
 {
+    # This function expects a string to be passed in as an argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The call_launch_script function expects an argument. Aborting."
+    fi
+
+    launch_arg="$1"
+
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
@@ -2456,7 +2464,7 @@ launch_wine_shell ()
 
     # Check if the launch script is the correct version
     current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
-    req_launcher_ver="1.0"
+    req_launcher_ver="1.5"
 
     if [ "$req_launcher_ver" != "$current_launcher_ver" ] &&
        [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$req_launcher_ver" | sort -V | head -n1)" ]; then
@@ -2465,7 +2473,7 @@ launch_wine_shell ()
     fi
 
     # Launch a wine shell using the launch script
-    "$wine_prefix/$wine_launch_script_name" shell
+    "$wine_prefix/$wine_launch_script_name" "$launch_arg"
 }
 
 # Edit the launch script
