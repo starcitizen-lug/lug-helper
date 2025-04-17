@@ -112,11 +112,6 @@ sc_base_dir="StarCitizen"
 # The default install location within a WINE prefix:
 default_install_path="drive_c/Program Files/Roberts Space Industries"
 
-# The names of the live/ptu/eptu directories
-live_dir="LIVE"
-ptu_dir="PTU"
-eptu_dir="EPTU"
-
 # Remaining directory paths are set at the end of the getdirs() function
 
 ######## Bundled Files #####################################################
@@ -715,25 +710,6 @@ getdirs() {
     if [ ! -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
     fi
-
-    ######## Set remaining directory paths #####################################
-    # $game_version is set in the version_menu() function
-    ############################################################################
-    # The game's user directory
-    if [ -d "$game_path/$game_version/USER/Client" ]; then
-        # Backwards compatibility for older installs
-        user_dir="$game_path/$game_version/USER/Client/0"
-    else
-        user_dir="$game_path/$game_version/user/client/0"
-    fi
-    # The location within the USER directory to which the game exports keybinds
-    keybinds_dir="$user_dir/Controls/Mappings"
-    # Custom characters directory
-    custom_characters_dir="$user_dir/CustomCharacters"
-    # dxvk cache file
-    dxvk_cache="$game_path/$game_version/StarCitizen.dxvk-cache"
-    # Where to store backed up keybinds
-    backup_path="$conf_dir/$conf_subdir"
 
     return "$retval"
 }
@@ -2284,27 +2260,24 @@ maintenance_menu() {
         # Configure the menu
         menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki\n\nWine prefix:</b> $maint_prefix"
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $maint_prefix"
-        menu_text_height="340"
+        menu_text_height="320"
         menu_type="radiolist"
 
         # Configure the menu options
-        version_msg="Switch the Helper between LIVE/PTU/EPTU  (Currently: $game_version)"
         prefix_msg="Target a different Star Citizen installation"
         launcher_msg="Update launch script (non-Lutris)"
         launchscript_msg="Edit launch script"
         config_msg="Open Wine prefix configuration"
         controllers_msg="Open Wine controller configuration"
         powershell_msg="Install PowerShell into Wine prefix"
-        userdir_msg="Delete my user folder and preserve keybinds/characters"
-        vidcache_msg="Delete my DXVK cache"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$version_msg" "$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$userdir_msg" "$vidcache_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("version_menu" "switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "rm_userdir" "rm_dxvkcache" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2319,46 +2292,6 @@ maintenance_menu() {
         # Call the menu function.  It will use the options as configured above
         menu
     done
-}
-
-# Display a menu to select the game version (LIVE/PTU/EPTU) to target for all Helper functions
-version_menu(){
-    # Configure the menu
-    menu_text_zenity="Select the game version the Helper will target:"
-    menu_text_terminal="Select the game version the Helper will target:"
-    menu_text_height="240"
-    menu_type="radiolist"
-    goback="Cancel"
-
-    # Set the options to be displayed in the menu
-    menu_options=("LIVE" "PTU" "EPTU" "$goback")
-    # Set the corresponding functions to be called for each of the options
-    menu_actions=("set_version $live_dir" "set_version $ptu_dir" "set_version $eptu_dir" ":")
-
-    # Calculate the total height the menu should be
-    # menu_option_height = pixels per menu option
-    # #menu_options[@] = number of menu options
-    # menu_text_height = height of the title/description text
-    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
-    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
-
-    # Set the label for the cancel button
-    cancel_label="Cancel"
-
-    # Call the menu function.  It will use the options as configured above
-    menu
-}
-
-# Set the game version to target for all Helper functions
-# Accepts a string as an argument
-set_version() {
-    # This function expects a string to be passed in as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The set_version function expects an argument. Aborting."
-    fi
-
-    # Set the game version from the passed argument
-    game_version="$1"
 }
 
 # Target the Helper at a different Star Citizen prefix/installation
@@ -2487,106 +2420,6 @@ edit_wine_launch_script() {
     fi
 }
 
-# Save exported keybinds, wipe the USER directory, and restore keybinds
-rm_userdir() {
-    # Prompt user to back up the current keybinds in the game
-    message info "Before proceeding, please be sure you have exported your Star Citizen keybinds and characters from within the game.\n\nTo export keybinds, launch the game and go to:\nOptions->Keybindings->Control Profiles->Save Control Settings\n\nTo export your character, go to the character creator from the main menu and save it with a name.\n\nGo on; I'll wait."
-
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu
-        # or there was an error
-        return 0
-    fi
-
-    # Sanity check
-    if [ ! -d "$user_dir" ]; then
-        message warning "User directory not found. There is nothing to delete!\n\n$user_dir"
-        return 0
-    fi
-
-    # Check for exported keybind files
-    if [ ! -d "$keybinds_dir" ] || [ -z "$(ls -A "$keybinds_dir")" ]; then
-        if message question "Warning: No exported keybindings found.\nContinuing will erase your existing keybinds!\n\nDo you want to continue anyway?"; then
-            keybinds_exported=0
-        else
-            # User said no
-            return 0
-        fi
-    else
-        keybinds_exported=1
-    fi
-
-    # Check for saved custom character files
-    if [ ! -d "$custom_characters_dir" ] || [ -z "$(ls -A "$custom_characters_dir")" ]; then
-        if message question "Warning: No saved characters found.\nContinuing will erase your existing character!\n\nDo you want to continue anyway?"; then
-            characters_exported=0
-        else
-            # User said no
-            return 0
-        fi
-    else
-        characters_exported=1
-    fi
-
-    if message question "The following directory will be deleted:\n\n$user_dir\n\nDo you want to proceed?"; then
-        # Back up keybinds
-        if [ "$keybinds_exported" -eq 1 ]; then
-            debug_print continue "Backing up keybinds to $backup_path/keybinds..."
-            mkdir -p "$backup_path/keybinds" && cp -r "$keybinds_dir/." "$backup_path/keybinds/"
-        fi
-
-        #Back up characters
-        if [ "$characters_exported" -eq 1 ]; then
-            debug_print continue "Backing up characters to $backup_path/CustomCharacters..."
-            mkdir -p "$backup_path/CustomCharacters" && cp -r "$custom_characters_dir/." "$backup_path/CustomCharacters/"
-        fi
-
-        # Wipe the user directory
-        debug_print continue "Wiping $user_dir..."
-        rm -r --interactive=never "$user_dir"
-
-        # Restore custom keybinds
-        if [ "$keybinds_exported" -eq 1 ]; then
-            debug_print continue "Restoring keybinds..."
-            mkdir -p "$keybinds_dir" && cp -r "$backup_path/keybinds/." "$keybinds_dir/"
-        fi
-
-        # Restore custom characters
-        if [ "$characters_exported" -eq 1 ]; then
-            debug_print continue "Restoring custom characters..."
-            mkdir -p "$custom_characters_dir" && cp -r "$backup_path/CustomCharacters/." "$custom_characters_dir/"
-        fi
-
-        message info "Your Star Citizen USER directory has been cleaned up!\n\nExported keybinds can be re-imported in-game from:\nOptions->Keybindings->Control Profiles\n\nSaved characters can be selected in the character creator"
-    fi
-}
-
-# Delete DXVK cache
-rm_dxvkcache() {
-    # Get/Set directory paths
-    getdirs
-    if [ "$?" -eq 1 ]; then
-        # User cancelled and wants to return to the main menu
-        # or there was an error
-        return 0
-    fi
-
-    # Sanity check
-    if [ ! -f "$dxvk_cache" ]; then
-        message warning "Unable to find the DXVK cache file. There is nothing to delete!\n\n$dxvk_cache"
-        return 0
-    fi
-
-    # Delete the cache file
-    if message question "The following file will be deleted:\n\n$dxvk_cache\n\nDo you want to proceed?"; then
-        debug_print continue "Deleting $dxvk_cache..."
-        rm --interactive=never "$dxvk_cache"
-        message info "Your DXVK cache has been deleted!"
-    fi
-}
-
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
     dirs_list="\n"
@@ -2594,7 +2427,7 @@ display_dirs() {
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
-        dirs_list+="Helper configuration:\n$conf_dir/$conf_subdir\n\nKeybind backups:\n$conf_dir/$conf_subdir/keybinds\n\n"
+        dirs_list+="Helper configuration:\n$conf_dir/$conf_subdir\n\n"
     fi
 
     # Wine prefix
@@ -3160,9 +2993,6 @@ if [ "$is_firstrun" != "false" ]; then
     is_firstrun="true"
 fi
 
-# Set defaults
-game_version="$live_dir"
-
 # Format some URLs for Zenity if the Helper was not invoked with command-line arguments (handle those separately below)
 if [ "$#" -eq 0 ]; then
     format_urls
@@ -3194,11 +3024,8 @@ Usage: lug-helper <options>
   -o, --update-wine-dxvk        Update DXVK for native Wine installs
   -k, --manage-lutris-dxvk      Install or remove Lutris DXVK versions
   -e, --edit-launch-script      Edit the native Wine install launch script
-  -a, --wine-config             Launch winecfg for the game's prefix
-  -b, --wine-controllers        Launch Wine controllers configuration
-  -u, --delete-user-folder      Delete Star Citizen USER dir, preserve keybinds
-  -c, --delete-dxvk-cache       Delete Star Citizen dxvk cache file
-  -t, --target [live|ptu|eptu]  Target LIVE/PTU/EPTU (default: live)
+  -c, --wine-config             Launch winecfg for the game's prefix
+  -j, --wine-controllers        Launch Wine controllers configuration
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
   -r, --get-referral            Get a random LUG member's referral code
   -d, --show-directories        Show all Star Citizen and Helper directories
@@ -3239,32 +3066,11 @@ Usage: lug-helper <options>
             --edit-launch-script | -e )
                 cargs+=("edit_wine_launch_script")
                 ;;
-            --wine-config | -a )
+            --wine-config | -c )
                 cargs+=("call_launch_script config")
                 ;;
-            --wine-controllers | -b )
+            --wine-controllers | -j )
                 cargs+=("call_launch_script controllers")
-                ;;
-            --delete-user-folder | -u )
-                cargs+=("rm_userdir")
-                ;;
-            --delete-dxvk-cache | -c )
-                cargs+=("rm_dxvkcache")
-                ;;
-            --target | -t )
-                game_version="$2"
-                if [ "$game_version" = "live" ] || [ "$game_version" = "LIVE" ]; then
-                    game_version="$live_dir"
-                elif [ "$game_version" = "ptu" ] || [ "$game_version" = "PTU" ]; then
-                    game_version="$ptu_dir"
-                elif [ "$game_version" = "eptu" ] || [ "$game_version" = "EPTU" ]; then
-                    game_version="$eptu_dir"
-                else
-                    printf "$0: Invalid argument '%s'\n" "$game_version"
-                    exit 0
-                fi
-                # Shift forward one argument
-                shift
                 ;;
             --no-gui | -g )
                 # If zenity is unavailable, it has already been set to 0
