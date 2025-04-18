@@ -2702,7 +2702,13 @@ install_game_wine() {
     export WINEDLLOVERRIDES="winemenubuilder.exe=d" # Stop wine from creating its own .desktop entries
 
     debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
-    "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
+    set -o pipefail # Pipefail is needed to catch errors in the winetricks command
+    if [ "$use_zenity" -eq 1 ]; then
+        "$winetricks_bin" -q arial tahoma dxvk powershell win11 2>&1 | tee "$tmp_install_log" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Preparing the wine prefix\n"
+    else
+        "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
+    fi
 
     if [ "$?" -eq 1 ]; then
         if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
@@ -2710,6 +2716,7 @@ install_game_wine() {
             rm -r --interactive=never "$install_dir"
         fi
         "$wine_path"/wineserver -k
+        set +o pipefail # Reset pipefail
         return 1
     fi
 
@@ -2718,7 +2725,12 @@ install_game_wine() {
 
     # Run the installer
     debug_print continue "Installing the launcher. Please wait; this will take a moment..."
-    "$wine_path"/wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
+    if [ "$use_zenity" -eq 1 ]; then
+        "$wine_path"/wine "$tmp_dir/$rsi_installer" /S 2>&1 | tee -a "$tmp_install_log" | \
+                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing the launcher\n"
+    else
+        "$wine_path"/wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
+    fi
 
     if [ "$?" -eq 1 ]; then
         # User cancelled or there was an error
@@ -2727,8 +2739,12 @@ install_game_wine() {
             rm -r --interactive=never "$install_dir"
         fi
         "$wine_path"/wineserver -k
+        set +o pipefail # Reset pipefail
         return 0
     fi
+
+    # Reset pipefail
+    set +o pipefail
 
     # Kill the wine process after installation
     # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
