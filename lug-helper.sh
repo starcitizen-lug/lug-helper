@@ -166,10 +166,11 @@ runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
 runner_sources=(
     "Kron4ek" "https://api.github.com/repos/Kron4ek/Wine-Builds/releases"
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
+    "Mactan" "https://api.github.com/repos/mactan-sc/mactan-sc-wine/releases"
 )
 
 # Set the default runner to install when the system wine doesn't meet requirements
-# default_runner_source corresponds to an even number index in runner_sources above
+# default_runner_source corresponds to an EVEN NUMBER index in runner_sources above
 default_runner="wine-10.5-amd64.tar.xz"
 default_runner_source=0
 
