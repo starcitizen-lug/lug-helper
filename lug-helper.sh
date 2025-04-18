@@ -2699,6 +2699,8 @@ install_game_wine() {
     export WINE="$wine_path/wine"
     export WINESERVER="$wine_path/wineserver"
     export WINEPREFIX="$install_dir"
+    export WINEDLLOVERRIDES="winemenubuilder.exe=d" # Stop wine from creating its own .desktop entries
+
     debug_print continue "Preparing the wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
 
