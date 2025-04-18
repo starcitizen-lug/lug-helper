@@ -2712,7 +2712,7 @@ install_game_wine() {
     fi
 
     # Add registry key that prevents wine from creating unnecessary file type associations
-    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
+    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N >>"$tmp_install_log" 2>&1
 
     # Run the installer
     debug_print continue "Installing the launcher. Please wait; this will take a moment..."
@@ -2762,8 +2762,8 @@ install_game_wine() {
     post_download_sed_string="export wine_path="
     sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
 
-    # Modify the .desktop files installed by wine to exec the game launch script
-    debug_print continue "Updating .desktop files installed by wine..."
+    # Create .desktop files
+    debug_print continue "Creating .desktop files..."
 
     # Copy the bundled RSI Launcher icon to the .local icons directory
     if [ -f "$rsi_icon" ]; then
@@ -2771,44 +2771,36 @@ install_game_wine() {
         cp "$rsi_icon" "$HOME/.local/share/icons/hicolor/256x256/apps"
     fi
 
-    # Modify $HOME/Desktop/RSI Launcher.desktop
+    # $HOME/Desktop/RSI Launcher.desktop
     home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
-    if [ -f "$home_desktop_file" ]; then
-        # Replace the exec line with our launch script
-        sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$home_desktop_file"
-        # Quote exec line
-        sed -i '/^Exec=/s/=/="/' "$home_desktop_file"
-        sed -i '/^Exec=/s/$/"/' "$home_desktop_file"
-        # Escape spaces in path line
-        sed -i '/^Path=/s/ /\\\s/g' "$home_desktop_file"
-        # Replace icon
-        sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$home_desktop_file"
-        debug_print continue "Updated $home_desktop_file"
-    else
-        debug_print continue "Unable to find $home_desktop_file"
-    fi
+    # $HOME/.local/share/applications/RSI Launcher.desktop
+    localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
 
-    # Modify $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
-    localshare_desktop_file="$data_dir/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop"
-    if [ -f "$localshare_desktop_file" ]; then
-        # Replace the exec line with our launch script
-        sed -i "s|^Exec=env.*|Exec=$installed_launch_script|" "$localshare_desktop_file"
-        # Quote exec line
-        sed -i '/^Exec=/s/=/="/' "$localshare_desktop_file"
-        sed -i '/^Exec=/s/$/"/' "$localshare_desktop_file"
-        # Escape spaces in path line
-        sed -i '/^Path=/s/ /\\\s/g' "$localshare_desktop_file"
-        # Replace icon
-        sed -i "s|^Icon=.*|Icon=$rsi_icon_name|" "$localshare_desktop_file"
-        debug_print continue "Updated $localshare_desktop_file"
-    else
-        debug_print continue "Unable to find $localshare_desktop_file"
-    fi
+    echo "[Desktop Entry]
+Name=RSI Launcher
+Type=Application
+Comment=RSI Launcher
+Icon=rsi-launcher.png
+Exec=\"$installed_launch_script\"
+Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$localshare_desktop_file"
+
+    # Copy the new desktop file to the user's desktop directory
+    cp "$localshare_desktop_file" "$home_desktop_file"
 
     # Update the .desktop file database if the command is available
     if [ -x "$(command -v update-desktop-database)" ]; then
         debug_print continue "Running update-desktop-database..."
         update-desktop-database "$HOME/.local/share/applications"
+    fi
+
+    # Check if the desktop files were created successfully
+    if [ ! -f "$home_desktop_file" ]; then
+        # Desktop file couldn't be created
+        message warning "Warning: The .desktop file could not be created!\n\n$home_desktop_file"
+    fi
+    if [ ! -f "$localshare_desktop_file" ]; then
+        # Desktop file couldn't be created
+        message warning "Warning: The .desktop file could not be created!\n\n$localshare_desktop_file"
     fi
 
     message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
