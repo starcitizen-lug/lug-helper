@@ -2177,7 +2177,7 @@ download_file() {
         stdbuf -oL tr '\r' '\n' < "$tmp_dir/lugpipe" | \
         grep --line-buffered -ve "100" | grep --line-buffered -o "[0-9]*\.[0-9]" | \
         (
-            trap 'kill "$curlpid"' ERR
+            trap 'kill "$curlpid"; trap - ERR' ERR
             zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
         )
 
@@ -2669,8 +2669,9 @@ install_game_wine() {
     # Show a zenity pulsating progress bar and get its process ID to kill when we're done
     while true; do
         sleep 1
-    done | zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Preparing Wine prefix and installing RSI Launcher.\nPlease wait..." 2>/dev/null &
+    done | zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Preparing Wine prefix and installing RSI Launcher. Please wait..." 2>/dev/null &
     zenity_pid="$!"
+    trap 'kill "$zenity_pid"; trap - SIGINT' SIGINT
 
     debug_print continue "Preparing Wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
@@ -2698,12 +2699,14 @@ install_game_wine() {
             rm -r --interactive=never "$install_dir"
         fi
         kill "$zenity_pid" 2>/dev/null
+        trap - SIGINT # Remove the trap
         "$wine_path"/wineserver -k
         return 0
     fi
 
     # Kill the zenity progress window
     kill "$zenity_pid" 2>/dev/null
+    trap - SIGINT # Remove the trap
 
     # Kill the wine process after installation
     # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
