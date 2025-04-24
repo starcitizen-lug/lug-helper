@@ -2666,8 +2666,11 @@ install_game_wine() {
     export WINEPREFIX="$install_dir"
     export WINEDLLOVERRIDES="winemenubuilder.exe=d" # Stop wine from creating its own .desktop entries
 
-    # Let the user know they won't see any progress windows
-    message info "Please wait while the RSI Launcher is installed.\nThis will take a few moments and you may not see a progress window!"
+    # Show a zenity pulsating progress bar and get its process ID to kill when we're done
+    while true; do
+        sleep 1
+    done | zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Preparing Wine prefix and installing RSI Launcher.\nPlease wait..." 2>/dev/null &
+    zenity_pid="$!"
 
     debug_print continue "Preparing Wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
@@ -2694,9 +2697,13 @@ install_game_wine() {
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
+        kill "$zenity_pid" 2>/dev/null
         "$wine_path"/wineserver -k
         return 0
     fi
+
+    # Kill the zenity progress window
+    kill "$zenity_pid" 2>/dev/null
 
     # Kill the wine process after installation
     # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
