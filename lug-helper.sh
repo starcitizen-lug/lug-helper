@@ -2664,7 +2664,7 @@ install_game_wine() {
     export WINE="$wine_path/wine"
     export WINESERVER="$wine_path/wineserver"
     export WINEPREFIX="$install_dir"
-    export WINEDLLOVERRIDES="winemenubuilder.exe=d" # Stop wine from creating its own .desktop entries
+    export WINEDLLOVERRIDES="dxwebsetup.exe,dotNetFx45_Full_setup.exe,winemenubuilder.exe=d"
 
     # Show a zenity pulsating progress bar and get its process ID to kill when we're done
     while true; do
