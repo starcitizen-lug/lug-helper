@@ -64,10 +64,10 @@ case "$1" in
         cd "$WINEPREFIX"; /usr/bin/env bash --norc; exit 0
         ;;
     "config")
-        /usr/bin/env bash --norc -c "winecfg"; exit 0
+        /usr/bin/env bash --norc -c "${wine_path}/winecfg"; exit 0
         ;;
     "controllers")
-        /usr/bin/env bash --norc -c "wine control joy.cpl"; exit 0
+        /usr/bin/env bash --norc -c "${wine_path}/wine control joy.cpl"; exit 0
         ;;
 esac
 
