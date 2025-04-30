@@ -61,7 +61,7 @@ case "$1" in
     "shell")
         echo "Entering Wine prefix maintenance shell. Type 'exit' when done."
         export PATH="$wine_path:$PATH"; export PS1="Wine: "
-        cd "$WINEPREFIX"; /usr/bin/env bash --norc; exit 0
+        cd "$WINEPREFIX"; pwd; /usr/bin/env bash --norc; exit 0
         ;;
     "config")
         /usr/bin/env bash --norc -c "${wine_path}/winecfg"; exit 0
