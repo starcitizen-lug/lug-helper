@@ -88,12 +88,16 @@ esac
 # Kill the wine prefix when this script exits
 # This makes sure there will be no lingering background wine processes
 update_check() {
-    while "$wine_path"/winedbg --command "info proc" | grep -qi "rsi.*setup"; do
-        sleep 2
-    done
+        while "$wine_path"/winedbg --command "info proc" | grep -qi "rsi.*setup"; do
+                sleep 2
+        done
 }
 trap "update_check; \"$wine_path\"/wineserver -k" EXIT
 
+args=()
+if [ -z "$DISPLAY" ]; then
+        args+=("--in-process-gpu")
+fi
 #############################################
 # Launch the game
 #############################################
@@ -104,4 +108,4 @@ trap "update_check; \"$wine_path\"/wineserver -k" EXIT
 # desired gamescope arguments. For example:
 # gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
 
-"$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
+"$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" "${args[@]}" >"$launch_log" 2>&1
