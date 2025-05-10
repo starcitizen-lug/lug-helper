@@ -17,7 +17,7 @@
 # If you do not wish to use the above .desktop files, simply run this script
 # from your terminal.
 #
-# version: 1.5
+# version: 1.6
 ################################################################################
 
 ################################################################
