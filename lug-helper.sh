@@ -741,6 +741,10 @@ getdirs() {
 # This argument is used by the install functions to indicate which
 # Preflight Check functions should be called and cause the Preflight Check
 # to only output problems that must be fixed
+#
+# There are two options for automatically fixing problems:
+# See existing functions for examples of setting
+# preflight_root_actions or preflight_user_actions
 preflight_check() {
     # Initialize variables
     unset preflight_pass
