@@ -231,32 +231,50 @@ current_version="v3.9"
 ############################################################################
 
 
-# Try to execute a supplied command as root
-# Expects one string argument
+# Try to execute a supplied command with either user or root privileges
+# Expects two string arguments
+# Usage: try_exec [root|user] "command"
 try_exec() {
-    # This function expects one string argument
-    if [ "$#" -lt 1 ]; then
-        printf "\nScript error:  The try_exec() function expects an argument. Aborting.\n"
+    # This function expects two string arguments
+    if [ "$#" -lt 2 ]; then
+        printf "\nScript error:  The try_exec() function expects two arguments. Aborting.\n"
         read -n 1 -s -p "Press any key..."
         exit 0
     fi
 
-    # Use pollkit's pkexec for gui authentication with a fallback to sudo
-    if [ -x "$(command -v pkexec)" ]; then
-        pkexec sh -c "$1"
+    exec_type="$1"
+    exec_command="$2"
 
-        # Check the exit status
-        if [ "$?" -eq 126 ] || [ "$?" -eq 127 ]; then
-            # User cancel or error
-            debug_print continue "pkexec returned an error. Falling back to sudo..."
-        else
-            # Successful execution, return here
-            return 0
+    if [ "$exec_type" = "root" ]; then
+        # Use pollkit's pkexec for gui authentication with a fallback to sudo
+        if [ -x "$(command -v pkexec)" ]; then
+            pkexec sh -c "$exec_command"
+
+            # Check the exit status
+            if [ "$?" -eq 126 ] || [ "$?" -eq 127 ]; then
+                # User cancel or error
+                debug_print continue "pkexec returned an error. Falling back to sudo..."
+            else
+                # Successful execution, return here
+                return 0
+            fi
         fi
-    fi
-    # Fall back to sudo if pkexec is unavailable or returned an error
-    if [ -x "$(command -v sudo)" ]; then
-        sudo sh -c "$1"
+        # Fall back to sudo if pkexec is unavailable or returned an error
+        if [ -x "$(command -v sudo)" ]; then
+            sudo sh -c "$exec_command"
+
+            # Check the exit status
+            if [ "$?" -eq 1 ]; then
+                # Error
+                return 1
+            fi
+        else
+            # We don't know how to perform this operation with elevated privileges
+            printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with the required privileges.\n"
+            return 1
+        fi
+    elif [ "$exec_type" = "user" ]; then
+        sh -c "$exec_command"
 
         # Check the exit status
         if [ "$?" -eq 1 ]; then
@@ -264,9 +282,7 @@ try_exec() {
             return 1
         fi
     else
-        # We don't know how to perform this operation with elevated privileges
-        printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with the required privileges.\n"
-        return 1
+        debug_print exit "Script Error: Invalid arguemnt passed to the try_exec function. Aborting."
     fi
 
     return 0
@@ -730,7 +746,8 @@ preflight_check() {
     unset preflight_pass
     unset preflight_fail
     unset preflight_action_funcs
-    unset preflight_actions
+    unset preflight_root_actions
+    unset preflight_user_actions
     unset preflight_fix_results
     unset preflight_manual
     unset preflight_followup
@@ -817,18 +834,18 @@ preflight_check() {
                 ${preflight_action_funcs[i]}
             done
             # Populate a string of actions to be executed
-            for (( i=0; i<"${#preflight_actions[@]}"; i++ )); do
+            for (( i=0; i<"${#preflight_root_actions[@]}"; i++ )); do
                 if [ "$i" -eq 0 ]; then
-                    preflight_actions_string="${preflight_actions[i]}"
+                    preflight_root_actions_string="${preflight_root_actions[i]}"
                 else
-                    preflight_actions_string="$preflight_actions_string; ${preflight_actions[i]}"
+                    preflight_root_actions_string="$preflight_root_actions_string; ${preflight_root_actions[i]}"
                 fi
             done
 
             # Execute the actions set by the functions
-            if [ -n "$preflight_actions_string" ]; then
+            if [ -n "$preflight_root_actions_string" ]; then
                 # Try to execute the actions as root
-                try_exec "$preflight_actions_string"
+                try_exec root "$preflight_root_actions_string"
                 if [ "$?" -eq 1 ]; then
                     message error "Authentication failed or there was an error.\nSee terminal for more information.\n\nReturning to main menu."
                     return 0
@@ -1053,11 +1070,11 @@ mapcount_check() {
 mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         # Newer versions of sysctl
-        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --quiet --system')
+        preflight_root_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --quiet --system')
         preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
     else
         # Older versions of sysctl
-        preflight_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
+        preflight_root_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
         preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
     fi
 
@@ -1067,7 +1084,7 @@ mapcount_set() {
 
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
-    preflight_actions+=('sysctl -w vm.max_map_count=16777216')
+    preflight_root_actions+=('sysctl -w vm.max_map_count=16777216')
     preflight_fix_results+=("vm.max_map_count was changed until the next boot.")
     preflight_followup+=("mapcount_confirm")
 }
@@ -1120,12 +1137,12 @@ filelimit_set() {
     if [ -f "/etc/systemd/system.conf" ]; then
         # Using systemd
         # Append to the file
-        preflight_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/99-starcitizen-filelimit.conf && systemctl daemon-reexec')
+        preflight_root_actions+=('mkdir -p /etc/systemd/system.conf.d && printf "[Manager]\n# Added by LUG-Helper:\nDefaultLimitNOFILE=524288\n" > /etc/systemd/system.conf.d/99-starcitizen-filelimit.conf && systemctl daemon-reexec')
         preflight_fix_results+=("The open files limit configuration has been added to:\n/etc/systemd/system.conf.d/99-starcitizen-filelimit.conf")
     elif [ -f "/etc/security/limits.conf" ]; then
         # Using limits.conf
         # Insert before the last line in the file
-        preflight_actions+=('sed -i "\$i#Added by LUG-Helper:" /etc/security/limits.conf; sed -i "\$i* hard nofile 524288" /etc/security/limits.conf')
+        preflight_root_actions+=('sed -i "\$i#Added by LUG-Helper:" /etc/security/limits.conf; sed -i "\$i* hard nofile 524288" /etc/security/limits.conf')
         preflight_fix_results+=("The open files limit configuration has been appended to:\n/etc/security/limits.conf")
     else
         # Don't know what method to use
