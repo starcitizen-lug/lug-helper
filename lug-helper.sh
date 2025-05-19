@@ -833,7 +833,8 @@ preflight_check() {
             for (( i=0; i<"${#preflight_action_funcs[@]}"; i++ )); do
                 ${preflight_action_funcs[i]}
             done
-            # Populate a string of actions to be executed
+
+            # Populate a string of actions to be executed with root privileges
             for (( i=0; i<"${#preflight_root_actions[@]}"; i++ )); do
                 if [ "$i" -eq 0 ]; then
                     preflight_root_actions_string="${preflight_root_actions[i]}"
@@ -841,13 +842,30 @@ preflight_check() {
                     preflight_root_actions_string="$preflight_root_actions_string; ${preflight_root_actions[i]}"
                 fi
             done
+            # Populate a string of actions to be executed with user privileges
+            for (( i=0; i<"${#preflight_user_actions[@]}"; i++ )); do
+                if [ "$i" -eq 0 ]; then
+                    preflight_user_actions_string="${preflight_user_actions[i]}"
+                else
+                    preflight_user_actions_string="$preflight_user_actions_string; ${preflight_user_actions[i]}"
+                fi
+            done
 
-            # Execute the actions set by the functions
+            # Execute the root privilege actions set by the functions
             if [ -n "$preflight_root_actions_string" ]; then
                 # Try to execute the actions as root
                 try_exec root "$preflight_root_actions_string"
                 if [ "$?" -eq 1 ]; then
-                    message error "Authentication failed or there was an error.\nSee terminal for more information.\n\nReturning to main menu."
+                    message error "The Preflight Check was unable to finish fixing problems.\nDid authentication fail? See terminal for more information.\n\nReturning to main menu."
+                    return 0
+                fi
+            fi
+            # Execute the user privilege actions set by the functions
+            if [ -n "$preflight_user_actions_string" ]; then
+                # Try to execute the actions as root
+                try_exec user "$preflight_user_actions_string"
+                if [ "$?" -eq 1 ]; then
+                    message error "The Preflight Check was unable to finish fixing problems.\nSee terminal for more information.\n\nReturning to main menu."
                     return 0
                 fi
             fi
