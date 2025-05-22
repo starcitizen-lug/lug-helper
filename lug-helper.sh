@@ -932,7 +932,7 @@ lutris_check() {
             preflight_pass+=("Lutris is installed and sufficiently up to date.")
         fi
 
-        if [[ "$lutris_native_runner" == "$lutris_runner_required" ]]; then
+        if ["$lutris_native_runner" == "$lutris_runner_required" ]; then
             # All good
             preflight_pass+=("Lutris runner is set to $lutris_runner.")
         else
@@ -944,6 +944,14 @@ lutris_check() {
 
             # Add info for manually changing the setting
             preflight_manual+=("To change Lutris global Wine runner, edit global preferences in Lutris")
+        fi
+
+        if [ ! -z "$(ls -A $data_dir/lutris/runtime)" ]; then
+            preflight_pass+=("Lutris has run at least once.")
+        else
+            preflight_fail+=("Lutris has not been run yet.")
+
+            preflight_manual+=("Run Lutris before installing the game.")
         fi
     fi
 
@@ -959,7 +967,7 @@ lutris_check() {
             preflight_pass+=("Flatpak Lutris is installed and sufficiently up to date.")
         fi
 
-        if [[ "$lutris_flatpak_runner" == "$lutris_runner_required" ]]; then
+        if [ "$lutris_flatpak_runner" == "$lutris_runner_required" ]; then
             # All good
             preflight_pass+=("Flatpak Lutris runner is set to $lutris_runner.")
         else
@@ -971,6 +979,14 @@ lutris_check() {
 
             # Add info for manually changing the setting
             preflight_manual+=("To change Flatpak Lutris global Wine runner, edit global preferences in Flatpak Lutris")
+        fi
+
+        if [ ! -z "$(ls -A $lutris_flatpak_dir/data/lutris/runtime)" ]; then
+            preflight_pass+=("Flatpak Lutris has run at least once.")
+        else
+            preflight_fail+=("Flatpak Lutris has not been run yet.")
+
+            preflight_manual+=("Run Flatpak Lutris before installing the game.")
         fi
     fi
 }
@@ -1011,18 +1027,19 @@ lutris_set_runner() {
     fi
 
     version_sed_string="version: "
-    if [ ! -f "$1" ] || [ -z "$(sed -En '/^wine:/,/^[^[:blank:]]/p' "$1")" ]; then
-        # the file doesn't exist yet, make it with the wine version content
+    if [ ! -f "$1" ] || [ "$(cat "$1")" = "{}" ]; then
+        # If the file doesn't exist yet or has at most one line, make it with the wine version content
         preflight_user_actions+=("mkdir -p \$(dirname \"\$1\"); printf 'wine:\n  version: $lutris_runner_required\n' > '$1'")
+        # This assumes an indent of two spaces before the key:value pair
+    elif ! grep -q "^wine:" "$1"; then
+        # If wine: group doesnt exist append it with the version: node
+        preflight_user_actions+=("printf 'wine:\n  version: $lutris_runner_required\n' >> '$1'")
+    elif [ -z "$(sed -En '/^wine:/,/^[^[:space:]]/ { /^[[:space:]]*version:/p }' "$1")" ]; then
+        # If system: node doesn't exist, add it at the start of the wine: grouping
+        preflight_user_actions+=("sed -i -e '/^wine:/a\' -e \"  ${version_sed_string}${lutris_runner_required}\" '$1'")
     else
-        # If it doesn't exist, add it at the start of the wine: grouping
-        if [ -z "$(sed -En '/^wine:/,/^[^[:space:]]/ { /^[[:space:]]*version:/p }' "$1")" ]; then
-            # This assumes an indent of two spaces before the key:value pair
-            preflight_user_actions+=("sed -i -e '/^wine:/a\' -e \"  ${version_sed_string}${lutris_runner_required}\" '$1'")
-        else
-            # Replace the appropriate key:value line if it exists
-            preflight_user_actions+=("sed -Ei '/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${version_sed_string}/s/${version_sed_string}.*/${version_sed_string}${lutris_runner_required}/}' '$1'")
-        fi
+        # Replace the appropriate key:value line if it exists
+        preflight_user_actions+=("sed -Ei '/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${version_sed_string}/s/${version_sed_string}.*/${version_sed_string}${lutris_runner_required}/}' '$1'")
     fi
 }
 
