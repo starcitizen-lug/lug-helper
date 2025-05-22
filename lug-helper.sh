@@ -945,6 +945,14 @@ lutris_check() {
             # Add info for manually changing the setting
             preflight_manual+=("To change Lutris global Wine runner, edit global preferences in Lutris")
         fi
+
+        if [ ! -z "$(ls -A $data_dir/lutris/runtime)" ]; then
+            preflight_pass+=("Lutris has run at least once.")
+        else
+            preflight_fail+=("Lutris has not been run yet.")
+
+            preflight_manual+=("Run Lutris before installing the game.")
+        fi
     fi
 
     # Check the flatpak lutris version number
@@ -971,6 +979,14 @@ lutris_check() {
 
             # Add info for manually changing the setting
             preflight_manual+=("To change Flatpak Lutris global Wine runner, edit global preferences in Flatpak Lutris")
+        fi
+
+        if [ ! -z "$(ls -A $lutris_flatpak_dir/data/lutris/runtime)" ]; then
+            preflight_pass+=("Flatpak Lutris has run at least once.")
+        else
+            preflight_fail+=("Flatpak Lutris has not been run yet.")
+
+            preflight_manual+=("Run Flatpak Lutris before installing the game.")
         fi
     fi
 }
