@@ -932,7 +932,7 @@ lutris_check() {
             preflight_pass+=("Lutris is installed and sufficiently up to date.")
         fi
 
-        if ["$lutris_native_runner" == "$lutris_runner_required" ]; then
+        if ["$lutris_native_runner" = "$lutris_runner_required" ]; then
             # All good
             preflight_pass+=("Lutris runner is set to $lutris_runner.")
         else
@@ -967,7 +967,7 @@ lutris_check() {
             preflight_pass+=("Flatpak Lutris is installed and sufficiently up to date.")
         fi
 
-        if [ "$lutris_flatpak_runner" == "$lutris_runner_required" ]; then
+        if [ "$lutris_flatpak_runner" = "$lutris_runner_required" ]; then
             # All good
             preflight_pass+=("Flatpak Lutris runner is set to $lutris_runner.")
         else
@@ -1006,7 +1006,7 @@ lutris_detect() {
         lutris_installed="true"
         lutris_native="true"
         if [ -f  "$lutris_native_wine_yml" ]; then
-            lutris_native_runner="$(sed -En '/^wine:/,/^[^[:space:]]/ { /^[[:space:]]*version:/s/^[[:space:]]*version:[[:space:]]*//p }' "$lutris_native_wine_yml")"
+            lutris_native_runner="$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/s/^[[:blank:]]*version:[[:blank:]]*//p }' "$lutris_native_wine_yml")"
         fi
     fi
 
@@ -1015,7 +1015,7 @@ lutris_detect() {
         lutris_installed="true"
         lutris_flatpak="true"
         if [ -f "$lutris_flatpak_wine_yml" ]; then
-            lutris_flatpak_runner="$(sed -En '/^wine:/,/^[^[:space:]]/ { /^[[:space:]]*version:/s/^[[:space:]]*version:[[:space:]]*//p }' "$lutris_flatpak_wine_yml")"
+            lutris_flatpak_runner="$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/s/^[[:blank:]]*version:[[:blank:]]*//p }' "$lutris_flatpak_wine_yml")"
         fi
     fi
 }
@@ -1033,8 +1033,8 @@ lutris_set_runner() {
         # This assumes an indent of two spaces before the key:value pair
     elif ! grep -q "^wine:" "$1"; then
         # If wine: group doesnt exist append it with the version: node
-        preflight_user_actions+=("printf 'wine:\n  version: $lutris_runner_required\n' >> '$1'")
-    elif [ -z "$(sed -En '/^wine:/,/^[^[:space:]]/ { /^[[:space:]]*version:/p }' "$1")" ]; then
+        preflight_user_actions+=("printf '\nwine:\n  version: $lutris_runner_required\n' >> '$1'")
+    elif [ -z "$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/p }' "$1")" ]; then
         # If system: node doesn't exist, add it at the start of the wine: grouping
         preflight_user_actions+=("sed -i -e '/^wine:/a\' -e \"  ${version_sed_string}${lutris_runner_required}\" '$1'")
     else
