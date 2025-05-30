@@ -1072,33 +1072,6 @@ wine_check() {
     fi
 }
 
-# Determine the architecture of a binary file
-# Used for wine_check above to check the system wine
-get_file_arch() {
-    case "$(od -An -t x1 -j 0x12 -N 1 "$1" 2>/dev/null | tr -d '[:space:]')" in
-        "3e")
-            # x86_64
-            echo "64bit"
-            ;;
-        "03"|"06")
-            # i386
-            echo "32bit"
-            ;;
-        "b7")
-            # aarch64
-            echo "64bit"
-            ;;
-        "28")
-            # aarch32
-            echo "32bit"
-            ;;
-        *)
-            # Unknown
-            echo ""
-            ;;
-    esac
-}
-
 # Check system memory and swap space
 memory_check() {
     # Get totals in bytes
