@@ -932,26 +932,26 @@ lutris_check() {
             preflight_pass+=("Lutris is installed and sufficiently up to date.")
         fi
 
-        if ["$lutris_native_runner" = "$lutris_runner_required" ]; then
+        if [ "$lutris_native_runner" = "$lutris_runner_required" ]; then
             # All good
-            preflight_pass+=("Lutris runner is set to $lutris_runner.")
+            preflight_pass+=("Lutris' runner is set to ${lutris_runner_required}.")
         else
             # The setting should be changed
-            preflight_fail+=("Lutris runner should be set to $lutris_runner_required")
+            preflight_fail+=("Lutris' runner should be set to ${lutris_runner_required}.")
 
-            preflight_action_funcs+=("lutris_set_runner $conf_dir/lutris/runners/wine.yml")
-            preflight_fix_results+=("The Lutris global wine runner has been configured.")
+            preflight_action_funcs+=("lutris_set_runner ${conf_dir}/lutris/runners/wine.yml")
+            preflight_fix_results+=("Lutris' global Wine runner has been set to '${lutris_runner_required}'.")
 
             # Add info for manually changing the setting
-            preflight_manual+=("To change Lutris global Wine runner, edit global preferences in Lutris")
+            preflight_manual+=("To change Lutris' global Wine runner, open the global Preferences in Lutris,\nselect the Runners tab, and edit the Wine runner options.")
         fi
 
-        if [ ! -z "$(ls -A $data_dir/lutris/runtime)" ]; then
-            preflight_pass+=("Lutris has run at least once.")
+        if [ ! -z "$(ls -A "$data_dir"/lutris/runtime)" ]; then
+            preflight_pass+=("Lutris has been run to populate its runtime.")
         else
             preflight_fail+=("Lutris has not been run yet.")
 
-            preflight_manual+=("Run Lutris before installing the game.")
+            preflight_manual+=("Run Lutris before installing the game to populate its runtime and caches.")
         fi
     fi
 
@@ -969,24 +969,24 @@ lutris_check() {
 
         if [ "$lutris_flatpak_runner" = "$lutris_runner_required" ]; then
             # All good
-            preflight_pass+=("Flatpak Lutris runner is set to $lutris_runner.")
+            preflight_pass+=("Flatpak Lutris' runner is set to ${lutris_runner_required}.")
         else
             # The setting should be changed
-            preflight_fail+=("Flatpak Lutris runner should be set to $lutris_runner_required")
+            preflight_fail+=("Flatpak Lutris' runner should be set to ${lutris_runner_required}.")
 
-            preflight_action_funcs+=("lutris_set_runner $lutris_flatpak_dir/data/lutris/runners/wine.yml")
-            preflight_fix_results+=("The Flatpak Lutris global wine runner has been configured.")
+            preflight_action_funcs+=("lutris_set_runner ${lutris_flatpak_dir}/data/lutris/runners/wine.yml")
+            preflight_fix_results+=("Flatpak Lutris' global wine runner has been set to '${lutris_runner_required}'.")
 
             # Add info for manually changing the setting
-            preflight_manual+=("To change Flatpak Lutris global Wine runner, edit global preferences in Flatpak Lutris")
+            preflight_manual+=("To change Flatpak Lutris' global Wine runner, open the global Preferences in Flatpak Lutris,\nselect the Runners tab, and edit the Wine runner options.")
         fi
 
-        if [ ! -z "$(ls -A $lutris_flatpak_dir/data/lutris/runtime)" ]; then
-            preflight_pass+=("Flatpak Lutris has run at least once.")
+        if [ ! -z "$(ls -A "$lutris_flatpak_dir"/data/lutris/runtime)" ]; then
+            preflight_pass+=("Flatpak Lutris has been run to populate its runtime.")
         else
             preflight_fail+=("Flatpak Lutris has not been run yet.")
 
-            preflight_manual+=("Run Flatpak Lutris before installing the game.")
+            preflight_manual+=("Run Flatpak Lutris before installing the game to populate its runtime and caches.")
         fi
     fi
 }
@@ -1020,6 +1020,9 @@ lutris_detect() {
     fi
 }
 
+# Set the global lturis runner
+# This function expects a path to the lutris wine runner config file as its argument
+# Works for both native and flatpak lutris as long as the passed path is correct
 lutris_set_runner() {
     # This function expects a string to be passed as an argument
     if [ -z "$1" ]; then
@@ -1029,11 +1032,11 @@ lutris_set_runner() {
     version_sed_string="version: "
     if [ ! -f "$1" ] || [ "$(cat "$1")" = "{}" ]; then
         # If the file doesn't exist yet or has at most one line, make it with the wine version content
-        preflight_user_actions+=("mkdir -p \$(dirname \"\$1\"); printf 'wine:\n  version: $lutris_runner_required\n' > '$1'")
+        preflight_user_actions+=("mkdir -p \$(dirname \"\$1\"); printf 'wine:\n  version: ${lutris_runner_required}\n' > '$1'")
         # This assumes an indent of two spaces before the key:value pair
     elif ! grep -q "^wine:" "$1"; then
         # If wine: group doesnt exist append it with the version: node
-        preflight_user_actions+=("printf '\nwine:\n  version: $lutris_runner_required\n' >> '$1'")
+        preflight_user_actions+=("printf '\nwine:\n  version: ${lutris_runner_required}\n' >> '$1'")
     elif [ -z "$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/p }' "$1")" ]; then
         # If system: node doesn't exist, add it at the start of the wine: grouping
         preflight_user_actions+=("sed -i -e '/^wine:/a\' -e \"  ${version_sed_string}${lutris_runner_required}\" '$1'")
