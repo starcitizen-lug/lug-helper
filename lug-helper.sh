@@ -2656,13 +2656,7 @@ install_game_wine() {
         install_dir="$HOME/Games/star-citizen"
     else
         if [ "$use_zenity" -eq 1 ]; then
-            if message options "Create my own prefix dir" "Continue" "After clicking Continue, select your Star Citizen install location.\nA new subdirectory named 'star-citizen' will be created in the selected location. This will be your wine prefix.\n\nIf you know what you are doing and want to create your own prefix directory, choose \"Create my own prefix dir\""; then
-                # Default, create the star-citizen directory
-                install_prefix="star-citizen"
-            else
-                # User will create their own prefix directory
-                install_prefix=""
-            fi
+            message info "On the next screen, select your Star Citizen install location"
 
             # Get the install path from the user
             while true; do
@@ -2678,15 +2672,11 @@ install_game_wine() {
                 fi
 
                 # Add the wine prefix subdirectory to the install path
-                if [ -n "$install_prefix" ]; then
-                    install_dir="$install_dir/$install_prefix"
-                fi
+                install_dir="$install_dir/star-citizen"
 
                 # Sanity check the chosen directory a bit to catch some possible mistakes
-                if [ "$install_dir" = "/" ] || [ "$install_dir" = "$HOME" ] || [ "$install_dir" = "$HOME/Games" ]; then
-                    if message question "Something seems off! This directory will become your wine prefix. Are you really sure this is what you want?\n\n$install_dir"; then
-                        break
-                    fi
+                if [ -d "$install_dir" ]; then
+                    message warning "A directory named \"star-citizen\" already exists!\nPlease choose a different install location.\n\n$install_dir"
                 else
                     # All good, break out of the loop and continue
                     break
