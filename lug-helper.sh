@@ -1232,9 +1232,9 @@ download_select_install() {
     contributor_url="${download_sources[$1+1]}"
 
     # For runners, check GlibC version against runner requirements
-    if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ]; }; then
+    if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "TKG" ] || [ "$contributor_name" = "RawFox" ] || [ "$contributor_name" = "Mactan" ]; }; then
         glibc_fail="false"
-        required_glibc="2.33"
+        required_glibc="2.38"
 
         # Check the system glibc
         if [ -x "$(command -v ldd)" ]; then
