@@ -2360,8 +2360,8 @@ install_game_wine() {
 
     # Copy the bundled RSI Launcher icon to the .local icons directory
     if [ -f "$rsi_icon" ]; then
-        mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps" && 
-        cp "$rsi_icon" "$HOME/.local/share/icons/hicolor/256x256/apps"
+        mkdir -p "$data_dir/icons/hicolor/256x256/apps" && 
+        cp "$rsi_icon" "$data_dir/icons/hicolor/256x256/apps"
     fi
 
     # $HOME/Desktop/RSI Launcher.desktop
@@ -2383,7 +2383,7 @@ Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Robert
     # Update the .desktop file database if the command is available
     if [ -x "$(command -v update-desktop-database)" ]; then
         debug_print continue "Running update-desktop-database..."
-        update-desktop-database "$HOME/.local/share/applications"
+        update-desktop-database "$data_dir/applications"
     fi
 
     # Check if the desktop files were created successfully
