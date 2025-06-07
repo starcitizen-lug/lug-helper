@@ -20,44 +20,33 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Checks that the hard open file descriptors limit is set to at least 524288.
     - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
 
-`Install Star Citizen with Wine`
-- Installs Star Citizen using the system's Wine without Lutris
+`Install Star Citizen`
+- Installs Star Citizen using Wine
 
-`Install Star Citizen with Lutris`
-- Launches Lutris and installs Star Citizen
-
-`Manage Wine Runners (non-Lutris)`
+`Manage Wine Runners`
 - Quickly install and delete custom Wine runners
 
-`Manage Lutris Runners`
-- Quickly install and delete Lutris runners
-
-`Manage Lutris DXVK Versions`
-- Quickly install and delete DXVK versions for Lutris
+`Update DXVK`
+- Update DXVK in the game's Wine prefix
 
 `Maintenance and Troubleshooting`
-- `Switch the helper between LIVE/PTU/EPTU`
-  - Target the LIVE, PTU, or EPTU installation for all operations.  Defaults to LIVE on each run.
-
 - `Target a different Star Citizen installation`
-  - Select a different wine prefix for the Helper to target in its operations  
+  - Select a different wine prefix for the Helper to target in its operations
+
+- `Update launch script`
+  - Update the game launch script to the latest version
+
+- `Edit launch script`
+  - Edit the game launch script
+
+- `Open Wine prefix configuration`
+  - Runs *winecfg* in the game's Wine prefix
+
+- `Open Wine controller configuration`
+  - Opens Wine's game controller configuration in the Wine prefix
 
 - `Install PowerShell into Wine prefix`
   - Uses winetricks to install PowerShell
-
-- `Delete my Star Citizen USER folder and preserve my keybinds`
-  - The helper will make backups of any exported keybinds, delete your Star Citizen USER folder, then restore your keybind files.
-  - To export your keybinds from within the game, go to:
-    - *Options->Keybindings->Control Profiles->Save Control Settings*
-  - To re-import your keybinds from within the game, select them from the list:
-    - *Options->Keybindings->Control Profiles*
-
-- `Delete my shaders`
-  - It is recommended to delete your shaders directory after each game update.
-  - You will be prompted to confirm each directory before deletion, so you may choose which game version shaders you want cleared out.
-
-- `Delete my DXVK cache`
-  - A troubleshooting step that sometimes helps fix various issues and crashes.
 
 - `Display Helper and Star Citizen directories`
   - Show all the directories currently in use by both the Helper and Star Citizen.
