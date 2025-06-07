@@ -190,6 +190,7 @@ current_version="v3.11"
 ############################################################################
 
 
+# MARK: try_exec()
 # Try to execute a supplied command with either user or root privileges
 # Expects two string arguments
 # Usage: try_exec [root|user] "command"
@@ -247,6 +248,7 @@ try_exec() {
     return 0
 }
 
+# MARK: debug_print()
 # Echo a formatted debug message to the terminal and optionally exit
 # Accepts either "continue" or "exit" as the first argument
 # followed by the string to be echoed
@@ -277,6 +279,7 @@ debug_print() {
     esac
 }
 
+# MARK: message()
 # Display a message to the user.
 # Expects the first argument to indicate the message type, followed by
 # a string of arguments that will be passed to zenity or echoed to the user.
@@ -400,6 +403,7 @@ message() {
     fi
 }
 
+# MARK: menu()
 # Display a menu to the user.
 # Uses Zenity for a gui menu with a fallback to plain old text.
 #
@@ -547,12 +551,14 @@ menu() {
     fi
 }
 
+# MARK: menu_loop_done()
 # Called when the user clicks cancel on a looping menu
 # Causes a return to the main menu
 menu_loop_done() {
     looping_menu="false"
 }
 
+# MARK: getdirs()
 # Get paths to the user's wine prefix, game directory, and a backup directory
 # Returns 3 if the user was asked to select new directories
 getdirs() {
@@ -695,6 +701,7 @@ getdirs() {
 ######## begin preflight check functions ###################################
 ############################################################################
 
+# MARK: preflight_check()
 # Check that the system is optimized for Star Citizen
 # Accepts an optional string argument, "wine"
 # This argument is used by the install functions to indicate which
@@ -857,6 +864,7 @@ preflight_check() {
     fi
 }
 
+# MARK: wine_check()
 # Check the system Wine version
 # Tells the preflight check whether or not wine is installed
 # Additionally sets system_wine_ok if system wine meets the minimum version requirement
@@ -886,6 +894,7 @@ wine_check() {
     fi
 }
 
+# MARK: memory_check()
 # Check system memory and swap space
 memory_check() {
     # Get totals in bytes
@@ -916,6 +925,7 @@ memory_check() {
     fi
 }
 
+# MARK: avx_check()
 # Check CPU for the required AVX extension
 avx_check() {
     if grep -q "avx" /proc/cpuinfo; then
@@ -929,6 +939,7 @@ avx_check() {
 ######## begin mapcount functions ##########################################
 ############################################################################
 
+# MARK: mapcount_check()
 # Check vm.max_map_count for the correct setting
 mapcount_check() {
     mapcount="$(cat /proc/sys/vm/max_map_count)"
@@ -961,6 +972,7 @@ mapcount_check() {
     fi
 }
 
+# MARK: mapcount_set()
 # Set vm.max_map_count
 mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
@@ -977,6 +989,7 @@ mapcount_set() {
     preflight_followup+=("mapcount_confirm")
 }
 
+# MARK: mapcount_once()
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
     preflight_root_actions+=('sysctl -w vm.max_map_count=16777216')
@@ -984,6 +997,7 @@ mapcount_once() {
     preflight_followup+=("mapcount_confirm")
 }
 
+# MARK: mapcount_confirm()
 # Check if setting vm.max_map_count was successful
 mapcount_confirm() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
@@ -999,6 +1013,7 @@ mapcount_confirm() {
 ######## begin filelimit functions #########################################
 ############################################################################
 
+# MARK: filelimit_check()
 # Check the open file descriptors limit
 filelimit_check() {
     filelimit="$(ulimit -Hn)"
@@ -1027,6 +1042,7 @@ filelimit_check() {
     fi
 }
 
+# MARK: filelimit_set()
 # Set the open file descriptors limit
 filelimit_set() {
     if [ -f "/etc/systemd/system.conf" ]; then
@@ -1048,6 +1064,7 @@ filelimit_set() {
     preflight_followup+=("filelimit_confirm")
 }
 
+# MARK: filelimit_confirm()
 # Check if setting the open file descriptors limit was successful
 filelimit_confirm() {
     if [ "$(ulimit -Hn)" -lt 524288 ]; then
@@ -1067,6 +1084,7 @@ filelimit_confirm() {
 ######## begin download functions ##########################################
 ############################################################################
 
+# MARK: download_manage()
 # Manage downloads. Called by a dedicated download type manage function, ie runner_manage_wine()
 #
 # This function expects the following variables to be set:
@@ -1161,6 +1179,7 @@ download_manage() {
     done
 }
 
+# MARK: runner_manage_wine()
 # Configure the download_manage function for wine runners
 runner_manage_wine() {
     # We'll want to instruct the user on how to use the downloaded runner
@@ -1206,6 +1225,7 @@ runner_manage_wine() {
     download_manage "runner"
 }
 
+# MARK: download_select_install()
 # List available items for download. Called by download_manage()
 #
 # The following variables are expected to be set before calling this function:
@@ -1423,6 +1443,7 @@ download_select_install() {
     menu
 }
 
+# MARK: download_install()
 # Download and install the selected item. Called by download_select_install()
 #
 # The following variables are expected to be set before calling this function:
@@ -1607,6 +1628,7 @@ download_install() {
     return 0
 }
 
+# MARK: download_select_delete()
 # List installed items for deletion. Called by download_manage()
 #
 # The following variables are expected to be set before calling this function:
@@ -1687,6 +1709,7 @@ download_select_delete() {
     menu
 }
 
+# MARK: download_delete()
 # Uninstall the selected item(s). Called by download_select_install()
 # Accepts array index numbers as an argument
 #
@@ -1731,6 +1754,7 @@ download_delete() {
     fi
 }
 
+# MARK: post_download()
 # Perform post-download actions or display a message/instructions
 #
 # The following variables are expected to be set before calling this function:
@@ -1830,6 +1854,7 @@ post_download() {
     fi
 }
 
+# MARK: download_file()
 # Download a file to the tmp directory
 # Expects three arguments: The download URL, file name, and download type
 download_file() {
@@ -1880,6 +1905,7 @@ download_file() {
 ######## begin maintenance functions #######################################
 ############################################################################
 
+# MARK: maintenance_menu()
 # Show maintenance/troubleshooting options
 maintenance_menu() {
     # Loop the menu until the user selects quit
@@ -1929,6 +1955,7 @@ maintenance_menu() {
     done
 }
 
+# MARK: switch_prefix()
 # Target the Helper at a different Star Citizen prefix/installation
 switch_prefix() {
     # Check if the config file exists
@@ -1947,6 +1974,7 @@ switch_prefix() {
     fi
 }
 
+# MARK: update_launcher()
 # Update the game launch script if necessary
 update_launcher() {
     getdirs
@@ -1993,6 +2021,7 @@ update_launcher() {
     fi
 }
 
+# MARK: call_launch_script()
 # Call our launch script and pass it the given command line argument
 call_launch_script()
 {
@@ -2031,6 +2060,7 @@ call_launch_script()
     "$wine_prefix/$wine_launch_script_name" "$launch_arg"
 }
 
+# MARK: edit_wine_launch_script()
 # Edit the launch script
 edit_wine_launch_script() {
     # Get/Set directory paths
@@ -2055,6 +2085,7 @@ edit_wine_launch_script() {
     fi
 }
 
+# MARK: display_dirs()
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
     dirs_list="\n"
@@ -2083,12 +2114,14 @@ display_dirs() {
     message info "$message_heading\n$dirs_list"
 }
 
+# MARK: display_wiki()
 # Display the LUG Wiki
 display_wiki() {
     # Display a message containing the URL
     message info "See the Wiki for our Quick-Start Guide, Troubleshooting,\nand Performance Tuning Recommendations:\n\n$lug_wiki"
 }
 
+# MARK: reset_helper()
 # Delete the helper's config directory
 reset_helper() {
     if [ "$1" = "switchprefix" ]; then
@@ -2112,6 +2145,7 @@ reset_helper() {
 ############################################################################
 
 
+# MARK: install_game_wine()
 # Install the game with Wine
 install_game_wine() {
     # Double check that wine is installed
@@ -2365,6 +2399,7 @@ Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Robert
     message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
 }
 
+# MARK: download_wine()
 # Download a default wine runner for use by the installer
 # Expects download_dirs to be set before calling
 download_wine() {
@@ -2399,6 +2434,7 @@ download_wine() {
     fi
 }
 
+# MARK: download_winetricks()
 # Download winetricks to a temporary file
 download_winetricks() {
     download_file "$winetricks_url" "winetricks" "winetricks"
@@ -2417,6 +2453,7 @@ download_winetricks() {
     chmod +x "$winetricks_bin"
 }
 
+# MARK: install_powershell()
 # Install powershell verb into the game's wine prefix
 install_powershell() {
     # Download winetricks
@@ -2439,6 +2476,7 @@ install_powershell() {
     fi
 }
 
+# MARK: dxvk_update_wine()
 # Update dxvk for native wine installs
 dxvk_update_wine() {
     # Download winetricks
@@ -2461,6 +2499,7 @@ dxvk_update_wine() {
     fi
 }
 
+# MARK: format_urls()
 # Format some URLs for Zenity
 format_urls() {
     if [ "$use_zenity" -eq 1 ]; then
@@ -2470,6 +2509,7 @@ format_urls() {
     fi
 }
 
+# MARK: get_latest_release()
 # Get the latest release version of a repo. Expects "user/repo_name" as input
 # Credits for this go to https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
 get_latest_release() {
@@ -2483,6 +2523,7 @@ get_latest_release() {
         sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
 }
 
+# MARK: referral_randomizer()
 # Get a random Penguin's Star Citizen referral code
 referral_randomizer() {
     # Populate the referral codes array
@@ -2494,6 +2535,7 @@ referral_randomizer() {
     message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
 }
 
+# MARK: quit()
 quit() {
     exit 0
 }
@@ -2503,6 +2545,7 @@ quit() {
 ######## MAIN ##############################################################
 ############################################################################
 
+# MARK: MAIN
 # Zenity availability/version check
 use_zenity=0
 # Initialize some variables
@@ -2559,6 +2602,7 @@ if [ "$latest_version" != "$current_version" ] &&
     message info "The latest version of the LUG Helper is $latest_version\nYou are using $current_version\n\nYou can download new releases here:\n$releases_url"
 fi
 
+# MARK: Cmdline arguments
 # If invoked with command line arguments, process them and exit
 if [ "$#" -gt 0 ]; then
     while [ "$#" -gt 0 ]
@@ -2657,6 +2701,7 @@ fi
 menu_heading_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>\nFor help, see our wiki: $lug_wiki"
 menu_heading_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group\nFor help, see our wiki: $lug_wiki"
 
+# MARK: First Run
 # First run
 firstrun_message="It looks like this is your first time running the Helper\n\nWould you like to run the Preflight Check and install Star Citizen?"
 if [ "$use_zenity" -eq 1 ]; then
@@ -2675,6 +2720,7 @@ if [ "$is_firstrun" = "true" ]; then
     echo "false" > "$conf_dir/$conf_subdir/$firstrun_conf"
 fi
 
+# MARK: Main Menu
 # Loop the main menu until the user selects quit
 while true; do
     # Configure the menu
