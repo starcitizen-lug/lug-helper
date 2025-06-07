@@ -86,21 +86,6 @@ data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
 # .config subdirectory
 conf_subdir="starcitizen-lug"
 
-# Flatpak lutris directory
-lutris_flatpak_dir="$HOME/.var/app/net.lutris.Lutris"
-
-# Lutris native game configs directory
-lutris_native_conf_dir="$conf_dir/lutris/games"
-
-# Lutris native wine config
-lutris_native_wine_yml="$conf_dir/lutris/runners/wine.yml"
-
-# Lutris flatpak game configs directory
-lutris_flatpak_conf_dir="$lutris_flatpak_dir/config/lutris/games"
-
-# Lutris flatpak wine config
-lutris_flatpak_wine_yml="$lutris_flatpak_dir/data/lutris/runners/wine.yml"
-
 # Helper directory
 helper_dir="$(realpath "$0" | xargs -0 dirname)"
 
@@ -127,7 +112,6 @@ wine_launch_script_name="sc-launch.sh"
 
 # Default to files in the Helper directory for a git download
 rsi_icon="$helper_dir/$rsi_icon_name"
-lutris_install_script="$helper_dir/lib/lutris-starcitizen.json"
 wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
 
 # Build our array of search paths, supporting packaged versions of this script
@@ -137,18 +121,13 @@ IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS:/usr/share/"
 # Locate our files in the search array
 for searchdir in "${data_dirs_array[@]}"; do
     # Check if we've found all our files and break the loop
-    if [ -f "$rsi_icon" ] && [ -f "$lutris_install_script" ] && [ -f "$wine_launch_script" ]; then
+    if [ -f "$rsi_icon" ] && [ -f "$wine_launch_script" ]; then
         break
     fi
 
     # rsi-launcher.png
     if [ ! -f "$rsi_icon" ] && [ -f "$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
         rsi_icon="$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name"
-    fi
-
-    # lutris-starcitizen.json
-    if [ ! -f "$lutris_install_script" ] && [ -f "$searchdir/lug-helper/lutris-starcitizen.json" ]; then
-        lutris_install_script="$searchdir/lug-helper/lutris-starcitizen.json"
     fi
 
     # sc-launch.sh
@@ -159,12 +138,7 @@ done
 
 ######## Runners ###########################################################
 
-# Lutris native wine runners directory
-runners_dir_native="$data_dir/lutris/runners/wine"
-# Lutris flatpak wine runners directory
-runners_dir_flatpak="$lutris_flatpak_dir/data/lutris/runners/wine"
-
-# URLs for downloading Lutris runners
+# URLs for downloading Wine runners
 # Elements in this array must be added in quoted pairs of: "description" "url"
 # The first string in the pair is expected to contain the runner description
 # The second is expected to contain the api releases url
@@ -180,34 +154,10 @@ runner_sources=(
 default_runner="wine-10.5-amd64.tar.xz"
 default_runner_source=0
 
-######## DXVK ##############################################################
-
-# Lutris native dxvk directory
-dxvk_dir_native="$data_dir/lutris/runtime/dxvk"
-# Lutris flatpak dxvk directory
-dxvk_dir_flatpak="$lutris_flatpak_dir/data/lutris/runtime/dxvk"
-
-# URLs for downloading dxvk versions
-# Elements in this array must be added in quoted pairs of: "description" "url"
-# The first string in the pair is expected to contain the runner description
-# The second is expected to contain the api releases url
-# ie. "Sporif Async" "https://api.github.com/repos/Sporif/dxvk-async/releases"
-# ie. "Ph42oN GPL+Async" "https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
-dxvk_sources=(
-    "doitsujin (standard dxvk)" "https://api.github.com/repos/doitsujin/dxvk/releases"
-    "Ph42oN GPL+Async" "https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
-)
-
 ######## Requirements ######################################################
 
 # Wine minimum version
 wine_required="9.4"
-
-# Lutris minimum version
-lutris_required="0.5.18"
-
-# Lutris runner minimum version
-lutris_runner_required="ge-proton"
 
 # Minimum amount of RAM in GiB
 memory_required="16"
@@ -746,7 +696,7 @@ getdirs() {
 ############################################################################
 
 # Check that the system is optimized for Star Citizen
-# Accepts an optional string argument, "lutris" or "wine"
+# Accepts an optional string argument, "wine"
 # This argument is used by the install functions to indicate which
 # Preflight Check functions should be called and cause the Preflight Check
 # to only output problems that must be fixed
@@ -774,15 +724,11 @@ preflight_check() {
     install_mode="$1"
 
     # Check the optional argument for valid values
-    if [ -n "$install_mode" ] && [ "$install_mode" != "wine" ] && [ "$install_mode" != "lutris" ]; then
+    if [ -n "$install_mode" ] && [ "$install_mode" != "wine" ]; then
         debug_print exit "Script error: Unexpected argument passed to the preflight_check function. Aborting."
     fi
 
     # Call the optimization functions to perform the checks
-    if [ "$install_mode" != "wine" ]; then
-        # Don't check for lutris if called from the wine install function
-        lutris_check
-    fi
     wine_check
     memory_check
     avx_check
@@ -908,141 +854,6 @@ preflight_check() {
         fi
 
         return 1
-    fi
-}
-
-# Check the installed lutris version
-lutris_check() {
-    lutris_detect
-
-    if [ "$lutris_installed" = "false" ]; then
-        preflight_fail+=("Lutris does not appear to be installed.\nFor non-Lutris installs, this may be ignored.")
-        return 1
-    fi
-
-    # Check the native lutris version number
-    if [ "$lutris_native" = "true" ]; then
-        lutris_current="$(lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
-        if [ -z "$lutris_current" ]; then
-            preflight_fail+=("Unable to detect Lutris version info.\nVersion $lutris_required or newer is required.")
-        elif [ "$lutris_required" != "$lutris_current" ] &&
-            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
-            preflight_fail+=("Lutris is out of date.\nVersion $lutris_required or newer is required.")
-        else
-            preflight_pass+=("Lutris is installed and sufficiently up to date.")
-        fi
-
-        if [ "$lutris_native_runner" = "$lutris_runner_required" ]; then
-            # All good
-            preflight_pass+=("Lutris' runner is set to ${lutris_runner_required}.")
-        else
-            # The setting should be changed
-            preflight_fail+=("Lutris' runner should be set to ${lutris_runner_required}.")
-
-            preflight_action_funcs+=("lutris_set_runner ${conf_dir}/lutris/runners/wine.yml")
-            preflight_fix_results+=("Lutris' global Wine runner has been set to '${lutris_runner_required}'.")
-
-            # Add info for manually changing the setting
-            preflight_manual+=("To change Lutris' global Wine runner, open the global Preferences in Lutris,\nselect the Runners tab, and edit the Wine runner options.")
-        fi
-
-        if [ ! -z "$(ls -A "$data_dir"/lutris/runtime)" ]; then
-            preflight_pass+=("Lutris has been run to populate its runtime.")
-        else
-            preflight_fail+=("Lutris has not been run yet.")
-
-            preflight_manual+=("Run Lutris before installing the game to populate its runtime and caches.")
-        fi
-    fi
-
-    # Check the flatpak lutris version number
-    if [ "$lutris_flatpak" = "true" ]; then
-        lutris_current="$(flatpak run net.lutris.Lutris -v 2>/dev/null | awk -F '-' '{print $2}')"
-        if [ -z "$lutris_current" ]; then
-            preflight_fail+=("Unable to detect Flatpak Lutris version info.\nVersion $lutris_required or newer is required.")
-        elif [ "$lutris_required" != "$lutris_current" ] &&
-            [ "$lutris_current" = "$(printf "%s\n%s" "$lutris_current" "$lutris_required" | sort -V | head -n1)" ]; then
-            preflight_fail+=("Flatpak Lutris is out of date.\nVersion $lutris_required or newer is required.")
-        else
-            preflight_pass+=("Flatpak Lutris is installed and sufficiently up to date.")
-        fi
-
-        if [ "$lutris_flatpak_runner" = "$lutris_runner_required" ]; then
-            # All good
-            preflight_pass+=("Flatpak Lutris' runner is set to ${lutris_runner_required}.")
-        else
-            # The setting should be changed
-            preflight_fail+=("Flatpak Lutris' runner should be set to ${lutris_runner_required}.")
-
-            preflight_action_funcs+=("lutris_set_runner ${lutris_flatpak_dir}/data/lutris/runners/wine.yml")
-            preflight_fix_results+=("Flatpak Lutris' global wine runner has been set to '${lutris_runner_required}'.")
-
-            # Add info for manually changing the setting
-            preflight_manual+=("To change Flatpak Lutris' global Wine runner, open the global Preferences in Flatpak Lutris,\nselect the Runners tab, and edit the Wine runner options.")
-        fi
-
-        if [ ! -z "$(ls -A "$lutris_flatpak_dir"/data/lutris/runtime)" ]; then
-            preflight_pass+=("Flatpak Lutris has been run to populate its runtime.")
-        else
-            preflight_fail+=("Flatpak Lutris has not been run yet.")
-
-            preflight_manual+=("Run Flatpak Lutris before installing the game to populate its runtime and caches.")
-        fi
-    fi
-}
-
-# Detect if lutris is installed
-lutris_detect() {
-    lutris_installed="false"
-
-    lutris_native="false"
-    lutris_native_runner=""
-
-    lutris_flatpak="false"
-    lutris_flatpak_runner=""
-
-    # Detect native lutris
-    if [ -x "$(command -v lutris)" ]; then
-        lutris_installed="true"
-        lutris_native="true"
-        if [ -f  "$lutris_native_wine_yml" ]; then
-            lutris_native_runner="$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/s/^[[:blank:]]*version:[[:blank:]]*//p }' "$lutris_native_wine_yml")"
-        fi
-    fi
-
-    # Detect flatpak lutris
-    if [ -x "$(command -v flatpak)" ] && flatpak list --app | grep -q Lutris; then
-        lutris_installed="true"
-        lutris_flatpak="true"
-        if [ -f "$lutris_flatpak_wine_yml" ]; then
-            lutris_flatpak_runner="$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/s/^[[:blank:]]*version:[[:blank:]]*//p }' "$lutris_flatpak_wine_yml")"
-        fi
-    fi
-}
-
-# Set the global lturis runner
-# This function expects a path to the lutris wine runner config file as its argument
-# Works for both native and flatpak lutris as long as the passed path is correct
-lutris_set_runner() {
-    # This function expects a string to be passed as an argument
-    if [ -z "$1" ]; then
-        debug_print exit "Script error:  The lutris_set_runner() function expects an argument. Aborting."
-    fi
-
-    version_sed_string="version: "
-    if [ ! -f "$1" ] || [ "$(cat "$1")" = "{}" ]; then
-        # If the file doesn't exist yet or has at most one line, make it with the wine version content
-        preflight_user_actions+=("mkdir -p \$(dirname \"\$1\"); printf 'wine:\n  version: ${lutris_runner_required}\n' > '$1'")
-        # This assumes an indent of two spaces before the key:value pair
-    elif ! grep -q "^wine:" "$1"; then
-        # If wine: group doesnt exist append it with the version: node
-        preflight_user_actions+=("printf '\nwine:\n  version: ${lutris_runner_required}\n' >> '$1'")
-    elif [ -z "$(sed -En '/^wine:/,/^[^[:blank:]]/ { /^[[:blank:]]*version:/p }' "$1")" ]; then
-        # If system: node doesn't exist, add it at the start of the wine: grouping
-        preflight_user_actions+=("sed -i -e '/^wine:/a\' -e \"  ${version_sed_string}${lutris_runner_required}\" '$1'")
-    else
-        # Replace the appropriate key:value line if it exists
-        preflight_user_actions+=("sed -Ei '/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${version_sed_string}/s/${version_sed_string}.*/${version_sed_string}${lutris_runner_required}/}' '$1'")
     fi
 }
 
@@ -1256,14 +1067,14 @@ filelimit_confirm() {
 ######## begin download functions ##########################################
 ############################################################################
 
-# Manage downloads. Called by a dedicated download type manage function, ie runner_manage_lutris()
+# Manage downloads. Called by a dedicated download type manage function, ie runner_manage_wine()
 #
 # This function expects the following variables to be set:
 #
 # - The string download_sources is a formatted array containing the URLs
 #   of items to download. It should be pointed to the appropriate
 #   array set at the top of the script using indirect expansion.
-#   See runner_sources at the top and runner_manage_lutris() for examples.
+#   See runner_sources at the top and runner_manage_wine() for examples.
 # - The array download_dirs should contain the locations the downloaded item
 #   will be installed to. Must be formatted in pairs of ("[type]" "[directory]")
 # - The string "download_menu_heading" should contain the type of item
@@ -1275,7 +1086,7 @@ filelimit_confirm() {
 # This function also expects one string argument containing the type of item to
 # be downloaded.  ie. runner or dxvk.
 #
-# See runner_manage_lutris() for a configuration example.
+# See runner_manage_wine() for a configuration example.
 download_manage() {
     # This function expects a string to be passed as an argument
     if [ -z "$1" ]; then
@@ -1350,10 +1161,10 @@ download_manage() {
     done
 }
 
-# Configure the download_manage function for non-Lutris wine runners
+# Configure the download_manage function for wine runners
 runner_manage_wine() {
     # We'll want to instruct the user on how to use the downloaded runner
-    # Valid options are "none", "info", "configure-lutris", or "configure-wine"
+    # Valid options are "none", "info", or "configure-wine"
     post_download_type="configure-wine"
 
     # Use indirect expansion to point download_sources
@@ -1364,13 +1175,13 @@ runner_manage_wine() {
     getdirs
 
     # Set the download directory for wine runners
-    # Unlike Lutris, only installting to one directory is supported
+    # Only installing to one directory is supported
     # Do not include multiple download destinations in this array
     # Must be formatted in pairs of ("[type]" "[directory]")
     download_dirs=("wine" "$wine_prefix/runners")
 
     # Configure the text displayed in the menus
-    download_menu_heading="Wine Runners (non-Lutris)"
+    download_menu_heading="Wine Runners"
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
     download_menu_height="320"
 
@@ -1393,92 +1204,6 @@ runner_manage_wine() {
     # The argument passed to the function is used for special handling
     # and displayed in the menus and dialogs.
     download_manage "runner"
-}
-
-# Configure the download_manage function for Lutris runners
-runner_manage_lutris() {
-    # Lutris will need to be configured and restarted after modifying runners
-    # Valid options are "none", "info", "configure-lutris", or "configure-wine"
-    post_download_type="configure-lutris"
-
-    # Use indirect expansion to point download_sources
-    # to the runner_sources array set at the top of the script
-    declare -n download_sources=runner_sources
-
-    # Check if Lutris is installed and get relevant directories
-    get_lutris_dirs "runner"
-    if [ "$lutris_installed" = "false" ]; then
-        message warning "Lutris is required but does not appear to be installed."
-        return 0
-    fi
-    # Point download_dirs to the lutris_dirs array set by get_lutris_dirs
-    # Must be formatted in pairs of ("[type]" "[directory]")
-    declare -n download_dirs=lutris_dirs
-
-    # Configure the text displayed in the menus
-    download_menu_heading="Lutris Runners"
-    download_menu_description="The runners listed below are wine builds created for Star Citizen"
-    download_menu_height="320"
-
-    # Configure the post install and delete messages
-    # Format:
-    # post_install_msg is displayed below the header
-    # post_delete_msg is displayed with no header
-    post_install_msg_heading="Download Complete"
-    post_install_msg="Would you like to automatically configure Lutris to use this runner?\n\nLutris will be restarted if necessary."
-    post_delete_msg="Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"
-    # Set the string sed will match against when editing Lutris yml configs
-    # This will be used to detect the appropriate yml key and replace its value
-    # with the name of the downloaded item
-    post_download_sed_string="version: "
-
-    # Call the download_manage function with the above configuration
-    # The argument passed to the function is used for special handling
-    # and displayed in the menus and dialogs.
-    download_manage "runner"
-}
-
-# Configure the download_manage function for Lutris dxvks
-dxvk_manage_lutris() {
-    # Lutris will need to be configured and restarted after modifying dxvks
-    # Valid options are "none", "info", "configure-lutris", or "configure-wine"
-    post_download_type="configure-lutris"
-
-    # Use indirect expansion to point download_sources
-    # to the dxvk_sources array set at the top of the script
-    declare -n download_sources=dxvk_sources
-
-    # Check if Lutris is installed and get relevant directories
-    get_lutris_dirs "dxvk"
-    if [ "$lutris_installed" = "false" ]; then
-        message warning "Lutris is required but does not appear to be installed."
-        return 0
-    fi
-    # Point download_dirs to the lutris_dirs array set by get_lutris_dirs
-    # Must be formatted in pairs of ("[type]" "[directory]")
-    declare -n download_dirs=lutris_dirs
-
-    # Configure the text displayed in the menus
-    download_menu_heading="Lutris DXVK Versions"
-    download_menu_description="The DXVK versions below may improve performance"
-    download_menu_height="320"
-
-    # Configure the post install and delete messages
-    # Format:
-    # post_install_msg is displayed below the header
-    # post_delete_msg is displayed with no header
-    post_install_msg_heading="Download Complete"
-    post_install_msg="Would you like to automatically configure Lutris to use this DXVK?\n\nLutris will be restarted if necessary."
-    post_delete_msg="Lutris must be restarted to detect the changes.\nWould you like this Helper to restart it for you?"
-    # Set the string sed will match against when editing Lutris yml configs
-    # This will be used to detect the appropriate yml key and replace its value
-    # with the name of the downloaded item
-    post_download_sed_string="dxvk_version: "
-
-    # Call the download_manage function with the above configuration
-    # The argument passed to the function is used for special handling
-    # and displayed in the menus and dialogs.
-    download_manage "dxvk"
 }
 
 # List available items for download. Called by download_manage()
@@ -1508,66 +1233,26 @@ download_select_install() {
 
     # For runners, check GlibC version against runner requirements
     if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "/dev/null" ] || [ "$contributor_name" = "TKG" ]; }; then
-        unset glibc_fail
+        glibc_fail="false"
         required_glibc="2.33"
 
-        # Native lutris
-        if [ "$lutris_native" = "true" ]; then
-            if [ -x "$(command -v ldd)" ]; then
-                native_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
-            else
-                native_glibc="0 (Not installed)"
-            fi
-
-            # Sort the versions and check if the installed glibc is smaller
-            if [ "$required_glibc" != "$native_glibc" ] &&
-            [ "$native_glibc" = "$(printf "%s\n%s" "$native_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
-                glibc_fail+=("Native")
-            fi
+        # Check the system glibc
+        if [ -x "$(command -v ldd)" ]; then
+            system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+        else
+            system_glibc="0 (Not installed)"
         fi
 
-        # Flatpak lutris
-        if [ "$lutris_flatpak" = "true" ]; then
-            flatpak_glibc="$(flatpak run --command="ldd" net.lutris.Lutris --version | awk '/ldd/{print $NF}')"
-
-            # Sort the versions and check if the installed glibc is smaller
-            if [ "$required_glibc" != "$flatpak_glibc" ] &&
-            [ "$flatpak_glibc" = "$(printf "%s\n%s" "$flatpak_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
-                glibc_fail+=("Flatpak")
-            fi
+        # Sort the versions and check if the installed glibc is smaller
+        if [ "$required_glibc" != "$system_glibc" ] &&
+        [ "$system_glibc" = "$(printf "%s\n%s" "$system_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
+            glibc_fail="true"
         fi
 
         # Display a warning message
-        if [ "${#glibc_fail[@]}" -gt 0 ]; then
-            unset glibc_message
-            # Prepare the warning message
-            for (( i=0; i<"${#glibc_fail[@]}"; i++ )); do
-                case "${glibc_fail[i]}" in
-                    "Native")
-                        glibc_message+="System glibc: $native_glibc\n"
-                        ;;
-                    "Flatpak")
-                        glibc_message+="Flatpak glibc: $flatpak_glibc\n"
-                        ;;
-                    *)
-                        debug_print exit "Script error:  Unknown glibc_fail string in download_select_install() function. Aborting."
-                        ;;
-                esac
-            done
-
-            message warning "Your glibc version is incompatible with the selected runner\n\n${glibc_message}Minimum required glibc: $required_glibc"
-
-            # Return if all installed versions of lutris fail the check
-            if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
-                # Both are installed
-                if [ "${#glibc_fail[@]}" -eq 2 ]; then
-                    # Both failed the check
-                    return 1
-                fi
-            else
-                # Only one is installed, but it failed the check
-                return 1
-            fi
+        if [ "$glibc_fail" = "true" ]; then
+            message warning "Your glibc version is incompatible with the selected runner\n\nSystem glibc: ${system_glibc}\nMinimum required glibc: $required_glibc"
+            return 1
         fi
     fi
 
@@ -1676,7 +1361,7 @@ download_select_install() {
         unset installed_types
         for (( j=0; j<"${#download_dirs[@]}"; j=j+2 )); do
             # Loop through all download destinations to get installed types
-            # Even numbered elements will contain the download destination type (ie. native/flatpak)
+            # Even numbered elements will contain the download destination type (ie. native/flatpak for lutris)
             if [ -d "${download_dirs[j+1]}/$download_basename" ]; then
                 installed_types+=("${download_dirs[j]}")
             fi
@@ -2049,20 +1734,20 @@ download_delete() {
 # Perform post-download actions or display a message/instructions
 #
 # The following variables are expected to be set before calling this function:
-# - post_download_type (string. "none", "info", "configure-lutris", "configure-wine")
+# - post_download_type (string. "none", "info", "configure-wine")
 # - post_install_msg_heading (string)
 # - post_install_msg (string)
 # - post_delete_msg (string)
-# - post_download_sed_string (string. For types configure-lutris and configure-wine)
+# - post_download_sed_string (string. For type configure-wine)
 # - post_delete_restore_value (string. For type configure-wine)
 # - download_action_success (string. Set automatically in install/delete functions)
 # - downloaded_item_name (string. For installs only. Set automatically in download_install function)
 # - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
 #
 # Details for post_download_sed_string:
-# This is the string sed will match against when editing Lutris yml configs
-# It will be used to detect the appropriate yml key and replace its value
-# with the name of the downloaded item. Example: "dxvk_version: "
+# This is the string sed will match against when editing configs or files
+# For the wine install, it replaces values in the default launch script
+# with the appropriate paths and values after installation.
 #
 # Message display format:
 # A header is automatically displayed that reads: Download Complete
@@ -2077,8 +1762,6 @@ post_download() {
         debug_print exit "Script error: The string 'post_install_msg' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_delete_msg" ]; then
         debug_print exit "Script error: The string 'post_delete_msg' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-lutris" ]; then
-        debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-wine" ]; then
         debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_delete_restore_value" ] && [ "$post_download_type" = "configure-wine" ]; then
@@ -2099,53 +1782,6 @@ post_download() {
     if [ "$post_download_type" = "info" ]; then
             # Just displaying an informational message
             message info "$post_install_msg_heading\n\n$post_install_msg"
-    elif [ "$post_download_type" = "configure-lutris" ]; then
-        # We need to configure and restart Lutris
-        unset lutris_game_ymls
-        # Build an array of all Lutris Star Citizen yml files
-        while IFS='' read -r line; do
-            lutris_game_ymls+=("$line")
-        done < <(grep -iRlE --include="*.yml" "Roberts Space Industries|starcitizen|star citizen|star-citizen" "$lutris_native_conf_dir" "$lutris_flatpak_conf_dir" 2>/dev/null)
-
-        # We handle installs and deletions differently
-        if [ "$download_action_success" = "installed" ]; then
-            # We are installing something for Lutris
-            if message question "$post_install_msg_heading\n\n$post_install_msg"; then
-                # Cylce through all Lutris config files for Star Citizen and configure the downloaded item
-                for (( i=0; i<"${#lutris_game_ymls[@]}"; i++ )); do
-                    # Replace the appropriate key:value line if it exists
-                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/^[[:blank:]]*${post_download_sed_string}/s/${post_download_sed_string}.*/${post_download_sed_string}${downloaded_item_name}/}" "${lutris_game_ymls[i]}"
-
-                    # If it doesn't exist, add it at the start of the wine: grouping
-                    if ! grep -q "${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"; then
-                        # This assumes an indent of two spaces before the key:value pair
-                        sed -i -e '/^wine:/a\' -e "  ${post_download_sed_string}${downloaded_item_name}" "${lutris_game_ymls[i]}"
-                    fi
-                done
-
-                # Lutris needs to be restarted after making changes
-                if [ "$(pgrep -f lutris)" ]; then
-                    # For installations, we ask the user if we can configure and restart Lutris in the post_install_msg
-                    lutris_restart
-                fi
-            fi
-        elif [ "$download_action_success" = "deleted" ]; then
-            # Find all Star Citizen Lutris configs and delete the matching key:value line
-            for (( i=0; i<"${#deleted_item_names[@]}"; i++ )); do
-                # Cylce through all Lutris config files for Star Citizen and remove the item
-                for (( j=0; j<"${#lutris_game_ymls[@]}"; j++ )); do
-                    sed -Ei "/^wine:/,/^[^[:blank:]]/ {/${post_download_sed_string}${deleted_item_names[i]}/d}" "${lutris_game_ymls[j]}"
-                done
-            done
-
-            # Lutris needs to be restarted after making changes
-            if [ "$(pgrep -f lutris)" ] && message question "$post_delete_msg"; then
-                # For deletions, we ask the user if it's okay to restart Lutris here
-                lutris_restart
-            fi
-        else
-            debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
-        fi
     elif [ "$post_download_type" = "configure-wine" ]; then
         # We handle installs and deletions differently
         if [ "$download_action_success" = "installed" ]; then
@@ -2191,66 +1827,6 @@ post_download() {
         fi
     else
             debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
-    fi
-}
-
-# Create an array of directories used by Lutris
-# Array will be formatted in pairs of ("[type]" "[directory]")
-# Supports native install and flatpak
-# Takes an argument to specify the type to return: "runner" or "dxvk"
-get_lutris_dirs() {
-    # Sanity check
-    if [ "$#" -lt 1 ]; then
-        debug_print exit "Script error: The get_lutris_dirs function expects one argument. Aborting."
-    fi
-
-    # Detect the type of Lutris install
-    lutris_detect
-
-    # Add lutris directories to an array
-    unset lutris_dirs
-    case "$1" in
-        "runner")
-            # Native Lutris install
-            if [ "$lutris_native" = "true" ]; then
-                lutris_dirs+=("native" "$runners_dir_native")
-            fi
-            # Flatpak lutris install
-            if [ "$lutris_flatpak" = "true" ]; then
-                lutris_dirs+=("flatpak" "$runners_dir_flatpak")
-            fi
-            ;;
-        "dxvk")
-            # Native Lutris install
-            if [ "$lutris_native" = "true" ]; then
-                lutris_dirs+=("native" "$dxvk_dir_native")
-            fi
-            # Flatpak lutris install
-            if [ "$lutris_flatpak" = "true" ]; then
-                lutris_dirs+=("flatpak" "$dxvk_dir_flatpak")
-            fi
-            ;;
-        *)
-            printf "lug-helper.sh: Unknown argument provided to get_lutris_dirs function. Aborting.\n" 1>&2
-            read -n 1 -s -p "Press any key..."
-            exit 0
-            ;;
-    esac
-}
-
-# Detect which version of Lutris is running and restart it
-lutris_restart() {
-    # Detect the installed versions of Lutris
-    lutris_detect
-    if [ "$lutris_native" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -Eq "[/]usr/bin/lutris|[/]usr/games/lutris"; then
-        # Native Lutris is running
-        debug_print continue "Restarting native Lutris..."
-        pkill -f -SIGTERM lutris && nohup lutris </dev/null &>/dev/null &
-    fi
-    if [ "$lutris_flatpak" = "true" ] && pgrep -f lutris | xargs ps -fp | grep -q "[/]app/bin/lutris"; then
-        # Flatpak Lutris is running
-        debug_print continue "Restarting flatpak Lutris..."
-        pkill -f -SIGTERM lutris && nohup flatpak run net.lutris.Lutris </dev/null &>/dev/null &
     fi
 }
 
@@ -2324,7 +1900,7 @@ maintenance_menu() {
 
         # Configure the menu options
         prefix_msg="Target a different Star Citizen installation"
-        launcher_msg="Update launch script (non-Lutris)"
+        launcher_msg="Update launch script"
         launchscript_msg="Edit launch script"
         config_msg="Open Wine prefix configuration"
         controllers_msg="Open Wine controller configuration"
@@ -2371,12 +1947,12 @@ switch_prefix() {
     fi
 }
 
-# Update the non-Lutris game launch script if necessary
+# Update the game launch script if necessary
 update_launcher() {
     getdirs
 
     if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-        message warning "Game launch script not found! If you're using Lutris, you don't need to update this\n\n$wine_prefix/$wine_launch_script_name"
+        message warning "Game launch script not found!\n\n$wine_prefix/$wine_launch_script_name"
         return 1
     fi
 
@@ -2482,7 +2058,6 @@ edit_wine_launch_script() {
 # Display all directories currently used by this helper and Star Citizen
 display_dirs() {
     dirs_list="\n"
-    lutris_detect
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
@@ -2497,30 +2072,6 @@ display_dirs() {
     # Star Citizen installation
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         dirs_list+="Star Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")\n\n"
-    fi
-
-    # Lutris runners
-    if [ -d "$runners_dir_native" ] || [ -d "$runners_dir_flatpak" ]; then
-        dirs_list+="Lutris Runners:"
-        if [ -d "$runners_dir_native" ] && [ "$lutris_native" = "true" ]; then
-            dirs_list+="\n$runners_dir_native"
-        fi
-        if [ -d "$runners_dir_flatpak" ] && [ "$lutris_flatpak" = "true" ]; then
-            dirs_list+="\n$runners_dir_flatpak"
-        fi
-        dirs_list+="\n\n"
-    fi
-
-    # Lutris dxvk
-    if [ -d "$dxvk_dir_native" ] || [ -d "$dxvk_dir_flatpak" ]; then
-        dirs_list+="Lutris DXVK Versions:"
-        if [ -d "$dxvk_dir_native" ] && [ "$lutris_native" = "true" ]; then
-            dirs_list+="\n$dxvk_dir_native"
-        fi
-        if [ -d "$dxvk_dir_flatpak" ] && [ "$lutris_flatpak" = "true" ]; then
-            dirs_list+="\n$dxvk_dir_flatpak"
-        fi
-        dirs_list+="\n\n"
     fi
 
     # Format the info header
@@ -2561,70 +2112,7 @@ reset_helper() {
 ############################################################################
 
 
-# Install Star Citizen using Lutris
-install_game_lutris() {
-    # Check if Lutris is installed
-    lutris_detect
-    if [ "$lutris_installed" = "false" ]; then
-        message error "Lutris is required but does not appear to be installed."
-        return 1
-    fi
-    # Check if the install script exists
-    if [ ! -f "$lutris_install_script" ]; then
-        message error "Lutris install script not found! Unable to proceed.\n\n$lutris_install_script\n\nIt is included in our official releases here:\n$releases_url"
-        return 1
-    fi
-
-    # Call the preflight check
-    preflight_check "lutris"
-    if [ "$?" -eq 1 ]; then
-        # There were errors
-        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
-    else
-        # No errors
-        install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAll Preflight Checks have passed\nAre you ready to continue?"
-    fi
-
-    if message question "$install_question"; then
-        # Detect which version of Lutris is installed
-        if [ "$lutris_native" = "true" ] && [ "$lutris_flatpak" = "true" ]; then
-            # Both versions of Lutris are installed so ask the user
-            if message options "Flatpak" "Native" "This Helper has detected both the Native and Flatpak versions of Lutris\nWhich version would you like to use?"; then
-                # Native version
-                install_version="native"
-            else
-                # Flatpak version
-                install_version="flatpak"
-            fi
-        elif [ "$lutris_native" = "true" ]; then
-            # Native version only
-            install_version="native"
-        elif [ "$lutris_flatpak" = "true" ]; then
-            # Flatpak version only
-            install_version="flatpak"
-        else
-            # We shouldn't get here
-            debug_print exit "Script error: Unable to detect Lutris version in install_game_lutris function. Aborting."
-        fi
-
-        # Create a temporary log file
-        tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
-
-        # Run the appropriate installer
-        if [ "$install_version" = "native" ]; then
-            lutris --debug --install "$lutris_install_script" >"$tmp_install_log" 2>&1 &
-        elif [ "$install_version" = "flatpak" ]; then
-            flatpak run --file-forwarding net.lutris.Lutris --debug --install @@ "$lutris_install_script" @@ >"$tmp_install_log" 2>&1 &
-        else
-            # We shouldn't get here
-            debug_print exit "Script error: Unknown condition for install_version in install_game_lutris() function. Aborting."
-        fi
-
-        message info "The installation will continue in Lutris. The debug log will be written to $tmp_install_log"
-    fi
-}
-
-# Install the game without Lutris
+# Install the game with Wine
 install_game_wine() {
     # Double check that wine is installed
     if [ ! -x "$(command -v wine)" ]; then
@@ -2877,7 +2365,7 @@ Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Robert
     message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
 }
 
-# Download a default wine runner for use by the non-lutris installer
+# Download a default wine runner for use by the installer
 # Expects download_dirs to be set before calling
 download_wine() {
     if [ "${#download_dirs[@]}" -eq 0 ]; then
@@ -3081,12 +2569,10 @@ if [ "$#" -gt 0 ]; then
                 printf "Star Citizen Linux Users Group Helper Script
 Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
-  -i, --install [lutris|wine]   Install Star Citizen (default: lutris)
-  -m, --manage-wine-runners     Install or remove Wine runners
-  -l, --manage-lutris-runners   Install or remove Lutris runners
-  -o, --update-wine-dxvk        Update DXVK for native Wine installs
-  -k, --manage-lutris-dxvk      Install or remove Lutris DXVK versions
-  -e, --edit-launch-script      Edit the native Wine install launch script
+  -i, --install                 Install Star Citizen
+  -m, --manage-runners          Install or remove Wine runners
+  -k, --update-dxvk             Update DXVK in the Wine prefix
+  -e, --edit-launch-script      Edit the game launch script
   -c, --wine-config             Launch winecfg for the game's prefix
   -j, --wine-controllers        Launch Wine controllers configuration
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
@@ -3102,29 +2588,13 @@ Usage: lug-helper <options>
                 cargs+=("preflight_check")
                 ;;
             --install | -i )
-                install_method="$2"
-                if [ "$install_method" = "lutris" ] || [ "$install_method" = "LUTRIS" ] || [ "$install_method" = "" ]; then
-                    cargs+=("install_game_lutris")
-                elif [ "$install_method" = "wine" ] || [ "$install_method" = "WINE" ]; then
-                    cargs+=("install_game_wine")
-                else
-                    printf "$0: Invalid argument '%s'\n" "$install_method"
-                    exit 0
-                fi
-                # Shift forward one argument
-                shift
+                cargs+=("install_game_wine")
                 ;;
-            --manage-wine-runners | -m )
+            --manage-runners | -m )
                 cargs+=("runner_manage_wine")
                 ;;
-            --manage-lutris-runners | -l )
-                cargs+=("runner_manage_lutris")
-                ;;
-            --update-wine-dxvk | -o )
+            --update-dxvk | -k )
                 cargs+=("dxvk_update_wine")
-                ;;
-            --manage-lutris-dxvk | -k )
-                cargs+=("dxvk_manage_lutris")
                 ;;
             --edit-launch-script | -e )
                 cargs+=("edit_wine_launch_script")
@@ -3196,11 +2666,7 @@ else
 fi
 if [ "$is_firstrun" = "true" ]; then
     if message question "$firstrun_message"; then
-        if message options "Wine" "Lutris" "Which install method would you like to use?"; then
-            install_game_lutris
-        else
-            install_game_wine
-        fi
+        install_game_wine
     fi
     # Store the first run state for subsequent launches
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -3219,20 +2685,17 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
-    install_msg_wine="Install Star Citizen with Wine"
-    runners_msg_wine="Manage Wine Runners (non-Lutris)"
-    dxvk_msg_wine="Update DXVK (non-Lutris)"
-    install_msg_lutris="Install Star Citizen with Lutris"
-    runners_msg_lutris="Manage Lutris Runners"
-    dxvk_msg_lutris="Manage Lutris DXVK Versions"
+    install_msg_wine="Install Star Citizen"
+    runners_msg_wine="Manage Wine Runners"
+    dxvk_msg_wine="Update DXVK"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$install_msg_lutris" "$runners_msg_lutris" "$dxvk_msg_lutris" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_update_wine" "install_game_lutris" "runner_manage_lutris" "dxvk_manage_lutris" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_update_wine" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
