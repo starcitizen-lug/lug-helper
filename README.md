@@ -71,7 +71,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 **Fedora:** https://copr.fedorainfracloud.org/coprs/jackgreiner/lug-helper  
 
 _Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
-_Winetricks Dependencies: **cabextract**, **unzip**_
+_Winetricks Dependencies: **cabextract**, **unzip**_  
 _Optional Dependencies: **zenity** (for GUI)_  
 
 ## Made with <3
