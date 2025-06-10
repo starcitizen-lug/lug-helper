@@ -62,13 +62,6 @@ if [ ! -x "$(command -v cabextract)" ] || [ ! -x "$(command -v unzip)" ]; then
     exit 1
 fi
 
-# Checks for NixOS for NixOS specific options
-if (grep '^NAME=NixOS' /etc/os-release -q 2> /dev/null ); then
-    is_nixos=1
-else
-    is_nixos=0
-fi
-
 ######## Config ############################################################
 
 wine_conf="winedir.conf"
@@ -2693,7 +2686,7 @@ Usage: lug-helper <options>
 fi
 
 # Detect if NixOS is being used and direct user to wiki
-if [ "$is_nixos" -eq 1 ]; then
+if (grep -q '^NAME=NixOS' /etc/os-release 2> /dev/null ); then
     message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos"
 fi
 
