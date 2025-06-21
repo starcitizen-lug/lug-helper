@@ -2216,7 +2216,7 @@ install_game_wine() {
         fi
     fi
 
-    if [ "$(ls -A "$install_dir")" ]; then
+    if [ "$(ls -A "$install_dir" 2>/dev/null)" ]; then
         # The directory is not empty, ask the user if they want to continue
         if ! message options "Cancel" "Continue" "The install directory is not empty!\n\nRe-using an existing wine prefix may result in unexpected behavior!\n\n$install_dir"; then
             return 1
