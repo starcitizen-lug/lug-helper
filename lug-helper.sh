@@ -2719,7 +2719,7 @@ while true; do
     # Configure the menu
     menu_text_zenity="$menu_heading_zenity"
     menu_text_terminal="$menu_heading_terminal"
-    menu_text_height="320"
+    menu_text_height="300"
     menu_type="radiolist"
 
     # Configure the menu options
