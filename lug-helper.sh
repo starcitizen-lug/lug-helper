@@ -144,15 +144,13 @@ runner_sources=(
 
 # Set the default runner to install when the system wine doesn't meet requirements
 # default_runner_source corresponds to an EVEN NUMBER index in runner_sources above
-default_runner="wine-10.0-amd64.tar.xz"
+default_runner="wine-10.5-amd64.tar.xz"
 default_runner_source=0
 
 ######## Requirements ######################################################
 
 # Wine minimum version
-wine_min_required="9.4"
-# Wine maximum version
-wine_max_required="10.0"
+wine_required="9.4"
 
 # Minimum amount of RAM in GiB
 memory_required="16"
@@ -881,11 +879,11 @@ wine_check() {
     # Check it against the required version
     if [ -z "$wine_current" ]; then
         system_wine_ok="false"
-    elif [ "$(printf "%s\n%s" "$wine_min_required" "$wine_current" | sort -V | head -n1)" = "$wine_min_required" ] && \
-         [ "$(printf "%s\n%s" "$wine_current" "$wine_max_required" | sort -V | head -n1)" = "$wine_current" ]; then
-        system_wine_ok="true"
-    else
+    elif [ "$wine_required" != "$wine_current" ] &&
+        [ "$wine_current" = "$(printf "%s\n%s" "$wine_current" "$wine_required" | sort -V | head -n1)" ]; then
         system_wine_ok="false"
+    else
+        system_wine_ok="true"
     fi
 }
 
