@@ -144,7 +144,7 @@ runner_sources=(
 
 # Set the default runner to install when the system wine doesn't meet requirements
 # default_runner_source corresponds to an EVEN NUMBER index in runner_sources above
-default_runner="wine-10.5-amd64.tar.xz"
+default_runner="wine-10.0-amd64.tar.xz"
 default_runner_source=0
 
 ######## Requirements ######################################################
@@ -2335,7 +2335,7 @@ install_game_wine() {
     fi
 
     # Add registry key that prevents wine from creating unnecessary file type associations
-    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N >>"$tmp_install_log" 2>&1
+    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
 
     # Run the installer
     debug_print continue "Installing RSI Launcher. Please wait; this will take a moment..."
