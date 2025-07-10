@@ -885,6 +885,49 @@ wine_check() {
     else
         system_wine_ok="true"
     fi
+
+    # If system wine passes the above checks, also check for the new wow64 mode that currently does not work
+    if [ "$system_wine_ok" = "true" ]; then
+        # Get paths to wine and wineserver binaries
+        wine_bin="$(command -v wine)"
+        wineserver_bin="$(command -v wineserver)"
+        wineboot_bin="$(command -v wineboot)"
+
+        # Determine the architecture of wine binary
+        wine_bin_arch="$(get_file_arch "${wine_bin}")"
+
+        # If unable to determine architecture, attempt alternative methods
+        if [ -z "${wine_bin_arch}" ]; then
+            if [ -x "${wineboot_bin}" ]; then
+                wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
+                if [ -x "${wine_bin_dir}/wine" ]; then
+                    wine_bin_arch="$(get_file_arch "${wine_bin_dir}/wine")"
+                fi
+            fi
+        fi
+
+        # Determine the architecture of wineserver binary
+        wineserver_bin_arch="$(get_file_arch "${wineserver_bin}")"
+
+        # If unable to determine architecture, attempt alternative methods
+        if [ -z "${wineserver_bin_arch}" ]; then
+            if [ -x "${wineboot_bin}" ]; then
+                wine_bin_dir="$(dirname "$(readlink -f "${wineboot_bin}" 2>/dev/null)" 2>/dev/null)"
+                if [ -x "${wine_bin_dir}/wineserver64" ]; then
+                    wineserver_bin_arch="$(get_file_arch "${wine_bin_dir}/wineserver64")"
+                elif [ -x "${wine_bin_dir}/wineserver32" ]; then
+                    wineserver_bin_arch="$(get_file_arch "${wine_bin_dir}/wineserver32")"
+                elif [ -x "${wine_bin_dir}/wineserver" ]; then
+                    wineserver_bin_arch="$(get_file_arch "${wine_bin_dir}/wineserver")"
+                fi
+            fi
+        fi
+
+        # Check for the new WOW64, 32bit, or unknown states and then fail the check
+        if [ "${wineserver_bin_arch}" = "${wine_bin_arch}" ] || [ -z "${wineserver_bin_arch}" ] || [ -z "${wine_bin_arch}" ]; then
+            system_wine_ok="false"
+        fi
+    fi
 }
 
 # MARK: memory_check()
@@ -2292,7 +2335,7 @@ install_game_wine() {
     fi
 
     # Add registry key that prevents wine from creating unnecessary file type associations
-    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N /f >>"$tmp_install_log" 2>&1
+    "$wine_path"/wine reg add "HKEY_CURRENT_USER\Software\Wine\FileOpenAssociations" /v Enable /d N >>"$tmp_install_log" 2>&1
 
     # Run the installer
     debug_print continue "Installing RSI Launcher. Please wait; this will take a moment..."
