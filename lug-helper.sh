@@ -2226,24 +2226,31 @@ install_game_wine() {
     # Create the game path
     mkdir -p "$install_dir"
 
+    # EAC doesn't like >10.0 wine or wow64 wine (all new wines are wow64)
+    # Until EAC fixes itself, we need to force a working runner for everyone
+    # The below is commented out in hopes that it can be restored in the future
+
     # If we can't use the system wine, we'll need to have the user select a custom wine runner to use
-    wine_path="$(command -v wine | xargs dirname)"
-    if [ "$system_wine_ok" = "false" ]; then
-        debug_print continue "Your system Wine does not meet the minimum requirements for Star Citizen!"
-        debug_print continue "A custom wine runner will be automatically downloaded and used."
+    #wine_path="$(command -v wine | xargs dirname)"
 
-        download_dirs=("wine" "$install_dir/runners")
+    #if [ "$system_wine_ok" = "false" ]; then
+    #debug_print continue "Your system Wine does not meet the minimum requirements for Star Citizen!"
+    #debug_print continue "A custom wine runner will be automatically downloaded and used."
 
-        # Install the default wine runner into the prefix
-        download_wine
-        # Make sure the wine download worked
-        if [ "$?" -eq 1 ]; then
-            message error "Something went wrong while installing ${default_runner}!\nGame installation cannot proceed."
-            return 1
-        fi
+    debug_print continue "Installing a custom wine runner..."
 
-        wine_path="$install_dir/runners/$downloaded_item_name/bin"
+    download_dirs=("wine" "$install_dir/runners")
+
+    # Install the default wine runner into the prefix
+    download_wine
+    # Make sure the wine download worked
+    if [ "$?" -eq 1 ]; then
+        message error "Something went wrong while installing ${default_runner}!\nGame installation cannot proceed."
+        return 1
     fi
+
+    wine_path="$install_dir/runners/$downloaded_item_name/bin"
+    #fi #### Note: End of previous if statement commented out due to new EAC requirements
 
     # Download winetricks
     download_winetricks
@@ -2389,6 +2396,7 @@ Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Robert
         message warning "Warning: The .desktop file could not be created!\n\n$localshare_desktop_file"
     fi
 
+    debug_print continue "Installation finished"
     message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
 }
 
