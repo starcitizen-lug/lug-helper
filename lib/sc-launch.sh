@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# This script configures and launches Star Citizen.
-# It is installed by the LUG Helper for a non-Lutris installation.
+# This script launches Star Citizen using Wine.
+# It is meant to be used after installation via the LUG Helper.
 #
 # The following .desktop files are added by wine during installation and then
 # modified by the LUG Helper to call this script.
