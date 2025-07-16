@@ -2398,7 +2398,7 @@ Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Robert
     fi
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, run the following launch script in a terminal\nEdit the environment variables in the script as needed:\n     $installed_launch_script\n\nYou may also start the RSI Launcher using the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file"
+    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nImportant:\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change that path!"
 }
 
 # MARK: download_wine()
