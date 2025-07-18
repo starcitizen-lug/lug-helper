@@ -1474,15 +1474,31 @@ download_install() {
     # the download_select_install function
     case "$download_filename" in
         *.tar.gz)
+            if [ ! -x "$(command -v gzip)" ]; then
+                message error "gzip does not appear to be installed. Unable to extract the requested archive."
+                return 1
+            fi
             download_basename="$(basename "$download_filename" .tar.gz)"
             ;;
         *.tgz)
+            if [ ! -x "$(command -v gzip)" ]; then
+                message error "gzip does not appear to be installed. Unable to extract the requested archive."
+                return 1
+            fi
             download_basename="$(basename "$download_filename" .tgz)"
             ;;
         *.tar.xz)
+            if [ ! -x "$(command -v xz)" ]; then
+                message error "xz does not appear to be installed. Unable to extract the requested archive."
+                return 1
+            fi
             download_basename="$(basename "$download_filename" .tar.xz)"
             ;;
         *.tar.zst)
+            if [ ! -x "$(command -v zstd)" ]; then
+                message error "zstd does not appear to be installed. Unable to extract the requested archive."
+                return 1
+            fi
             download_basename="$(basename "$download_filename" .tar.zst)"
             ;;
         *)
