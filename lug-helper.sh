@@ -145,7 +145,7 @@ runner_sources=(
 
 # Set the default runner to install when the system wine doesn't meet requirements
 # default_runner_source corresponds to an EVEN NUMBER index in runner_sources above
-default_runner="lug-wine-tkg-fsync-git-10.12.tar.zst"
+default_runner="lug-wine-tkg-fsync-git-10.12.tar.gz"
 default_runner_source=0
 
 ######## Requirements ######################################################
