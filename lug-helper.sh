@@ -2390,6 +2390,7 @@ install_game_wine() {
 Name=RSI Launcher
 Type=Application
 Comment=RSI Launcher
+Keywords=Star Citizen;StarCitizen
 Icon=rsi-launcher.png
 Exec=\"$installed_launch_script\"
 Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$localshare_desktop_file"
