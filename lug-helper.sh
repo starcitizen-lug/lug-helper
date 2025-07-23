@@ -2150,17 +2150,32 @@ display_dirs() {
 
     # Helper configs and keybinds
     if [ -d "$conf_dir/$conf_subdir" ]; then
-        dirs_list+="Helper configuration:\n$conf_dir/$conf_subdir\n\n"
+        dir_path="$conf_dir/$conf_subdir"
+        if [ "$use_zenity" -eq 1 ]; then
+            dirs_list+="Helper configuration:\n<a href='file://$dir_path'>$dir_path</a>\n\n"
+        else
+            dirs_list+="Helper configuration:\n$dir_path\n\n"
+        fi
     fi
 
     # Wine prefix
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dirs_list+="Wine prefix:\n$(cat "$conf_dir/$conf_subdir/$wine_conf")\n\n"
+        dir_path="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+        if [ "$use_zenity" -eq 1 ]; then
+            dirs_list+="Wine prefix:\n<a href='file://$dir_path'>$dir_path</a>\n\n"
+        else
+            dirs_list+="Wine prefix:\n$dir_path\n\n"
+        fi
     fi
 
     # Star Citizen installation
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
-        dirs_list+="Star Citizen game directory:\n$(cat "$conf_dir/$conf_subdir/$game_conf")\n\n"
+        dir_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
+        if [ "$use_zenity" -eq 1 ]; then
+            dirs_list+="Star Citizen game directory:\n<a href='file://$dir_path'>$dir_path</a>\n\n"
+        else
+            dirs_list+="Star Citizen game directory:\n$dir_path\n\n"
+        fi
     fi
 
     # Format the info header
