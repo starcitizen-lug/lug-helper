@@ -424,22 +424,22 @@ progress_bar() {
 
     if [ "$1" = "start" ]; then
         # If another progress bar is already running, do nothing
-        if [ -n "$progressbar_pid" ]; then
+        if [ -f "$tmp_dir/zenity_progress_bar_running" ]; then
             debug_print continue "Script error:  A progress_bar function instance is already running, but a new progress bar was called. This is not handled."
             return 0
         fi
 
-        # Show a zenity pulsating progress bar and get its process ID to kill when we're done
-        while true; do
+        # Show a zenity pulsating progress bar and use a temp file to track it inside the subshell
+        touch "$tmp_dir/zenity_progress_bar_running"
+        while [ -f "$tmp_dir/zenity_progress_bar_running" ]; do
             sleep 1
         done | zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="$2" 2>/dev/null &
-        progressbar_pid="$!"
+        
         trap 'progress_bar stop' SIGINT # catch sigint to cleanly kill the zenity progress window
     elif [ "$1" = "stop" ]; then
-        # Kill the zenity progress window
-        kill "$progressbar_pid" 2>/dev/null
+        # Stop the zenity progress window
+        rm --interactive=never "$tmp_dir/zenity_progress_bar_running" 2>/dev/null
         trap - SIGINT # Remove the trap
-        unset progressbar_pid # Reset the PID variable
     else
         debug_print exit "Script error:  The progress_bar function expects either 'start' or 'stop' as the first argument. Aborting."
     fi
