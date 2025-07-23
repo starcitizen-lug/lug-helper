@@ -397,6 +397,54 @@ message() {
     fi
 }
 
+# MARK: progress_bar()
+# Display a zenity progress bar that pulsates until its PID is killed.
+# Takes a start or a stop argument, followed by a message string.
+# 
+# To call this function, use the following format: progress_bar [start|stop] "[string]".
+# The first string argument should be either "start" or "stop".
+# If "start" is specified, a second string argument contains the text to display to the user.
+# If "stop" is specified, no second argument is used and the progress bar's PID is killed.
+#
+# This function does not verify whether or not start was called before stop.
+progress_bar() {
+    # This function expects at least one string argument
+    if [ -z "$1" ]; then
+        debug_print exit "Script error:  The progress_bar function expects at least one string argument. Aborting."
+    fi
+    # If the first argument is start, a second argument is required
+    if [ "$1" = "start" ] && [ -z "$2" ]; then
+        debug_print exit "Script error:  The progress_bar function expects a second string argument when starting the progress bar. Aborting."
+    fi
+
+    # Don't do anything if not using zenity
+    if [ "$use_zenity" -eq 0 ]; then
+        return 0
+    fi
+
+    if [ "$1" = "start" ]; then
+        # If another progress bar is already running, do nothing
+        if [ -n "$progressbar_pid" ]; then
+            debug_print continue "Script error:  A progress_bar function instance is already running, but a new progress bar was called. This is not handled."
+            return 0
+        fi
+
+        # Show a zenity pulsating progress bar and get its process ID to kill when we're done
+        while true; do
+            sleep 1
+        done | zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="$2" 2>/dev/null &
+        progressbar_pid="$!"
+        trap 'progress_bar stop' SIGINT # catch sigint to cleanly kill the zenity progress window
+    elif [ "$1" = "stop" ]; then
+        # Kill the zenity progress window
+        kill "$progressbar_pid" 2>/dev/null
+        trap - SIGINT # Remove the trap
+        unset progressbar_pid # Reset the PID variable
+    else
+        debug_print exit "Script error:  The progress_bar function expects either 'start' or 'stop' as the first argument. Aborting."
+    fi
+}
+
 # MARK: menu()
 # Display a menu to the user.
 # Uses Zenity for a gui menu with a fallback to plain old text.
@@ -2296,22 +2344,19 @@ install_game_wine() {
     export WINEPREFIX="$install_dir"
     export WINEDLLOVERRIDES="dxwebsetup.exe,dotNetFx45_Full_setup.exe,winemenubuilder.exe=d"
 
-    # Show a zenity pulsating progress bar and get its process ID to kill when we're done
-    while true; do
-        sleep 1
-    done | zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Preparing Wine prefix and installing RSI Launcher. Please wait..." 2>/dev/null &
-    zenity_pid="$!"
-    trap 'kill "$zenity_pid"; trap - SIGINT' SIGINT
+    # Show a zenity pulsating progress bar
+    progress_bar start "Preparing Wine prefix and installing RSI Launcher. Please wait..."
 
     debug_print continue "Preparing Wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
 
     if [ "$?" -eq 1 ]; then
+        "$wine_path"/wineserver -k # Kill all wine processes
+        progress_bar stop # Stop the zenity progress window
         if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
-        "$wine_path"/wineserver -k
         return 1
     fi
 
@@ -2322,21 +2367,19 @@ install_game_wine() {
     debug_print continue "Installing RSI Launcher. Please wait; this will take a moment..."
     "$wine_path"/wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
-    if [ "$?" -eq 1 ]; then
+    if [ "$?" -eq 1 ] || [ "$?" -eq 58 ]; then
         # User cancelled or there was an error
+        "$wine_path"/wineserver -k # Kill all wine processes
+        progress_bar stop # Stop the zenity progress window
         if message question "Installation aborted. The install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
-        kill "$zenity_pid" 2>/dev/null
-        trap - SIGINT # Remove the trap
-        "$wine_path"/wineserver -k
         return 0
     fi
 
-    # Kill the zenity progress window
-    kill "$zenity_pid" 2>/dev/null
-    trap - SIGINT # Remove the trap
+    # Stop the zenity progress window
+    progress_bar stop
 
     # Kill the wine process after installation
     # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
