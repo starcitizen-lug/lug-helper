@@ -2532,9 +2532,19 @@ install_powershell() {
 
     # Install powershell
     if [ "$?" -ne 1 ]; then
+        # Show a zenity pulsating progress bar
+        progress_bar start "Installing PowerShell. Please wait..."
+
         debug_print continue "Installing PowerShell into ${wine_prefix}..."
         WINEPREFIX="$wine_prefix" "$winetricks_bin" -q powershell
-        message info "PowerShell operation complete. See terminal output for details."
+
+        if [ "$?" -eq 1 ] || [ "$?" -eq 130 ]; then
+            progress_bar stop # Stop the zenity progress window
+            message warning "PowerShell could not be installed. See terminal output for details."
+        else
+            progress_bar stop # Stop the zenity progress window
+            message info "PowerShell operation complete. See terminal output for details."
+        fi
     fi
 }
 
@@ -2555,9 +2565,19 @@ dxvk_update_wine() {
 
     # Update dxvk
     if [ "$?" -ne 1 ]; then
+        # Show a zenity pulsating progress bar
+        progress_bar start "Updating DXVK. Please wait..."
+
         debug_print continue "Updating DXVK in ${wine_prefix}..."
         WINEPREFIX="$wine_prefix" "$winetricks_bin" -f dxvk
-        message info "DXVK update complete. See terminal output for details."
+
+        if [ "$?" -eq 1 ] || [ "$?" -eq 130 ]; then
+            progress_bar stop # Stop the zenity progress window
+            message warning "DXVK could not be installed. See terminal output for details."
+        else
+            progress_bar stop # Stop the zenity progress window
+            message info "DXVK update complete. See terminal output for details."
+        fi
     fi
 }
 
