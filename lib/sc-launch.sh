@@ -17,7 +17,7 @@
 # If you do not wish to use the above .desktop files, simply run this script
 # from your terminal.
 #
-# version: 1.7
+# version: 1.8
 ################################################################################
 
 ################################################################
@@ -29,7 +29,6 @@ launch_log="$WINEPREFIX/sc-launch.log"
 
 export WINEDLLOVERRIDES=winemenubuilder.exe=d # Prevent updates from overwriting our .desktop entries
 export WINEDEBUG=-all # Cut down on console debug messages
-
 # Nvidia cache options
 export __GL_SHADER_DISK_CACHE=1
 export __GL_SHADER_DISK_CACHE_SIZE=10737418240
@@ -38,6 +37,9 @@ export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1
 # Mesa (AMD/Intel) shader cache options
 export MESA_SHADER_CACHE_DIR="$WINEPREFIX"
 export MESA_SHADER_CACHE_MAX_SIZE="10G"
+# Performance options
+export WINEESYNC=1
+export WINEFSYNC=1
 # Optional HUDs
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
