@@ -18,3 +18,7 @@ With the above project goals in mind, please consider the following guidelines w
 - Where possible, code should be written to be easy to understand by someone who is moderately competent with shell script.
 - Avoid overly simplified one-liners that are difficult to parse. Break it up.
 - Please comment your code!
+
+--- 
+❤️ Many thanks to everyone who has contributed Pull Requests and Issue Reports!  
+You can view commit graphs for the wiki's contributors [here](https://github.com/starcitizen-lug/lug-helper/graphs/contributors).
