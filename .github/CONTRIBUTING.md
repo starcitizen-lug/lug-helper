@@ -1,17 +1,17 @@
-# Contributors' Guide
-## Project Goals
+# Contributor's Guide
+### Project Goals
 The LUG Helper is a purpose-built bash script for the [Star Citizen Linux Users Group](https://wiki.starcitizen-lug.org/). Our community is a diverse group of Penguins running many differnet Linux distros on all kinds of hardware. As such, ease of use and compatibility are primary focuses of the project.
 
 The Helper is designed to be easy and intuitive for novice Penguins who may be using Linux for the very first time. It clearly communicates to the user what is being done and aims to provide working defaults without overwhelming the user with too many unnecessary choices.
 
-## Pull Request Guidelines
+### Pull Request Guidelines
 With the above project goals in mind, please consider the following guidelines when submitting Pull Requests:
 - Avoid overwhelming the user with choices and, instead, provide defaults that "Just Work".
 - Any messages or options presented to the user should be clear and concise.
 - The Helper should not make any changes to the user's system without first asking or notifying the user.
 - Avoid duplicating code. Make use of the existing helper functions. See Code Structure and Overview below.
 
-## Code Syntax and Formatting Guidelines
+### Code Syntax and Formatting Guidelines
 - Match existing code styling and syntax for consistency and legibility.
 - Stick to POSIX-compliant code where possible for portability.
 - Where bashisms are necessary for functionality or because they vastly simplify code maintenance, check in which bash version the feature was introduced to make sure the code will work on older LTS distros.
@@ -21,7 +21,7 @@ With the above project goals in mind, please consider the following guidelines w
 
 
 # Code Structure and Overview
-The following is a high level overview of the Helper's functions as of LUG Helper Version 4.3
+What follows is a high level overview of the Helper's functions as of LUG Helper Version 4.3
 
 ## Setup
 The setup portion at the top of the script:
