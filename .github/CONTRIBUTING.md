@@ -20,5 +20,5 @@ With the above project goals in mind, please consider the following guidelines w
 - Please comment your code!
 
 --- 
-❤️ Many thanks to everyone who has contributed Pull Requests and Issue Reports!  
+❤️ Many thanks to everyone who has contributed to the project!  
 You can view commit graphs for the Helper's contributors [here](https://github.com/starcitizen-lug/lug-helper/graphs/contributors).
