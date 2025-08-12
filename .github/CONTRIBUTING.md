@@ -9,14 +9,14 @@ With the above project goals in mind, please consider the following guidelines w
 - Avoid overwhelming the user with choices and, instead, provide defaults that "Just Work".
 - Any messages or options presented to the user should be clear and concise.
 - The Helper should not make any changes to the user's system without first asking or notifying the user.
-- Avoid duplicating code. Make use of the existing helper functions. See Code Structure and Overview below.
+- Avoid duplicating code. Make use of the existing helper functions. See [Code Structure and Overview](#code-structure-and-overview) below.
 
 ### Code Syntax and Formatting Guidelines
 - Match existing code styling and syntax for consistency and legibility.
 - Stick to POSIX-compliant code where possible for portability.
 - Where bashisms are necessary for functionality or because they vastly simplify code maintenance, check in which bash version the feature was introduced to make sure the code will work on older LTS distros.
 - Where possible, code should be written to be easy to understand by someone who is moderately competent with shell script.
-- Avoid simplifications and one-liners that add complexity and are difficult to parse.
+- Avoid overly simplified one-liners that are difficult to parse. Break it up.
 - Please comment your code!
 
 
