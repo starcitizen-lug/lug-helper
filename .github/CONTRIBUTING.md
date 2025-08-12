@@ -13,9 +13,9 @@ With the above project goals in mind, please consider the following guidelines w
 
 ### Code Syntax and Formatting Guidelines
 - Match existing code styling and syntax for consistency and legibility.
-- Stick to POSIX-compliant code where possible for portability.
-- Where bashisms are necessary for functionality or because they vastly simplify code maintenance, check in which bash version the feature was introduced to make sure the code will work on older LTS distros.
-- Where possible, code should be written to be easy to understand by someone who is moderately competent with shell script.
+- Use POSIX-compliant code where possible for portability.
+- Where non-POSIX, bash-specific syntax is necessary for functionality or because it vastly simplifies code maintenance, check in which bash version the feature was introduced. Verify that the syntax will work on LTS distros.
+- Where possible, code should be easy to understand by someone moderately competent with shell script.
 - Avoid overly simplified one-liners that are difficult to parse. Break it up.
 - Please comment your code!
 
