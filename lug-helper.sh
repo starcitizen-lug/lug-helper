@@ -1260,6 +1260,7 @@ runner_manage_wine() {
     # Set the value of the above variable that will be restored after a runner is deleted
     # In this case, we want to revert to calling system wine
     post_delete_restore_value="$(command -v wine | xargs dirname)"
+    post_delete_restore_value="${post_delete_restore_value:-/usr/bin}" # default to /usr/bin if empty
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -2064,6 +2065,7 @@ update_launcher() {
         # If wine_path is empty, it may be an older version of the launch script. Default to system wine
         if [ -z "$bak_winepath" ]; then
             bak_winepath="$(command -v wine | xargs dirname)"
+            bak_winepath="${bak_winepath:-/usr/bin}" # default to /usr/bin if still empty
         fi
 
         # Copy in the new launch script
