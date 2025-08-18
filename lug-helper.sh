@@ -2443,6 +2443,8 @@ install_game_wine() {
     home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
     # $HOME/.local/share/applications/RSI Launcher.desktop
     localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
+    # $HOME/Games/star-citizen/RSI Launcher.desktop
+    prefix_desktop_file="$install_dir/RSI Launcher.desktop"
 
     echo "[Desktop Entry]
 Name=RSI Launcher
@@ -2457,6 +2459,8 @@ Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Robert
 
     # Copy the new desktop file to the user's desktop directory
     cp "$localshare_desktop_file" "$home_desktop_file"
+    # Copy the new desktop file to the user's prefix directory as a backup alongside the launch script
+    cp "$localshare_desktop_file" "$prefix_desktop_file"
 
     # Update the .desktop file database if the command is available
     if [ -x "$(command -v update-desktop-database)" ]; then
