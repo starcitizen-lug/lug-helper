@@ -2452,12 +2452,12 @@ StartupNotify=true
 StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher.png
 Exec=\"$installed_launch_script\"
-Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$localshare_desktop_file"
+Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$prefix_desktop_file"
 
     # Copy the new desktop file to the user's desktop directory
-    cp "$localshare_desktop_file" "$home_desktop_file"
+    cp "$prefix_desktop_file" "$home_desktop_file"
     # Copy the new desktop file to the user's prefix directory as a backup alongside the launch script
-    cp "$localshare_desktop_file" "$prefix_desktop_file"
+    cp "$prefix_desktop_file" "$localshare_desktop_file"
 
     # Update the .desktop file database if the command is available
     if [ -x "$(command -v update-desktop-database)" ]; then
