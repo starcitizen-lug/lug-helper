@@ -74,17 +74,6 @@ case "$1" in
 esac
 
 #############################################
-# Run optional prelaunch and postexit scripts
-#############################################
-# To use, update the game install paths here, create the scripts with your
-# desired actions in them, then place them in your prefix directory:
-# sc-prelaunch.sh and sc-postexit.sh
-# Replace the trap line in the section below with the example provided here
-#
-# "$WINEPREFIX/sc-prelaunch.sh"
-# trap "update_check; \"$wine_path\"/wineserver -k; \"$WINEPREFIX\"/sc-postexit.sh" EXIT
-
-#############################################
 # It's a trap!
 #############################################
 # Kill the wine prefix when this script exits
