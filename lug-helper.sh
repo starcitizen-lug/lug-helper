@@ -778,7 +778,7 @@ preflight_check() {
     fi
 
     # Call the optimization functions to perform the checks
-    wine_check
+    #wine_check # Disabled for now. Wine dependencies may not be needed anymore with the lug-wine runners.
     memory_check
     avx_check
     mapcount_check
@@ -2223,11 +2223,6 @@ reset_helper() {
 # MARK: install_game_wine()
 # Install the game with Wine
 install_game_wine() {
-    # Double check that wine is installed
-    if [ ! -x "$(command -v wine)" ]; then
-        message error "Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki"
-        return 1
-    fi
     # Check if the install script exists
     if [ ! -f "$wine_launch_script" ]; then
         message error "Game launch script not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
