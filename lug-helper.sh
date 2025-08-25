@@ -2001,7 +2001,7 @@ maintenance_menu() {
 
         # Configure the menu options
         prefix_msg="Target a different Star Citizen installation"
-        launcher_msg="Update launch script"
+        launcher_msg="Update/Repair launch script"
         launchscript_msg="Edit launch script"
         config_msg="Open Wine prefix configuration"
         controllers_msg="Open Wine controller configuration"
@@ -2059,39 +2059,57 @@ update_launcher() {
         return 1
     fi
 
+    # Get launch script version info
     current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
     latest_launcher_ver="$(grep "^# version:" $wine_launch_script | awk '{print $3}')"
 
+    # Get some path variables from the existing launch script
+    launch_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+    launch_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+
     if [ "$latest_launcher_ver" != "$current_launcher_ver" ] &&
        [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$latest_launcher_ver" | sort -V | head -n1)" ]; then
+        # The launch script is out of date and needs to be updated
 
         # Backup the file
         cp "$wine_prefix/$wine_launch_script_name" "$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
 
-        # Backup the variables we know we need
-        bak_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}')"
-        bak_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}')"
-
         # If wineprefix isn't found in the file, something is wrong and we shouldn't proceed
-        if [ -z "$bak_wineprefix" ]; then
+        if [ -z "$launch_wineprefix" ]; then
             message error "The WINEPREFIX env var was not found in your launch script. Unable to proceed!\n\n$wine_prefix/$wine_launch_script_name"
             return 1
         fi
 
         # If wine_path is empty, it may be an older version of the launch script. Default to system wine
-        if [ -z "$bak_winepath" ]; then
-            bak_winepath="$(command -v wine | xargs dirname)"
-            bak_winepath="${bak_winepath:-/usr/bin}" # default to /usr/bin if still empty
+        if [ -z "$launch_winepath" ]; then
+            launch_winepath="$(command -v wine | xargs dirname)"
+            launch_winepath="${launch_winepath:-/usr/bin}" # default to /usr/bin if still empty
         fi
 
         # Copy in the new launch script
         cp "$wine_launch_script" "$wine_prefix"
 
-        # Restore the variables
-        sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=$bak_wineprefix|" "$wine_prefix/$wine_launch_script_name"
-        sed -i "s#^export wine_path=.*#export wine_path=$bak_winepath#" "$wine_prefix/$wine_launch_script_name"
+        # Restore the wine prefix variable
+        if [ "$launch_wineprefix" != "$wine_prefix" ]; then
+            # Offer to fix an incorrectly referenced wine prefix
+            if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launch_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
+                sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
+            fi
+        else
+            # Restore the backed up prefix variable if the user doesn't want to change it
+            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$launch_wineprefix\"|" "$wine_prefix/$wine_launch_script_name"
+        fi
+
+        # Restore the wine path variable
+        sed -i "s#^export wine_path=.*#export wine_path=\"$launch_winepath\"#" "$wine_prefix/$wine_launch_script_name"
 
         message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
+    elif [ "$launch_wineprefix" != "$wine_prefix" ]; then
+        # The launch script is the correct version, but the current prefix is pointing to the wrong location
+        if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launch_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
+            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
+            message info "Your game launch script has been repaired!"
+        fi
     else
         message info "Your game launch script is already up to date!"
     fi
