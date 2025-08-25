@@ -177,10 +177,10 @@ memory_combined_required="40"
 ######## Links / Versions ##################################################
 
 # LUG Wiki
-lug_wiki="https://starcitizen-lug.github.io"
+lug_wiki="https://wiki.starcitizen-lug.org"
 
 # NixOS section in Wiki
-lug_wiki_nixos="https://github.com/starcitizen-lug/knowledge-base/wiki/Tips-and-Tricks#nixos"
+lug_wiki_nixos="https://wiki.starcitizen-lug.org/Tips-and-Tricks#nixos"
 
 # RSI Installer version and url
 rsi_installer="RSI Launcher-Setup-2.7.1.exe"
