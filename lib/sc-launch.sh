@@ -17,13 +17,13 @@
 # If you do not wish to use the above .desktop files, simply run this script
 # from your terminal.
 #
-# version: 1.8
+# version: 1.9
 ################################################################################
 
-################################################################
+################################################################################
 # Configure the environment
 # Add additional environment variables here as needed
-################################################################
+################################################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
 launch_log="$WINEPREFIX/sc-launch.log"
 
@@ -44,17 +44,17 @@ export WINEFSYNC=1
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
-################################################################
+################################################################################
 # Configure the wine binaries to be used
 #
 # To use a custom wine runner, set the path to its bin directory
 # export wine_path="/path/to/custom/runner/bin"
-################################################################
+################################################################################
 export wine_path="$(command -v wine | xargs dirname)"
 
-#############################################
+################################################################################
 # Command line arguments
-#############################################
+################################################################################
 # shell - Drop into a Wine maintenance shell
 # config - Wine configuration
 # controllers - Game controller configuration
@@ -73,21 +73,20 @@ case "$1" in
         ;;
 esac
 
-#############################################
-# It's a trap!
-#############################################
-# Kill the wine prefix when this script exits
-# This makes sure there will be no lingering background wine processes
+################################################################################
+# Update check and cleanup
+# Kill existing wine processes before launch
+################################################################################
 update_check() {
     while "$wine_path"/winedbg --command "info proc" | grep -qi "rsi.*setup"; do
-        sleep 2
+        echo "RSI Setup process detected. Exiting."; exit 0
     done
 }
-trap "update_check; \"$wine_path\"/wineserver -k" EXIT
+"$wine_path"/wineserver -k
 
-#############################################
+################################################################################
 # Launch the game
-#############################################
+################################################################################
 # To enable feral gamemode, replace the launch line below with:
 # gamemoderun "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
 #
