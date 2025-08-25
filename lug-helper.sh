@@ -2436,12 +2436,12 @@ install_game_wine() {
         cp "$rsi_icon" "$data_dir/icons/hicolor/256x256/apps"
     fi
 
-    # $HOME/Desktop/RSI Launcher.desktop
-    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
-    # $HOME/.local/share/applications/RSI Launcher.desktop
-    localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
     # $HOME/Games/star-citizen/RSI Launcher.desktop
     prefix_desktop_file="$install_dir/RSI Launcher.desktop"
+    # $HOME/.local/share/applications/RSI Launcher.desktop
+    localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
+    # $HOME/Desktop/RSI Launcher.desktop
+    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
 
     echo "[Desktop Entry]
 Name=RSI Launcher
@@ -2452,12 +2452,15 @@ StartupNotify=true
 StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher.png
 Exec=\"$installed_launch_script\"
-Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$localshare_desktop_file"
+Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$prefix_desktop_file"
 
+    # Copy the new desktop file to ~/.local/share/applications
+    mkdir -p "$data_dir/applications"
+    cp "$prefix_desktop_file" "$localshare_desktop_file"
     # Copy the new desktop file to the user's desktop directory
-    cp "$localshare_desktop_file" "$home_desktop_file"
-    # Copy the new desktop file to the user's prefix directory as a backup alongside the launch script
-    cp "$localshare_desktop_file" "$prefix_desktop_file"
+    if [ -d "$(dirname "$home_desktop_file")" ]; then
+        cp "$prefix_desktop_file" "$home_desktop_file"
+    fi
 
     # Update the .desktop file database if the command is available
     if [ -x "$(command -v update-desktop-database)" ]; then
