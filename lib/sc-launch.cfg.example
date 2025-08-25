@@ -1,0 +1,17 @@
+#############################################
+# Instructions:
+# - Copy this file into your prefix directory and name it `sc-launch.cfg`;
+#   for example `$WINEPREFIX/sc-launch.cfg`.
+# - Edit the settings below to suit your personal system.
+#
+# Values:
+# - `USE_*` = `y` to Enable or `n` to Disable.
+# - `*_ARGS` = Space-separated argument list.
+#############################################
+
+# GameMode:
+USE_GAMEMODE=y
+
+# Gamescope:
+USE_GAMESCOPE=y
+GAMESCOPE_ARGS="--hdr-enabled -W 2560 -H 1440 --force-grab-cursor"

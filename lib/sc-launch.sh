@@ -87,7 +87,28 @@ update_check() {
 ################################################################################
 # Launch the game
 ################################################################################
-# To enable gamescope, replace the launch line below. For example:
-# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
+# Load user configuration (if found; optional).
+# To use your own custom configuration, please look at "sc-launch.cfg.example".
+cfg_file="$WINEPREFIX/sc-launch.cfg"
+if [ -f "$cfg_file" ]; then
+    source "$cfg_file"
+fi
 
-"$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
+# Build dynamic launch command based on user's configuration.
+declare -a launch_cmd=()
+
+if [ "${USE_GAMEMODE:-}" = "y" ]; then
+    launch_cmd+=("gamemoderun")
+fi
+
+if [ "${USE_GAMESCOPE:-}" = "y" ]; then
+    launch_cmd+=("gamescope")
+    if [ -n "${GAMESCOPE_ARGS:-}" ]; then
+        launch_cmd+=(${GAMESCOPE_ARGS})
+    fi
+fi
+
+launch_cmd+=("$wine_path/wine")
+launch_cmd+=("C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe")
+
+"${launch_cmd[@]}" > "$launch_log" 2>&1
