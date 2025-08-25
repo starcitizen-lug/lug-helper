@@ -14,11 +14,11 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 ## Options
 
 `Preflight Check`
-- Runs a series of system optimization checks and offers to fix any issues.
-  - Checks that vm.max_map_count is set to at least 16777216.
-    - This sets the maxmimum number of "memory map areas" a process can have. While most applications need less than a thousand maps, Star Citizen requires access to more.
-  - Checks that the hard open file descriptors limit is set to at least 524288.
-    - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen.
+- Runs a series of system optimization checks and offers to fix any issues
+  - Checks that vm.max_map_count is set to at least 16777216
+    - This sets the maxmimum number of "memory map areas" a process can have. While most applications need less than a thousand maps, Star Citizen requires access to more
+  - Checks that the hard open file descriptors limit is set to at least 524288
+    - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen
 
 `Install Star Citizen`
 - Installs Star Citizen using Wine
@@ -33,8 +33,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Target a different Star Citizen installation`
   - Select a different wine prefix for the Helper to target in its operations
 
-- `Update launch script`
-  - Update the game launch script to the latest version
+- `Update/Repair launch script`
+  - Update the game launch script to the latest version or repair broken paths
 
 - `Edit launch script`
   - Edit the game launch script
@@ -49,13 +49,13 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Uses winetricks to install PowerShell
 
 - `Display Helper and Star Citizen directories`
-  - Show all the directories currently in use by both the Helper and Star Citizen.
+  - Show all the directories currently in use by both the Helper and Star Citizen
 
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
 
 `Get a random Penguin's Star Citizen referral code`
-- Display a referral code for a random member of the Star Citizen Linux Users Group.
+- Display a referral code for a random member of the Star Citizen Linux Users Group
 
 
 
