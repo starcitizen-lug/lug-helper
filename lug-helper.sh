@@ -2298,16 +2298,22 @@ install_game_wine() {
                     return 1
                 fi
 
+                # Make sure we're not installing over an existing prefix
+                if [ -d "$install_dir/star-citizen" ]; then
+                    message warning "A directory named \"star-citizen\" already exists!\nPlease choose a different install location.\n\n$install_dir"
+                    continue
+                fi
+
+                # Make sure the directory is empty
+                if [ "$(ls -A "$install_dir" 2>/dev/null)" ]; then
+                    message warning "The chosen directory is not empty!\nPlease choose a different install location.\n\n$install_dir"
+                    continue
+                fi
+
                 # Add the wine prefix subdirectory to the install path
                 install_dir="$install_dir/star-citizen"
 
-                # Sanity check the chosen directory a bit to catch some possible mistakes
-                if [ -d "$install_dir" ]; then
-                    message warning "A directory named \"star-citizen\" already exists!\nPlease choose a different install location.\n\n$install_dir"
-                else
-                    # All good, break out of the loop and continue
-                    break
-                fi
+                break
             done
         else
             # No Zenity, use terminal-based menus
@@ -2325,13 +2331,6 @@ install_game_wine() {
                     break
                 fi
             done
-        fi
-    fi
-
-    if [ "$(ls -A "$install_dir" 2>/dev/null)" ]; then
-        # The directory is not empty, ask the user if they want to continue
-        if ! message options "Cancel" "Continue" "The install directory is not empty!\n\nRe-using an existing wine prefix may result in unexpected behavior!\n\n$install_dir"; then
-            return 1
         fi
     fi
 
