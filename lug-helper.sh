@@ -221,7 +221,8 @@ try_exec() {
             pkexec sh -c "$exec_command"
 
             # Check the exit status
-            if [ "$?" -eq 126 ] || [ "$?" -eq 127 ]; then
+            exit_code="$?"
+            if [ "$exit_code" -eq 126 ] || [ "$exit_code" -eq 127 ]; then
                 # User cancel or error
                 debug_print continue "pkexec returned an error. Falling back to sudo..."
             else
@@ -2413,7 +2414,8 @@ install_game_wine() {
     debug_print continue "Installing RSI Launcher. Please wait; this will take a moment..."
     "$wine_path"/wine "$tmp_dir/$rsi_installer" /S >>"$tmp_install_log" 2>&1
 
-    if [ "$?" -eq 1 ] || [ "$?" -eq 58 ]; then
+    exit_code="$?"
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 58 ]; then
         # User cancelled or there was an error
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
@@ -2593,7 +2595,8 @@ install_powershell() {
         debug_print continue "Installing PowerShell into ${wine_prefix}..."
         WINEPREFIX="$wine_prefix" "$winetricks_bin" -q powershell
 
-        if [ "$?" -eq 1 ] || [ "$?" -eq 130 ]; then
+        exit_code="$?"
+        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ]; then
             progress_bar stop # Stop the zenity progress window
             message warning "PowerShell could not be installed. See terminal output for details."
         else
@@ -2626,7 +2629,8 @@ dxvk_update_wine() {
         debug_print continue "Updating DXVK in ${wine_prefix}..."
         WINEPREFIX="$wine_prefix" "$winetricks_bin" -f dxvk
 
-        if [ "$?" -eq 1 ] || [ "$?" -eq 130 ]; then
+        exit_code="$?"
+        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ]; then
             progress_bar stop # Stop the zenity progress window
             message warning "DXVK could not be installed. See terminal output for details."
         else
