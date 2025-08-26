@@ -87,7 +87,4 @@ update_check() {
 ################################################################################
 # Launch the game
 ################################################################################
-# To enable gamescope, replace the launch line below. For example:
-# gamescope --hdr-enabled -W 2560 -H 1440 --force-grab-cursor "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
-
 "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
