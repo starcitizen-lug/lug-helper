@@ -1,29 +1,18 @@
 #!/usr/bin/env bash
 
-################################################################################
 # This script launches Star Citizen using Wine.
 # It is meant to be used after installation via the LUG Helper.
 #
-# The following .desktop files are added by wine during installation and then
-# modified by the LUG Helper to call this script.
-# They are automatically detected by most desktop environments for easy game
-# launching.
-#
-################################################################################
-# $HOME/Desktop/RSI Launcher.desktop
-# $HOME/.local/share/applications/wine/Programs/Roberts Space Industries/RSI Launcher.desktop
-################################################################################
-#
-# If you do not wish to use the above .desktop files, simply run this script
-# from your terminal.
+# Usage:
+# Run from your terminal or use the .desktop files installed by the Helper.
 #
 # version: 1.9
-################################################################################
 
-################################################################################
-# Configure the environment
-# Add additional environment variables here as needed
-################################################################################
+############################################################################
+# ENVIRONMENT VARIABLES
+############################################################################
+# Add additional environment variables to this section as needed
+############################################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
 
 launch_log="$WINEPREFIX/sc-launch.log"
@@ -44,17 +33,20 @@ export WINEFSYNC=1
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
 
-################################################################################
-# Configure the wine binaries to be used
-#
+############################################################################
+# END ENVIRONMENT VARIABLES
+############################################################################
+
+##################
+# Wine binary path
+##################
 # To use a custom wine runner, set the path to its bin directory
 # export wine_path="/path/to/custom/runner/bin"
-################################################################################
 export wine_path="$(command -v wine | xargs dirname)"
 
-################################################################################
+########################
 # Command line arguments
-################################################################################
+########################
 # shell - Drop into a Wine maintenance shell
 # config - Wine configuration
 # controllers - Game controller configuration
@@ -73,10 +65,10 @@ case "$1" in
         ;;
 esac
 
-################################################################################
+###########################
 # Update check and cleanup
+##########################
 # Kill existing wine processes before launch
-################################################################################
 update_check() {
     while "$wine_path"/winedbg --command "info proc" | grep -qi "rsi.*setup"; do
         echo "RSI Setup process detected. Exiting."; exit 0
@@ -84,7 +76,7 @@ update_check() {
 }
 "$wine_path"/wineserver -k
 
-################################################################################
+############################################################################
 # Launch the game
-################################################################################
+############################################################################
 "$wine_path"/wine "C:\Program Files\Roberts Space Industries\RSI Launcher\RSI Launcher.exe" > "$launch_log" 2>&1
