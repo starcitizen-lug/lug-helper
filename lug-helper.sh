@@ -1002,30 +1002,30 @@ avx_check() {
 mapcount_check() {
     mapcount="$(cat /proc/sys/vm/max_map_count)"
     # Add to the results and actions arrays
-    if [ "$mapcount" -ge 16777216 ]; then
+    if [ "$mapcount" -ge 1048576 ]; then
         # All good
         preflight_pass+=("vm.max_map_count is set to $mapcount.")
     elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
         # Was it supposed to have been set by sysctl?
-        preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
+        preflight_fail+=("vm.max_map_count is configured to at least 1048576 but the setting has not been loaded by your system.")
         # Add the function that will be called to change the configuration
         preflight_action_funcs+=("mapcount_once")
 
         # Add info for manually changing the setting
-        preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
+        preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=1048576")
     else
         # The setting should be changed
-        preflight_fail+=("vm.max_map_count is $mapcount\nand should be set to at least 16777216\nto give the game access to sufficient memory.")
+        preflight_fail+=("vm.max_map_count is $mapcount\nand should be set to at least 1048576\nto give the game access to sufficient memory.")
         # Add the function that will be called to change the configuration
         preflight_action_funcs+=("mapcount_set")
 
         # Add info for manually changing the setting
         if [ -d "/etc/sysctl.d" ]; then
             # Newer versions of sysctl
-            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/99-starcitizen-max_map_count.conf' and reload with 'sudo sysctl --system'\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.d/99-starcitizen-max_map_count.conf' and reload with 'sudo sysctl --system'\n    vm.max_map_count = 1048576\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=1048576")
         else
             # Older versions of sysctl
-            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.conf' and reload with 'sudo sysctl -p':\n    vm.max_map_count = 16777216\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=16777216")
+            preflight_manual+=("To change vm.max_map_count permanently, add the following line to\n'/etc/sysctl.conf' and reload with 'sudo sysctl -p':\n    vm.max_map_count = 1048576\n\nOr, to change vm.max_map_count temporarily until next boot, run:\n    sudo sysctl -w vm.max_map_count=1048576")
         fi
     fi
 }
@@ -1035,11 +1035,11 @@ mapcount_check() {
 mapcount_set() {
     if [ -d "/etc/sysctl.d" ]; then
         # Newer versions of sysctl
-        preflight_root_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --quiet --system')
+        preflight_root_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 1048576\n" > /etc/sysctl.d/99-starcitizen-max_map_count.conf && sysctl --quiet --system')
         preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.d/99-starcitizen-max_map_count.conf")
     else
         # Older versions of sysctl
-        preflight_root_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 16777216" >> /etc/sysctl.conf && sysctl -p')
+        preflight_root_actions+=('printf "\n# Added by LUG-Helper:\nvm.max_map_count = 1048576" >> /etc/sysctl.conf && sysctl -p')
         preflight_fix_results+=("The vm.max_map_count configuration has been added to:\n/etc/sysctl.conf")
     fi
 
@@ -1050,7 +1050,7 @@ mapcount_set() {
 # MARK: mapcount_once()
 # Sets vm.max_map_count for the current session only
 mapcount_once() {
-    preflight_root_actions+=('sysctl -w vm.max_map_count=16777216')
+    preflight_root_actions+=('sysctl -w vm.max_map_count=1048576')
     preflight_fix_results+=("vm.max_map_count was changed until the next boot.")
     preflight_followup+=("mapcount_confirm")
 }
@@ -1058,7 +1058,7 @@ mapcount_once() {
 # MARK: mapcount_confirm()
 # Check if setting vm.max_map_count was successful
 mapcount_confirm() {
-    if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
+    if [ "$(cat /proc/sys/vm/max_map_count)" -lt 1048576 ]; then
         preflight_fix_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
     fi
 }
