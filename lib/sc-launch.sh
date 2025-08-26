@@ -12,6 +12,8 @@
 # ENVIRONMENT VARIABLES
 ############################################################################
 # Add additional environment variables to this section as needed
+# Example:
+# export NEW_VARIABLE="value"
 ############################################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
 
