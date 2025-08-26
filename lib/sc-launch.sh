@@ -67,7 +67,7 @@ case "$1" in
         ;;
 esac
 
-###########################
+##########################
 # Update check and cleanup
 ##########################
 # Kill existing wine processes before launch
