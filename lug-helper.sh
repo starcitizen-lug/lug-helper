@@ -2062,7 +2062,7 @@ update_launcher() {
 
     # Get launch script version info
     current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
-    latest_launcher_ver="$(grep "^# version:" $wine_launch_script | awk '{print $3}')"
+    latest_launcher_ver="$(grep "^# version:" "$wine_launch_script" | awk '{print $3}')"
 
     # Get some path variables from the existing launch script
     launch_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
@@ -2488,7 +2488,7 @@ StartupNotify=true
 StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher.png
 Exec=\"$installed_launch_script\"
-Path=$(echo $install_dir | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$prefix_desktop_file"
+Path=$(echo "$install_dir" | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$prefix_desktop_file"
 
     # Copy the new desktop file to ~/.local/share/applications
     mkdir -p "$data_dir/applications"
