@@ -2304,12 +2304,6 @@ install_game_wine() {
                     continue
                 fi
 
-                # Make sure the directory is empty
-                if [ "$(ls -A "$install_dir" 2>/dev/null)" ]; then
-                    message warning "The chosen directory is not empty!\nPlease choose a different install location.\n\n$install_dir"
-                    continue
-                fi
-
                 # Add the wine prefix subdirectory to the install path
                 install_dir="$install_dir/star-citizen"
 
