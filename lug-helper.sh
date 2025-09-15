@@ -2479,9 +2479,8 @@ Comment=RSI Launcher
 Keywords=Star Citizen;StarCitizen
 StartupNotify=true
 StartupWMClass=rsi launcher.exe
-Icon=rsi-launcher.png
-Exec=\"$installed_launch_script\"
-Path=$(echo "$install_dir" | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$prefix_desktop_file"
+Icon=rsi-launcher
+Exec=\"$installed_launch_script\"" > "$prefix_desktop_file"
 
     # Copy the new desktop file to ~/.local/share/applications
     mkdir -p "$data_dir/applications"
