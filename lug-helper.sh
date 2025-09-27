@@ -2391,7 +2391,7 @@ install_game_wine() {
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
 
     exit_code="$?"
-    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 126 ]; then
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
         # 126 = permission denied (ie. noexec on /tmp)
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
@@ -2590,7 +2590,7 @@ install_powershell() {
         WINEPREFIX="$wine_prefix" "$winetricks_bin" -q powershell
 
         exit_code="$?"
-        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ]; then
+        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
             progress_bar stop # Stop the zenity progress window
             message warning "PowerShell could not be installed. See terminal output for details."
         else
@@ -2624,7 +2624,7 @@ dxvk_update_wine() {
         WINEPREFIX="$wine_prefix" "$winetricks_bin" -f dxvk
 
         exit_code="$?"
-        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ]; then
+        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
             progress_bar stop # Stop the zenity progress window
             message warning "DXVK could not be installed. See terminal output for details."
         else
