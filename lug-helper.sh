@@ -1202,7 +1202,7 @@ download_manage() {
         unset menu_actions
 
         # Initialize success
-        unset download_action_success
+        unset post_download_required
 
         # Loop through the download_sources array and create a menu item
         # for each one. Even numbered elements will contain the item name
@@ -1232,7 +1232,7 @@ download_manage() {
         menu
 
         # Perform post-download actions and display messages or instructions
-        if [ -n "$download_action_success" ] && [ "$post_download_type" != "none" ]; then
+        if [ -n "$post_download_required" ] && [ "$post_download_type" != "none" ]; then
             post_download
         fi
     done
@@ -1663,7 +1663,7 @@ download_install() {
         # Store the final name of the downloaded item
         downloaded_item_name="$download_basename"
         # Mark success for triggering post-download actions
-        download_action_success="installed"
+        post_download_required="installed"
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
@@ -1690,7 +1690,7 @@ download_install() {
         # Store the final name of the downloaded item
         downloaded_item_name="$download_basename"
         # Mark success for triggering post-download actions
-        download_action_success="installed"
+        post_download_required="installed"
     else
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
@@ -1817,16 +1817,31 @@ download_delete() {
     done
 
     if message question "Are you sure you want to delete the following ${download_type}(s)?\n$list_to_delete"; then
+        # Get the current wine runner from the launch script
+        get_current_runner
+        if [ "$?" -ne 1 ]; then
+            current_runner_path="$(dirname "$launcher_winepath")"
+        fi
+
+        unset post_delete_required
+
         # Loop through the arguments
         for (( i=0; i<"${#item_to_delete[@]}"; i++ )); do
             rm -r --interactive=never "${installed_items[${item_to_delete[i]}]}"
             debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
 
+            # If we just deleted the currently used runner, we need to trigger post-delete to update the launch script
+            if [ "${installed_items[${item_to_delete[i]}]}" = "$current_runner_path" ]; then
+                post_delete_required="true"
+            fi
+
             # Store the names of deleted items for post_download() processing
             deleted_item_names+=("${installed_item_names[${item_to_delete[i]}]}")
         done
         # Mark success for triggering post-deletion actions
-        download_action_success="deleted"
+        if [ "$post_delete_required" = "true" ]; then
+            post_download_required="deleted"
+        fi
     fi
 }
 
@@ -1840,7 +1855,7 @@ download_delete() {
 # - post_delete_msg (string)
 # - post_download_sed_string (string. For type configure-wine)
 # - post_delete_restore_value (string. For type configure-wine)
-# - download_action_success (string. Set automatically in install/delete functions)
+# - post_download_required (string. Set automatically in install/delete functions)
 # - downloaded_item_name (string. For installs only. Set automatically in download_install function)
 # - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
 #
@@ -1884,7 +1899,7 @@ post_download() {
             message info "$post_install_msg_heading\n\n$post_install_msg"
     elif [ "$post_download_type" = "configure-wine" ]; then
         # We handle installs and deletions differently
-        if [ "$download_action_success" = "installed" ]; then
+        if [ "$post_download_required" = "installed" ]; then
             # We are installing a wine version and updating the launch script to use it
             if message question "$post_install_msg_heading\n\n$post_install_msg"; then
                 # Make sure we can locate the launch script
@@ -1903,7 +1918,7 @@ post_download() {
             else
                 message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
-        elif [ "$download_action_success" = "deleted" ]; then
+        elif [ "$post_download_required" = "deleted" ]; then
             # We deleted a custom wine version and need to revert the launch script to use the system wine
             if message question "$post_delete_msg"; then
                 # Make sure we can locate the launch script
@@ -1923,7 +1938,7 @@ post_download() {
                 message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
             fi
         else
-            debug_print exit "Script error: Unknown download_action_success value in post_download function. Aborting."
+            debug_print exit "Script error: Unknown post_download_required value in post_download function. Aborting."
         fi
     else
             debug_print exit "Script error: Unknown post_download_type value in post_download function. Aborting."
