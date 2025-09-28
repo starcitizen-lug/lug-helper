@@ -2055,6 +2055,12 @@ switch_prefix() {
 update_launcher() {
     getdirs
 
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message warning "Unable to update launch script."
+        return 0
+    fi
+
     if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
         message warning "Game launch script not found!\n\n$wine_prefix/$wine_launch_script_name"
         return 1
@@ -2065,8 +2071,8 @@ update_launcher() {
     latest_launcher_ver="$(grep "^# version:" "$wine_launch_script" | awk '{print $3}')"
 
     # Get some path variables from the existing launch script
-    launch_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
-    launch_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+    launcher_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+    launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
 
     if [ "$latest_launcher_ver" != "$current_launcher_ver" ] &&
        [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$latest_launcher_ver" | sort -V | head -n1)" ]; then
@@ -2076,38 +2082,38 @@ update_launcher() {
         cp "$wine_prefix/$wine_launch_script_name" "$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
 
         # If wineprefix isn't found in the file, something is wrong and we shouldn't proceed
-        if [ -z "$launch_wineprefix" ]; then
+        if [ -z "$launcher_wineprefix" ]; then
             message error "The WINEPREFIX env var was not found in your launch script. Unable to proceed!\n\n$wine_prefix/$wine_launch_script_name"
             return 1
         fi
 
         # If wine_path is empty, it may be an older version of the launch script. Default to system wine
-        if [ -z "$launch_winepath" ]; then
-            launch_winepath="$(command -v wine | xargs dirname)"
-            launch_winepath="${launch_winepath:-/usr/bin}" # default to /usr/bin if still empty
+        if [ -z "$launcher_winepath" ]; then
+            launcher_winepath="$(command -v wine | xargs dirname)"
+            launcher_winepath="${launcher_winepath:-/usr/bin}" # default to /usr/bin if still empty
         fi
 
         # Copy in the new launch script
         cp "$wine_launch_script" "$wine_prefix"
 
         # Restore the wine prefix variable
-        if [ "$launch_wineprefix" != "$wine_prefix" ]; then
+        if [ "$launcher_wineprefix" != "$wine_prefix" ]; then
             # Offer to fix an incorrectly referenced wine prefix
-            if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launch_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
+            if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
                 sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
             fi
         else
             # Restore the backed up prefix variable if the user doesn't want to change it
-            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$launch_wineprefix\"|" "$wine_prefix/$wine_launch_script_name"
+            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$launcher_wineprefix\"|" "$wine_prefix/$wine_launch_script_name"
         fi
 
         # Restore the wine path variable
-        sed -i "s#^export wine_path=.*#export wine_path=\"$launch_winepath\"#" "$wine_prefix/$wine_launch_script_name"
+        sed -i "s#^export wine_path=.*#export wine_path=\"$launcher_winepath\"#" "$wine_prefix/$wine_launch_script_name"
 
         message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
-    elif [ "$launch_wineprefix" != "$wine_prefix" ]; then
+    elif [ "$launcher_wineprefix" != "$wine_prefix" ]; then
         # The launch script is the correct version, but the current prefix is pointing to the wrong location
-        if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launch_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
+        if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
             sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
             message info "Your game launch script has been repaired!"
         fi
@@ -2566,6 +2572,24 @@ download_winetricks() {
     chmod +x "$winetricks_bin"
 }
 
+# MARK: get_current_runner()
+# Get the wine runner path from the sc-launch.sh script
+# It's expected that getdirs has already been called by the calling function to populate directory variables
+get_current_runner() {
+    # Make sure we can find the launch script
+    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        return 1
+    fi
+
+    # Get the current wine runner path from the launch script
+    launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+
+    # Double check that we found a path in the launch script
+    if [ -z "$launcher_winepath" ]; then
+        return 1
+    fi
+}
+
 # MARK: install_powershell()
 # Install powershell verb into the game's wine prefix
 install_powershell() {
@@ -2581,22 +2605,35 @@ install_powershell() {
     # Update directories
     getdirs
 
-    # Install powershell
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message warning "Unable to install powershell."
+        return 1
+    fi
+
+    # Get the current wine runner from the launch script
+    get_current_runner
     if [ "$?" -ne 1 ]; then
-        # Show a zenity pulsating progress bar
-        progress_bar start "Installing PowerShell. Please wait..."
+        export WINE="$launcher_winepath/wine"
+        export WINESERVER="$launcher_winepath/wineserver"
+    fi
+    # Set the correct wine prefix
+    export WINEPREFIX="$wine_prefix"
 
-        debug_print continue "Installing PowerShell into ${wine_prefix}..."
-        WINEPREFIX="$wine_prefix" "$winetricks_bin" -q powershell
+    # Show a zenity pulsating progress bar
+    progress_bar start "Installing PowerShell. Please wait..."
 
-        exit_code="$?"
-        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
-            progress_bar stop # Stop the zenity progress window
-            message warning "PowerShell could not be installed. See terminal output for details."
-        else
-            progress_bar stop # Stop the zenity progress window
-            message info "PowerShell operation complete. See terminal output for details."
-        fi
+    # Install powershell
+    debug_print continue "Installing PowerShell into ${wine_prefix}..."
+    "$winetricks_bin" -q powershell
+
+    exit_code="$?"
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
+        progress_bar stop # Stop the zenity progress window
+        message warning "PowerShell could not be installed. See terminal output for details."
+    else
+        progress_bar stop # Stop the zenity progress window
+        message info "PowerShell operation complete. See terminal output for details."
     fi
 }
 
@@ -2615,22 +2652,36 @@ dxvk_update_wine() {
     # Update directories
     getdirs
 
-    # Update dxvk
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message warning "Unable to update dxvk."
+        return 1
+    fi
+
+    # Get the current wine runner from the launch script
+    get_current_runner
     if [ "$?" -ne 1 ]; then
-        # Show a zenity pulsating progress bar
-        progress_bar start "Updating DXVK. Please wait..."
+        export WINE="$launcher_winepath/wine"
+        export WINESERVER="$launcher_winepath/wineserver"
+    fi
+    # Set the correct wine prefix
+    export WINEPREFIX="$wine_prefix"
 
-        debug_print continue "Updating DXVK in ${wine_prefix}..."
-        WINEPREFIX="$wine_prefix" "$winetricks_bin" -f dxvk
 
-        exit_code="$?"
-        if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
-            progress_bar stop # Stop the zenity progress window
-            message warning "DXVK could not be installed. See terminal output for details."
-        else
-            progress_bar stop # Stop the zenity progress window
-            message info "DXVK update complete. See terminal output for details."
-        fi
+    # Show a zenity pulsating progress bar
+    progress_bar start "Updating DXVK. Please wait..."
+
+    # Update dxvk
+    debug_print continue "Updating DXVK in ${wine_prefix}..."
+    "$winetricks_bin" -f dxvk
+
+    exit_code="$?"
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
+        progress_bar stop # Stop the zenity progress window
+        message warning "DXVK could not be installed. See terminal output for details."
+    else
+        progress_bar stop # Stop the zenity progress window
+        message info "DXVK update complete. See terminal output for details."
     fi
 }
 
