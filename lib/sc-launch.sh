@@ -6,7 +6,7 @@
 # Usage:
 # Run from your terminal or use the .desktop files installed by the Helper.
 #
-# version: 1.9
+# version: 2.1
 
 ############################################################################
 # ENVIRONMENT VARIABLES
