@@ -2029,7 +2029,7 @@ maintenance_menu() {
         # Set the options to be displayed in the menu
         menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2065,9 +2065,9 @@ switch_prefix() {
     fi
 }
 
-# MARK: update_launcher()
+# MARK: update_launch_script()
 # Update the game launch script if necessary
-update_launcher() {
+update_launch_script() {
     getdirs
 
     if [ "$?" -eq 1 ]; then
@@ -2176,9 +2176,9 @@ call_launch_script()
     "$wine_prefix/$wine_launch_script_name" "$launch_arg"
 }
 
-# MARK: edit_wine_launch_script()
+# MARK: edit_launch_script()
 # Edit the launch script
-edit_wine_launch_script() {
+edit_launch_script() {
     # Get/Set directory paths
     getdirs
     if [ "$?" -eq 1 ]; then
@@ -2842,7 +2842,7 @@ Usage: lug-helper <options>
                 cargs+=("dxvk_update")
                 ;;
             --edit-launch-script | -e )
-                cargs+=("edit_wine_launch_script")
+                cargs+=("edit_launch_script")
                 ;;
             --wine-config | -c )
                 cargs+=("call_launch_script config")
