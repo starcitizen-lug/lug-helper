@@ -2652,9 +2652,9 @@ install_powershell() {
     fi
 }
 
-# MARK: dxvk_update_wine()
+# MARK: dxvk_update()
 # Update dxvk for native wine installs
-dxvk_update_wine() {
+dxvk_update() {
     # Download winetricks
     download_winetricks
 
@@ -2839,7 +2839,7 @@ Usage: lug-helper <options>
                 cargs+=("runner_manage_wine")
                 ;;
             --update-dxvk | -k )
-                cargs+=("dxvk_update_wine")
+                cargs+=("dxvk_update")
                 ;;
             --edit-launch-script | -e )
                 cargs+=("edit_wine_launch_script")
@@ -2942,7 +2942,7 @@ while true; do
     # Set the options to be displayed in the menu
     menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_update_wine" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_update" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
