@@ -2660,7 +2660,7 @@ dxvk_update_wine() {
 
     # Abort if the winetricks download failed
     if [ "$?" -eq 1 ]; then
-        message error "Unable to install powershell without winetricks. Aborting."
+        message error "Unable to update dxvk without winetricks. Aborting."
         return 1
     fi
 
