@@ -6,7 +6,7 @@
 # Usage:
 # Run from your terminal or use the .desktop files installed by the Helper.
 #
-# version: 2.1
+# version: 2.2
 
 ############################################################################
 # ENVIRONMENT VARIABLES
@@ -31,6 +31,7 @@ export MESA_SHADER_CACHE_MAX_SIZE="10G"
 # Performance options
 export WINEESYNC=1
 export WINEFSYNC=1
+#export DXVK_ASYNC=1
 # Optional HUDs
 #export DXVK_HUD=fps,compiler
 #export MANGOHUD=1
