@@ -1474,6 +1474,8 @@ download_select_install() {
 # MARK: download_install()
 # Download and install the selected item. Called by download_select_install()
 #
+# Expects one numerical argument, an index number for the array "download_versions"
+#
 # The following variables are expected to be set before calling this function:
 # - download_versions (array)
 # - contributor_url (string)
