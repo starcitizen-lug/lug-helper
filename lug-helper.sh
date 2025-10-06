@@ -164,6 +164,11 @@ runner_sources=(
 default_runner="lug-wine-tkg-fsync-git-10.15-1.tar.gz"
 default_runner_source=0
 
+######## DXVK ##############################################################
+
+# URLs for downloading dxvk versions
+dxvk_async_source="https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
+
 ######## Requirements ######################################################
 
 # Wine minimum version
@@ -2652,16 +2657,50 @@ install_powershell() {
     fi
 }
 
-# MARK: dxvk_update()
-# Update dxvk for native wine installs
-dxvk_update() {
-    # Download winetricks
-    download_winetricks
+# MARK: dxvk_menu()
+# Menu to select and install dxvk into the wine prefix
+dxvk_menu() {
+    # Configure the menu
+    menu_text_zenity="<b><big>Update or Switch DXVK</big>\n\nSelect which DXVK you'd like to update and use for Star Citizen</b>\n\nYou may choose from the following options:"
+    menu_text_terminal="Update or Switch DXVK\n\nSelect which DXVK you'd like to update and use for Star Citizen\nYou may choose from the following options:"
+    menu_text_height="300"
+    menu_type="radiolist"
 
-    # Abort if the winetricks download failed
-    if [ "$?" -eq 1 ]; then
-        message error "Unable to update dxvk without winetricks. Aborting."
-        return 1
+    # Configure the menu options
+    standard_msg="Standard DXVK"
+    async_msg="Async DXVK"
+    quit_msg="Return to the main menu"
+
+    # Set the options to be displayed in the menu
+    menu_options=("$standard_msg" "$async_msg" "$quit_msg")
+    # Set the corresponding functions to be called for each of the options
+    menu_actions=("install_dxvk standard" "install_dxvk async" "menu_loop_done")
+
+    # Calculate the total height the menu should be
+    # menu_option_height = pixels per menu option
+    # #menu_options[@] = number of menu options
+    # menu_text_height = height of the title/description text
+    # menu_text_height_zenity4 = added title/description height for libadwaita bigness
+    menu_height="$(($menu_option_height * ${#menu_options[@]} + $menu_text_height + $menu_text_height_zenity4))"
+
+    # Set the label for the cancel button
+    cancel_label="Go Back"
+
+    # Call the menu function.  It will use the options as configured above
+    menu
+}
+
+# MARK: install_dxvk()
+# Updates DXVK in the wine prefix
+# Accepts one argument to specify which type of dxvk to install
+# Supports "standard" or "async"
+install_dxvk() {
+    # Sanity checks
+    if [ "$#" -lt 1 ]; then
+        debug_print exit "Script error: The install_dxvk function expects one argument. Aborting."
+    fi
+    if [ "$1" != "standard" ] && [ "$1" != "async" ]; then
+        debug_print exit "Script error: Unknown argument in install_dxvk function: $1. Aborting."
     fi
 
     # Update directories
@@ -2682,12 +2721,32 @@ dxvk_update() {
     # Set the correct wine prefix
     export WINEPREFIX="$wine_prefix"
 
+    if [ "$1" == "standard" ]; then
+        install_standard_dxvk
+    elif [ "$1" == "async" ]; then
+        install_async_dxvk
+    fi
+}
+
+# MARK: install_standard_dxvk()
+# Update standard dxvk in the wine prefix
+# Expects that getdirs has already been called
+# Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
+install_standard_dxvk() {
+    # Download winetricks
+    download_winetricks
+
+    # Abort if the winetricks download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to update dxvk without winetricks. Aborting."
+        return 1
+    fi
 
     # Show a zenity pulsating progress bar
     progress_bar start "Updating DXVK. Please wait..."
+    debug_print continue "Updating DXVK in ${wine_prefix}..."
 
     # Update dxvk
-    debug_print continue "Updating DXVK in ${wine_prefix}..."
     "$winetricks_bin" -f dxvk
 
     exit_code="$?"
@@ -2698,6 +2757,99 @@ dxvk_update() {
         progress_bar stop # Stop the zenity progress window
         message info "DXVK update complete. See terminal output for details."
     fi
+}
+
+# MARK: install_async_dxvk()
+# Update async dxvk in the wine prefix
+# Expects that getdirs has already been called
+# Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
+install_async_dxvk() {
+    # Sanity checks
+    if [ ! -d "$wine_prefix/drive_c/windows/system32" ]; then
+        message error "Unable to find the system32 directory in your Wine prefix! Your prefix may be broken.\n\n$wine_prefix/drive_c/windows/system32"
+        return 1
+    fi
+    if [ ! -d "$wine_prefix/drive_c/windows/syswow64" ]; then
+        message error "Unable to find the syswow64 directory in your Wine prefix! Your prefix may be broken.\n\n$wine_prefix/drive_c/windows/syswow64"
+        return 1
+    fi
+
+    # Get the file download url
+    # Assume the first item returned by the API is the latest version
+    download_url="$(curl -s "${dxvk_async_source}?per_page=$max_download_items" | grep -Eo "\"direct_asset_url\": ?\"[^\"]+\"" | grep "releases" | grep -F ".tar.gz" | cut -d '"' -f4 | cut -d '?' -f1 | head -n 1)"
+
+    # Sanity check
+    if [ -z "$download_url" ]; then
+        message warning "Could not find the requested dxvk file.  The GitLab API may be down or rate limited."
+        return 1
+    fi
+
+    # Get file name info
+    download_filename="$(basename "$download_url")"
+    download_basename="$(basename "$download_filename" .tar.gz)"
+
+    # Download the item to the tmp directory
+    download_file "$download_url" "$download_filename" "DXVK"
+
+    # Sanity check
+    if [ ! -f "$tmp_dir/$download_filename" ]; then
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong and the requested DXVK file could not be downloaded!"
+        debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
+        return 1
+    fi
+
+    # Show a zenity pulsating progress bar
+    progress_bar start "Updating DXVK. Please wait..."
+
+    # Extract the archive to the tmp directory
+    debug_print continue "Extracting DXVK into $tmp_dir/$download_basename..."
+    tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir"
+
+    # Make sure the expected directories exist
+    if [ ! -d "$tmp_dir/$download_basename/x64" ] || [ ! -d "$tmp_dir/$download_basename/x32" ]; then
+        progress_bar stop # Stop the zenity progress window
+        message warning "Unexpected file structure in the extracted DXVK. The file may be corrupt."
+        return 1
+    fi
+
+    # Install the dxvk into the wine prefix
+    debug_print continue "Copying DXVK dlls into ${wine_prefix}..."
+    cp "$tmp_dir"/"$download_basename"/x64/*.dll "$wine_prefix/drive_c/windows/system32"
+    cp "$tmp_dir"/"$download_basename"/x32/*.dll "$wine_prefix/drive_c/windows/syswow64"
+
+    
+    # Make sure we can locate the launch script
+    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        progress_bar stop # Stop the zenity progress window
+        message warning "Unable to locate launch script!\n$wine_prefix/$wine_launch_script_name\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
+        return 0
+    fi
+    # Check if the DXVK_ASYNC variable is commented out in the launch script
+    if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$wine_launch_script_name" && ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$wine_launch_script_name"; then
+        progress_bar stop # Stop the zenity progress window
+        if message question "Could not find the DXVK_ASYNC environment variable in your launch script! It may be out of date.\n\nWould you like to update your launch script?"; then
+            update_launch_script
+
+            # Check if the update was successful and we know have the env var
+            if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$wine_launch_script_name"; then
+                message warning "Could not find the DXVK_ASYNC environment variable in your launch script! The update may have failed.\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
+                return 0
+            fi
+        else
+            message info "To enable async, set the environment variable: DXVK_ASYNC=1\n\nWould you like to open your launch script for editing?"
+            return 0
+        fi
+    fi
+
+    # Modify the launch script to uncomment the DXVK_ASYNC variable unless it's already uncommented
+    if ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$wine_launch_script_name"; then
+        debug_print continue "Updating DXVK_ASYNC env var in launch script ${wine_prefix}/${wine_launch_script_name}..."
+        sed -i "s|^#export DXVK_ASYNC=.*|export DXVK_ASYNC=1|" "$wine_prefix/$wine_launch_script_name"
+    fi
+
+    progress_bar stop # Stop the zenity progress window
+    message info "DXVK update complete."
 }
 
 # MARK: format_urls()
@@ -2934,7 +3086,7 @@ while true; do
     preflight_msg="Preflight Check (System Optimization)"
     install_msg_wine="Install Star Citizen"
     runners_msg_wine="Manage Wine Runners"
-    dxvk_msg_wine="Update DXVK"
+    dxvk_msg_wine="Update/Switch DXVK"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
@@ -2942,7 +3094,7 @@ while true; do
     # Set the options to be displayed in the menu
     menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_update" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_menu" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
