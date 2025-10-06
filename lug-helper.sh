@@ -1247,7 +1247,7 @@ download_manage() {
 # Configure the download_manage function for wine runners
 runner_manage() {
     # We'll want to instruct the user on how to use the downloaded runner
-    # Valid options are "none", "info", or "configure-wine"
+    # Valid options are "none" or "configure-wine"
     post_download_type="configure-wine"
 
     # Use indirect expansion to point download_sources
@@ -1268,13 +1268,6 @@ runner_manage() {
     download_menu_description="The runners listed below are wine builds created for Star Citizen"
     download_menu_height="320"
 
-    # Configure the post install and delete messages
-    # Format:
-    # post_install_msg is displayed below the header
-    # post_delete_msg is displayed with no header
-    post_install_msg_heading="Download Complete"
-    post_install_msg="The launch script needs to be updated\n\nWould you like to automatically configure it to use this runner?"
-    post_delete_msg="The launch script needs to be updated\n\nWould you like to automatically revert to using your system wine?"
     # Set the string sed will match against when editing the launch script
     # This will be used to detect the appropriate variable and replace its value
     # with the path to the downloaded item
@@ -1845,10 +1838,7 @@ download_delete() {
 # Perform post-download actions or display a message/instructions
 #
 # The following variables are expected to be set before calling this function:
-# - post_download_type (string. "none", "info", "configure-wine")
-# - post_install_msg_heading (string)
-# - post_install_msg (string)
-# - post_delete_msg (string)
+# - post_download_type (string. "none", "configure-wine")
 # - post_download_sed_string (string. For type configure-wine)
 # - post_delete_restore_value (string. For type configure-wine)
 # - post_download_required (string. Set automatically in install/delete functions)
@@ -1859,20 +1849,10 @@ download_delete() {
 # This is the string sed will match against when editing configs or files
 # For the wine install, it replaces values in the default launch script
 # with the appropriate paths and values after installation.
-#
-# Message display format:
-# A header is automatically displayed that reads: Download Complete
-# post_install_msg is displayed below the header
 post_download() {
     # Sanity checks
     if [ -z "$post_download_type" ]; then
         debug_print exit "Script error: The string 'post_download_type' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_install_msg_heading" ]; then
-        debug_print exit "Script error: The string 'post_install_msg_heading' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_install_msg" ]; then
-        debug_print exit "Script error: The string 'post_install_msg' was not set before calling the post_download function. Aborting."
-    elif [ -z "$post_delete_msg" ]; then
-        debug_print exit "Script error: The string 'post_delete_msg' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_download_sed_string" ] && [ "$post_download_type" = "configure-wine" ]; then
         debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_delete_restore_value" ] && [ "$post_download_type" = "configure-wine" ]; then
@@ -1884,55 +1864,50 @@ post_download() {
         return 0
     fi
 
-    # Configure the message heading and format it for zenity
-    if [ "$use_zenity" -eq 1 ]; then
-        post_install_msg_heading="<b>$post_install_msg_heading</b>"
-    fi
+    # Handle the appropriate post-download actions
+    if [ "$post_download_type" = "configure-wine" ]; then
+        # Make sure we can locate the launch script
+        if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+            message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name\n\nYou will need to edit the launch script's \"${post_download_sed_string}\" variable manually."
+            return 1
+        fi
 
-    # Display appropriate post-download message
-    if [ "$post_download_type" = "info" ]; then
-            # Just displaying an informational message
-            message info "$post_install_msg_heading\n\n$post_install_msg"
-    elif [ "$post_download_type" = "configure-wine" ]; then
+        # Make sure the launch script has the appropriate string to be replaced
+        if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
+            if message question "Unable to find a required variable in your launch script! It may be out of date.\n\nWould you like to try updating your launch script?"; then
+                # Try updating the launch script
+                update_launch_script
+
+                # Check if the update was successful and we now have the required string
+                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
+                    message warning "Unable to find a required variable in your launch script! The update may have failed.\n\nYou will need to edit the launch script's \"${post_download_sed_string}\" variable manually."
+                    return 1
+                fi
+            else
+                message warning "You will need to edit the launch script's \"${post_download_sed_string}\" variable manually."
+                return 1
+            fi
+        fi
+
         # We handle installs and deletions differently
         if [ "$post_download_required" = "installed" ]; then
             # We are installing a wine version and updating the launch script to use it
-            if message question "$post_install_msg_heading\n\n$post_install_msg"; then
-                # Make sure we can locate the launch script
-                if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-                    message error "Unable to find $wine_prefix/$wine_launch_script_name"
-                    return 1
-                fi
-                # Make sure the launch script has the appropriate string to be replaced
-                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
-                    message error "Unable to to find a required variable in\n$wine_prefix/$wine_launch_script_name\n\nYour launch script may be out of date and will need to be edited manually!"
-                    return 1
-                fi
 
-                # Replace the specified variable
-                sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin\"|" "$wine_prefix/$wine_launch_script_name"
-            else
-                message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
-            fi
+            # Replace the specified variable
+            debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${wine_launch_script_name}..."
+            sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin\"|" "$wine_prefix/$wine_launch_script_name"
+
+            # Display a confirmation message
+            message info "Wine Runner installation complete!"
         elif [ "$post_download_required" = "deleted" ]; then
-            # We deleted a custom wine version and need to revert the launch script to use the system wine
-            if message question "$post_delete_msg"; then
-                # Make sure we can locate the launch script
-                if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-                    message error "Unable to find $wine_prefix/$wine_launch_script_name"
-                    return 1
-                fi
-                # Make sure the launch script has the appropriate string to be replaced
-                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
-                    message error "Unable to to find a required variable in\n$wine_prefix/$wine_launch_script_name\n\nYour launch script may be out of date and will need to be edited manually!"
-                    return 1
-                fi
+            # We deleted a custom wine version and need to revert the launch script to use the default wine
 
-                # Restore the specified variable
-                sed -i "s#^${post_download_sed_string}.*#${post_download_sed_string}\"${post_delete_restore_value}\"#" "$wine_prefix/$wine_launch_script_name"
-            else
-                message warning "The launch script will need to be edited manually!\n\n$wine_prefix/$wine_launch_script_name"
-            fi
+            # Restore the specified variable
+            debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${wine_launch_script_name}..."
+            sed -i "s#^${post_download_sed_string}.*#${post_download_sed_string}\"${post_delete_restore_value}\"#" "$wine_prefix/$wine_launch_script_name"
+
+            # Display a confirmation message
+            message info "The currently used Wine Runner has been deleted.\nYour launch script has been updated to use the default system Wine."
         else
             debug_print exit "Script error: Unknown post_download_required value in post_download function. Aborting."
         fi
@@ -2813,22 +2788,23 @@ install_async_dxvk() {
     # Make sure we can locate the launch script
     if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
         progress_bar stop # Stop the zenity progress window
-        message warning "Unable to locate launch script!\n$wine_prefix/$wine_launch_script_name\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
+        message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
         return 0
     fi
     # Check if the DXVK_ASYNC variable is commented out in the launch script
     if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$wine_launch_script_name" && ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$wine_launch_script_name"; then
         progress_bar stop # Stop the zenity progress window
-        if message question "Could not find the DXVK_ASYNC environment variable in your launch script! It may be out of date.\n\nWould you like to update your launch script?"; then
+        if message question "Could not find the DXVK_ASYNC environment variable in your launch script! It may be out of date.\n\nWould you like to try updating your launch script?"; then
+            # Try updating the launch script
             update_launch_script
 
-            # Check if the update was successful and we know have the env var
+            # Check if the update was successful and we now have the env var
             if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$wine_launch_script_name"; then
                 message warning "Could not find the DXVK_ASYNC environment variable in your launch script! The update may have failed.\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
                 return 0
             fi
         else
-            message info "To enable async, set the environment variable: DXVK_ASYNC=1\n\nWould you like to open your launch script for editing?"
+            message warning "To enable async, set the environment variable: DXVK_ASYNC=1"
             return 0
         fi
     fi
