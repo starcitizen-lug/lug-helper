@@ -1157,8 +1157,8 @@ filelimit_confirm() {
 #   of items to download. It should be pointed to the appropriate
 #   array set at the top of the script using indirect expansion.
 #   See runner_sources at the top and runner_manage() for examples.
-# - The array download_dirs should contain the locations the downloaded item
-#   will be installed to. Must be formatted in pairs of ("[type]" "[directory]")
+# - The string download_dir should contain the location where the
+#   downloaded item will be installed to.
 # - The string "download_menu_heading" should contain the type of item
 #   being downloaded.  It will appear in the menu heading.
 # - The string "download_menu_description" should contain a description of
@@ -1178,8 +1178,8 @@ download_manage() {
     # Sanity checks
     if [ -z "$download_sources" ]; then
         debug_print exit "Script error: The string 'download_sources' was not set before calling the download_manage function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_manage function. Aborting."
+    elif [ -z "$download_dir" ]; then
+        debug_print exit "Script error: The string 'download_dir' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_heading" ]; then
         debug_print exit "Script error: The string 'download_menu_heading' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_description" ]; then
@@ -1258,10 +1258,7 @@ runner_manage() {
     getdirs
 
     # Set the download directory for wine runners
-    # Only installing to one directory is supported
-    # Do not include multiple download destinations in this array
-    # Must be formatted in pairs of ("[type]" "[directory]")
-    download_dirs=("wine" "$wine_prefix/runners")
+    download_dir="$wine_prefix/runners"
 
     # Configure the text displayed in the menus
     download_menu_heading="Wine Runners"
@@ -1289,7 +1286,7 @@ runner_manage() {
 # The following variables are expected to be set before calling this function:
 # - download_sources (array)
 # - download_type (string)
-# - download_dirs (array)
+# - download_dir (string)
 download_select_install() {
     # This function expects an element number for the sources array to be passed in as an argument
     if [ -z "$1" ]; then
@@ -1301,8 +1298,8 @@ download_select_install() {
         debug_print exit "Script error: The array 'download_sources' was not set before calling the download_select_install function. Aborting."
     elif [ -z "$download_type" ]; then
         debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_install function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_install function. Aborting."
+    elif [ -z "$download_dir" ]; then
+        debug_print exit "Script error: The string 'download_dir' was not set before calling the download_select_install function. Aborting."
     fi
 
     # Store info from the selected contributor
@@ -1435,42 +1432,15 @@ download_select_install() {
                 ;;
         esac
 
-        # Create a list of locations where the file is already installed
-        unset installed_types
-        for (( j=0; j<"${#download_dirs[@]}"; j=j+2 )); do
-            # Loop through all download destinations to get installed types
-            # Even numbered elements will contain the download destination type (ie. native/flatpak for lutris)
-            if [ -d "${download_dirs[j+1]}/$download_basename" ]; then
-                installed_types+=("${download_dirs[j]}")
-            fi
-        done
-
         # Build the menu item
         unset menu_option_text
-        if [ "${#download_dirs[@]}" -eq 2 ]; then
-            # We're only installing to one location
-            if [ -d "${download_dirs[1]}/$download_basename" ]; then
-                menu_option_text="$download_basename    [installed]"
-            else
-                # The file is not installed
-                menu_option_text="$download_basename"
-            fi
+        if [ -d "${download_dir}/${download_basename}" ]; then
+            menu_option_text="$download_basename    [installed]"
         else
-            # We're installing to multiple locations
-            if [ "${#installed_types[@]}" -gt 0 ]; then
-                # The file is already installed
-                menu_option_text="$download_basename    [installed:"
-                for (( j=0; j<"${#installed_types[@]}"; j++ )); do
-                    # Add labels for each installed location
-                    menu_option_text="$menu_option_text ${installed_types[j]}"
-                done
-                # Complete the menu text
-                menu_option_text="$menu_option_text]"
-            else
-                # The file is not installed
-                menu_option_text="$download_basename"
-            fi
+            # The file is not installed
+            menu_option_text="$download_basename"
         fi
+
         # Add the file names to the menu
         menu_options+=("$menu_option_text")
         menu_actions+=("download_install $i")
@@ -1509,7 +1479,7 @@ download_select_install() {
 # - contributor_url (string)
 # - download_url_type (string)
 # - download_type (string)
-# - download_dirs (array)
+# - download_dir (string)
 download_install() {
     # This function expects an index number for the array
     # download_versions to be passed in as an argument
@@ -1526,8 +1496,8 @@ download_install() {
         debug_print exit "Script error: The string 'download_url_type' was not set before calling the download_install function. Aborting."
     elif [ -z "$download_type" ]; then
         debug_print exit "Script error: The string 'download_type' was not set before calling the download_install function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_install function. Aborting."
+    elif [ -z "$download_dir" ]; then
+        debug_print exit "Script error: The string 'download_dir' was not set before calling the download_install function. Aborting."
     fi
 
     # Get the filename including file extension
@@ -1635,21 +1605,17 @@ download_install() {
         # If the archive contains only one directory, install that directory
         # We rename it to the name of the archive in case it is different
         # so we can easily detect installed items in download_select_install()
-        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-            # Loop through all download destinations, installing to each one
-            # Odd numbered elements will contain the download destination's path
-            if [ -d "${download_dirs[i]}/$download_basename" ]; then
-                # This item has already been installed. Delete it before reinstalling
-                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
-                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
-                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
-            else
-                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
-            fi
+        if [ -d "${download_dir}/${download_basename}" ]; then
+            # This item has already been installed. Delete it before reinstalling
+            debug_print continue "$download_type exists, deleting ${download_dir}/${download_basename}..."
+            rm -r --interactive=never "${download_dir:?}/${download_basename}"
+            debug_print continue "Reinstalling $download_type into ${download_dir}/${download_basename}..."
+        else
+            debug_print continue "Installing $download_type into ${download_dir}/${download_basename}..."
+        fi
 
-            # Copy the directory to the destination
-            mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename"
-        done
+        # Copy the directory to the destination
+        mkdir -p "$download_dir" && cp -r "${tmp_dir}/${download_basename}/${extracted_dir}" "${download_dir}/${download_basename}"
 
         # Store the final name of the downloaded item
         downloaded_item_name="$download_basename"
@@ -1658,21 +1624,17 @@ download_install() {
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
-        for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-            # Loop through all download destinations, installing to each one
-            # Odd numbered elements will contain the download destination's path
-            if [ -d "${download_dirs[i]}/$download_basename" ]; then
-                # This item has already been installed. Delete it before reinstalling
-                debug_print continue "$download_type exists, deleting ${download_dirs[i]}/$download_basename..."
-                rm -r --interactive=never "${download_dirs[i]:?}/$download_basename"
-                debug_print continue "Reinstalling $download_type into ${download_dirs[i]}/$download_basename..."
-            else
-                debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
-            fi
+        if [ -d "${download_dir}/${download_basename}" ]; then
+            # This item has already been installed. Delete it before reinstalling
+            debug_print continue "$download_type exists, deleting ${download_dir}/${download_basename}..."
+            rm -r --interactive=never "${download_dir:?}/${download_basename}"
+            debug_print continue "Reinstalling $download_type into ${download_dir}/${download_basename}..."
+        else
+            debug_print continue "Installing $download_type into ${download_dir}/${download_basename}..."
+        fi
 
-            # Copy the directory to the destination
-            mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename"
-        done
+        # Copy the directory to the destination
+        mkdir -p "${download_dir}/${download_basename}" && cp -r "$tmp_dir"/"$download_basename"/* "$download_dir"/"$download_basename"
 
         # Store the final name of the downloaded item
         downloaded_item_name="$download_basename"
@@ -1686,9 +1648,9 @@ download_install() {
     progress_bar stop # Stop the zenity progress window
 
     # Cleanup tmp download
-    debug_print continue "Cleaning up $tmp_dir/$download_filename..."
-    rm --interactive=never "${tmp_dir:?}/$download_filename"
-    rm -r --interactive=never "${tmp_dir:?}/$download_basename"
+    debug_print continue "Cleaning up ${tmp_dir}/${download_filename}..."
+    rm --interactive=never "${tmp_dir:?}/${download_filename}"
+    rm -r --interactive=never "${tmp_dir:?}/${download_basename}"
 
     return 0
 }
@@ -1698,13 +1660,13 @@ download_install() {
 #
 # The following variables are expected to be set before calling this function:
 # - download_type (string)
-# - download_dirs (array)
+# - download_dir (string)
 download_select_delete() {
     # Sanity checks
     if [ -z "$download_type" ]; then
         debug_print exit "Script error: The string 'download_type' was not set before calling the download_select_delete function. Aborting."
-    elif [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_select_delete function. Aborting."
+    elif [ -z "$download_dir" ]; then
+        debug_print exit "Script error: The string 'download_dir' was not set before calling the download_select_delete function. Aborting."
     fi
 
     # Configure the menu
@@ -1718,27 +1680,15 @@ download_select_delete() {
     unset menu_options
     unset menu_actions
 
-    # Find all installed items in the download destinations
-    for (( i=1; i<"${#download_dirs[@]}"; i=i+2 )); do
-        # Skip if the directory doesn't exist
-        if [ ! -d "${download_dirs[i]}" ]; then
-            continue
-        fi
-        # Loop through all download destinations
-        # Odd numbered elements will contain the download destination's path
-        for item in "${download_dirs[i]}"/*; do
+    # Find all installed items in the download destination
+    if [ -d "$download_dir" ]; then
+        for item in "$download_dir"/*; do
             if [ -d "$item" ]; then
-                if [ "${#download_dirs[@]}" -eq 2 ]; then
-                    # We're deleting from one location
-                    installed_item_names+=("$(basename "$item")")
-                else
-                    # We're deleting from multiple locations so label each one
-                    installed_item_names+=("$(basename "$item    [${download_dirs[i-1]}]")")
-                fi
+                installed_item_names+=("$(basename "$item")")
                 installed_items+=("$item")
             fi
         done
-    done
+    fi
 
     # Create menu options for the installed items
     for (( i=0; i<"${#installed_items[@]}"; i++ )); do
@@ -2336,7 +2286,7 @@ install_game() {
 
     debug_print continue "Installing a custom wine runner..."
 
-    download_dirs=("wine" "$install_dir/runners")
+    download_dir="$install_dir/runners"
 
     # Install the default wine runner into the prefix
     download_wine
@@ -2506,10 +2456,10 @@ Exec=\"$installed_launch_script\"" > "$prefix_desktop_file"
 
 # MARK: download_wine()
 # Download a default wine runner for use by the installer
-# Expects download_dirs to be set before calling
+# Expects download_dir to be set before calling
 download_wine() {
-    if [ "${#download_dirs[@]}" -eq 0 ]; then
-        debug_print exit "Script error: The array 'download_dirs' was not set before calling the download_wine function. Aborting."
+    if [ -z "$download_dir" ]; then
+        debug_print exit "Script error: The string 'download_dir' was not set before calling the download_wine function. Aborting."
     fi
 
     # Set up variables needed for the download functions, quick and dirty
