@@ -2991,7 +2991,7 @@ Usage: lug-helper <options>
                 cargs+=("runner_manage")
                 ;;
             --update-dxvk | -k )
-                cargs+=("dxvk_update")
+                cargs+=("dxvk_menu")
                 ;;
             --edit-launch-script | -e )
                 cargs+=("edit_launch_script")
