@@ -1398,7 +1398,7 @@ download_select_install() {
 
     # Sanity check
     if [ "${#download_versions[@]}" -eq 0 ]; then
-        message warning "No $download_type versions were found.  The source API may be down or rate limited."
+        message warning "No $download_type versions were found.  The $download_url_type API may be down or rate limited."
         return 1
     fi
 
@@ -1599,7 +1599,7 @@ download_install() {
 
     # Sanity check
     if [ -z "$download_url" ]; then
-        message warning "Could not find the requested ${download_type}.  The source API may be down or rate limited."
+        message warning "Could not find the requested ${download_type}.  The $download_url_type API may be down or rate limited."
         return 1
     fi
 
