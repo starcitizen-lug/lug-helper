@@ -161,7 +161,8 @@ runner_sources=(
 
 # Set the default runner to install when the system wine doesn't meet requirements
 # default_runner_source corresponds to an EVEN NUMBER index in runner_sources above
-default_runner="lug-wine-tkg-fsync-git-10.15-1.tar.gz"
+default_runner="lug-wine-tkg-fsync-git-10.15-1"
+default_runner_file="${default_runner}.tar.gz"
 default_runner_source=0
 
 ######## DXVK ##############################################################
@@ -1270,9 +1271,8 @@ runner_manage() {
     # with the path to the downloaded item
     post_download_sed_string="export wine_path="
     # Set the value of the above variable that will be restored after a runner is deleted
-    # In this case, we want to revert to calling system wine
-    post_delete_restore_value="$(command -v wine | xargs dirname)"
-    post_delete_restore_value="${post_delete_restore_value:-/usr/bin}" # default to /usr/bin if empty
+    # In this case, we want to revert to the configured default wine runner
+    post_delete_restore_value="${download_dir}/${default_runner}/bin"
 
     # Call the download_manage function with the above configuration
     # The argument passed to the function is used for special handling
@@ -1795,6 +1795,7 @@ download_delete() {
 # - post_download_required (string. Set automatically in install/delete functions)
 # - downloaded_item_name (string. For installs only. Set automatically in download_install function)
 # - deleted_item_names (array. For deletions only. Set automatically in download_delete function)
+# - download_dir (string)
 #
 # Details for post_download_sed_string:
 # This is the string sed will match against when editing configs or files
@@ -1808,6 +1809,8 @@ post_download() {
         debug_print exit "Script error: The string 'post_download_sed_string' was not set before calling the post_download function. Aborting."
     elif [ -z "$post_delete_restore_value" ] && [ "$post_download_type" = "configure-wine" ]; then
         debug_print exit "Script error: The string 'post_delete_restore_value' was not set before calling the post_download function. Aborting."
+    elif [ -z "$download_dir" ]; then
+        debug_print exit "Script error: The string 'download_dir' was not set before calling the post_download function. Aborting."
     fi
 
     # Return if we don't have anything to do
@@ -1819,7 +1822,7 @@ post_download() {
     if [ "$post_download_type" = "configure-wine" ]; then
         # Make sure we can locate the launch script
         if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-            message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name\n\nYou will need to edit the launch script's \"${post_download_sed_string}\" variable manually."
+            message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
             return 1
         fi
 
@@ -1831,11 +1834,11 @@ post_download() {
 
                 # Check if the update was successful and we now have the required string
                 if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
-                    message warning "Unable to find a required variable in your launch script! The update may have failed.\n\nYou will need to edit the launch script's \"${post_download_sed_string}\" variable manually."
+                    message warning "Unable to find a required variable in your launch script! The update may have failed.\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
                     return 1
                 fi
             else
-                message warning "You will need to edit the launch script's \"${post_download_sed_string}\" variable manually."
+                message warning "You will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
                 return 1
             fi
         fi
@@ -1844,21 +1847,35 @@ post_download() {
         if [ "$post_download_required" = "installed" ]; then
             # We are installing a wine version and updating the launch script to use it
 
-            # Replace the specified variable
+            # Replace the specified variable in the launch script
             debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${wine_launch_script_name}..."
             sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin\"|" "$wine_prefix/$wine_launch_script_name"
 
             # Display a confirmation message
             message info "Wine Runner installation complete!"
         elif [ "$post_download_required" = "deleted" ]; then
-            # We deleted a custom wine version and need to revert the launch script to use the default wine
+            # We deleted a custom wine version and need to revert the launch script to use the default wine runner
 
-            # Restore the specified variable
+            # Check if the default wine runner is installed
+            if [ ! -d "${download_dir}/${default_runner}" ]; then
+                message info "The Wine runner currently used by your launch script has been deleted!\n\nThe default Wine runner will now be downloaded and installed."
+                # Install the default wine runner into the prefix
+                download_wine
+                # Make sure the wine download worked
+                if [ "$?" -eq 1 ]; then
+                    message warning "Something went wrong while installing ${default_runner}!\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
+                    return 1
+                fi
+            else
+                message info "The Wine runner currently used by your launch script has been deleted!\n\nYour launch script will be updated to use the default Wine runner."
+            fi
+
+            # Replace the specified variable in the launch script
             debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${wine_launch_script_name}..."
             sed -i "s#^${post_download_sed_string}.*#${post_download_sed_string}\"${post_delete_restore_value}\"#" "$wine_prefix/$wine_launch_script_name"
 
             # Display a confirmation message
-            message info "The currently used Wine Runner has been deleted.\nYour launch script has been updated to use the default system Wine."
+            message info "Your launch script has been updated!"
         else
             debug_print exit "Script error: Unknown post_download_required value in post_download function. Aborting."
         fi
@@ -2467,7 +2484,7 @@ download_wine() {
     # For more details, see their usage in the download_select_install and download_install functions
     declare -n download_sources=runner_sources
     download_type="runner"
-    download_versions=("$default_runner")
+    download_versions=("$default_runner_file")
     contributor_name="${download_sources[$default_runner_source]}"
     contributor_url="${download_sources[$default_runner_source+1]}"
     case "$contributor_url" in
