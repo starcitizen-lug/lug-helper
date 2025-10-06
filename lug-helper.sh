@@ -1614,15 +1614,12 @@ download_install() {
         return 1
     fi
 
+    # Show a zenity pulsating progress bar
+    progress_bar start "Installing ${download_type}. Please wait..."
+
     # Extract the archive to the tmp directory
     debug_print continue "Extracting $download_type into $tmp_dir/$download_basename..."
-    if [ "$use_zenity" -eq 1 ]; then
-        # Use Zenity progress bar
-        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename" | \
-                zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Extracting ${download_type}...\n" 2>/dev/null
-    else
-        mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename"
-    fi
+    mkdir "$tmp_dir/$download_basename" && tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir/$download_basename"
 
     # Check the contents of the extracted archive to determine the
     # directory structure we must create upon installation
@@ -1656,13 +1653,9 @@ download_install() {
             else
                 debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
             fi
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename" | \
-                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename"
-            fi
+
+            # Copy the directory to the destination
+            mkdir -p "${download_dirs[i]}" && cp -r "$tmp_dir/$download_basename/$extracted_dir" "${download_dirs[i]}/$download_basename"
         done
 
         # Store the final name of the downloaded item
@@ -1683,13 +1676,9 @@ download_install() {
             else
                 debug_print continue "Installing $download_type into ${download_dirs[i]}/$download_basename..."
             fi
-            if [ "$use_zenity" -eq 1 ]; then
-                # Use Zenity progress bar
-                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename" | \
-                        zenity --progress --pulsate --no-cancel --auto-close --title="Star Citizen LUG Helper" --text="Installing ${download_type}...\n" 2>/dev/null
-            else
-                mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename"
-            fi
+
+            # Copy the directory to the destination
+            mkdir -p "${download_dirs[i]}/$download_basename" && cp -r "$tmp_dir"/"$download_basename"/* "${download_dirs[i]}"/"$download_basename"
         done
 
         # Store the final name of the downloaded item
@@ -1700,6 +1689,8 @@ download_install() {
         # Some unexpected combination of directories and files
         debug_print exit "Script error:  Unexpected archive contents in download_install function. Aborting"
     fi
+
+    progress_bar stop # Stop the zenity progress window
 
     # Cleanup tmp download
     debug_print continue "Cleaning up $tmp_dir/$download_filename..."
