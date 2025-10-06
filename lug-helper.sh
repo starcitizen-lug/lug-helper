@@ -1149,14 +1149,14 @@ filelimit_confirm() {
 ############################################################################
 
 # MARK: download_manage()
-# Manage downloads. Called by a dedicated download type manage function, ie runner_manage_wine()
+# Manage downloads. Called by a dedicated download type manage function, ie runner_manage()
 #
 # This function expects the following variables to be set:
 #
 # - The string download_sources is a formatted array containing the URLs
 #   of items to download. It should be pointed to the appropriate
 #   array set at the top of the script using indirect expansion.
-#   See runner_sources at the top and runner_manage_wine() for examples.
+#   See runner_sources at the top and runner_manage() for examples.
 # - The array download_dirs should contain the locations the downloaded item
 #   will be installed to. Must be formatted in pairs of ("[type]" "[directory]")
 # - The string "download_menu_heading" should contain the type of item
@@ -1168,7 +1168,7 @@ filelimit_confirm() {
 # This function also expects one string argument containing the type of item to
 # be downloaded.  ie. runner or dxvk.
 #
-# See runner_manage_wine() for a configuration example.
+# See runner_manage() for a configuration example.
 download_manage() {
     # This function expects a string to be passed as an argument
     if [ -z "$1" ]; then
@@ -1243,9 +1243,9 @@ download_manage() {
     done
 }
 
-# MARK: runner_manage_wine()
+# MARK: runner_manage()
 # Configure the download_manage function for wine runners
-runner_manage_wine() {
+runner_manage() {
     # We'll want to instruct the user on how to use the downloaded runner
     # Valid options are "none", "info", or "configure-wine"
     post_download_type="configure-wine"
@@ -2261,7 +2261,7 @@ display_wiki() {
 # Delete the helper's config directory
 reset_helper() {
     if [ "$1" = "switchprefix" ]; then
-        # This gets called by the switch_prefix and install_game_wine functions
+        # This gets called by the switch_prefix and install_game functions
         # We only want to delete configs related to the game path in order to target a different game install
         debug_print continue "Deleting $conf_dir/$conf_subdir/{$wine_conf,$game_conf}..."
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"{"$wine_conf","$game_conf"}
@@ -2281,9 +2281,9 @@ reset_helper() {
 ############################################################################
 
 
-# MARK: install_game_wine()
+# MARK: install_game()
 # Install the game with Wine
-install_game_wine() {
+install_game() {
     # Check if the install script exists
     if [ ! -f "$wine_launch_script" ]; then
         message error "Game launch script not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
@@ -2985,10 +2985,10 @@ Usage: lug-helper <options>
                 cargs+=("preflight_check")
                 ;;
             --install | -i )
-                cargs+=("install_game_wine")
+                cargs+=("install_game")
                 ;;
             --manage-runners | -m )
-                cargs+=("runner_manage_wine")
+                cargs+=("runner_manage")
                 ;;
             --update-dxvk | -k )
                 cargs+=("dxvk_update")
@@ -3064,7 +3064,7 @@ else
 fi
 if [ "$is_firstrun" = "true" ]; then
     if message question "$firstrun_message"; then
-        install_game_wine
+        install_game
     fi
     # Store the first run state for subsequent launches
     if [ ! -d "$conf_dir/$conf_subdir" ]; then
@@ -3094,7 +3094,7 @@ while true; do
     # Set the options to be displayed in the menu
     menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game_wine" "runner_manage_wine" "dxvk_menu" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_menu" "maintenance_menu" "referral_randomizer" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
