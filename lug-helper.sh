@@ -1540,6 +1540,19 @@ download_install() {
             ;;
     esac
 
+    # Check if the item is already installed
+    # Trigger post-download actions to reconfigure the launch script then skip the rest of the redownload process
+    if [ -d "${download_dir}/${download_basename}" ]; then
+        debug_print continue "The selected $download_type is already installed. Skipping download."
+
+        # Store the final name of the downloaded item
+        downloaded_item_name="$download_basename"
+        # Mark success for triggering post-download actions
+        post_download_required="installed"
+
+        return 0
+    fi
+
     # Set the search keys we'll use to parse the api for the download url
     # To add new sources, handle them here and in the
     # download_select_install function
@@ -1605,14 +1618,7 @@ download_install() {
         # If the archive contains only one directory, install that directory
         # We rename it to the name of the archive in case it is different
         # so we can easily detect installed items in download_select_install()
-        if [ -d "${download_dir}/${download_basename}" ]; then
-            # This item has already been installed. Delete it before reinstalling
-            debug_print continue "$download_type exists, deleting ${download_dir}/${download_basename}..."
-            rm -r --interactive=never "${download_dir:?}/${download_basename}"
-            debug_print continue "Reinstalling $download_type into ${download_dir}/${download_basename}..."
-        else
-            debug_print continue "Installing $download_type into ${download_dir}/${download_basename}..."
-        fi
+        debug_print continue "Installing $download_type into ${download_dir}/${download_basename}..."
 
         # Copy the directory to the destination
         mkdir -p "$download_dir" && cp -r "${tmp_dir}/${download_basename}/${extracted_dir}" "${download_dir}/${download_basename}"
@@ -1624,14 +1630,7 @@ download_install() {
     elif [ "$num_dirs" -gt 1 ] || [ "$num_files" -gt 0 ]; then
         # If the archive contains more than one directory or
         # one or more files, we must create a subdirectory
-        if [ -d "${download_dir}/${download_basename}" ]; then
-            # This item has already been installed. Delete it before reinstalling
-            debug_print continue "$download_type exists, deleting ${download_dir}/${download_basename}..."
-            rm -r --interactive=never "${download_dir:?}/${download_basename}"
-            debug_print continue "Reinstalling $download_type into ${download_dir}/${download_basename}..."
-        else
-            debug_print continue "Installing $download_type into ${download_dir}/${download_basename}..."
-        fi
+        debug_print continue "Installing $download_type into ${download_dir}/${download_basename}..."
 
         # Copy the directory to the destination
         mkdir -p "${download_dir}/${download_basename}" && cp -r "$tmp_dir"/"$download_basename"/* "$download_dir"/"$download_basename"
