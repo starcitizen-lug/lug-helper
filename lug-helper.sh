@@ -195,6 +195,7 @@ rsi_installer_url="https://install.robertsspaceindustries.com/rel/2/$rsi_install
 # Winetricks download url
 winetricks_version="20250102"
 winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/$winetricks_version/src/winetricks"
+winetricks_next_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
@@ -2509,8 +2510,15 @@ download_wine() {
 
 # MARK: download_winetricks()
 # Download winetricks to a temporary file
+# Accepts an optional string argument "next" to download the latest -next version instead of the stable release
 download_winetricks() {
-    download_file "$winetricks_url" "winetricks" "winetricks"
+    if [ "$1" = "next" ]; then
+        # Download the -next version
+        download_file "$winetricks_next_url" "winetricks" "winetricks"
+    else
+        # Download the stable version
+        download_file "$winetricks_url" "winetricks" "winetricks"
+    fi
 
     # Sanity check
     if [ ! -f "$tmp_dir/winetricks" ]; then
@@ -2592,23 +2600,24 @@ install_powershell() {
 }
 
 # MARK: dxvk_menu()
-# Menu to select and install dxvk into the wine prefix
+# Menu to select and install a dxvk into the wine prefix
 dxvk_menu() {
     # Configure the menu
-    menu_text_zenity="<b><big>Update or Switch DXVK</big>\n\nSelect which DXVK you'd like to update and use for Star Citizen</b>\n\nYou may choose from the following options:"
-    menu_text_terminal="Update or Switch DXVK\n\nSelect which DXVK you'd like to update and use for Star Citizen\nYou may choose from the following options:"
+    menu_text_zenity="<b><big>Manage Your DXVK Version</big>\n\nSelect which DXVK you'd like to update or install</b>\n\nYou may choose from the following options:"
+    menu_text_terminal="Manage Your DXVK Version\n\nSelect which DXVK you'd like to update or install\nYou may choose from the following options:"
     menu_text_height="300"
     menu_type="radiolist"
 
     # Configure the menu options
-    standard_msg="Standard DXVK"
-    async_msg="Async DXVK"
+    standard_msg="Update or Switch to Standard DXVK"
+    async_msg="Update or Switch to Async DXVK"
+    nvapi_msg="Add or Update DXVK-NVAPI"
     quit_msg="Return to the main menu"
 
     # Set the options to be displayed in the menu
-    menu_options=("$standard_msg" "$async_msg" "$quit_msg")
+    menu_options=("$standard_msg" "$async_msg" "$nvapi_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("install_dxvk standard" "install_dxvk async" "menu_loop_done")
+    menu_actions=("install_dxvk standard" "install_dxvk async" "install_dxvk nvapi" "menu_loop_done")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option
@@ -2625,16 +2634,14 @@ dxvk_menu() {
 }
 
 # MARK: install_dxvk()
-# Updates DXVK in the wine prefix
-# Accepts one argument to specify which type of dxvk to install
-# Supports "standard" or "async"
+# Entry function to install or update DXVK in the wine prefix
+#
+# Requires one argument to specify which type of dxvk to install
+# Supports "standard", "async", "nvapi"
 install_dxvk() {
     # Sanity checks
     if [ "$#" -lt 1 ]; then
         debug_print exit "Script error: The install_dxvk function expects one argument. Aborting."
-    fi
-    if [ "$1" != "standard" ] && [ "$1" != "async" ]; then
-        debug_print exit "Script error: Unknown argument in install_dxvk function: $1. Aborting."
     fi
 
     # Update directories
@@ -2655,15 +2662,20 @@ install_dxvk() {
     # Set the correct wine prefix
     export WINEPREFIX="$wine_prefix"
 
-    if [ "$1" == "standard" ]; then
+    if [ "$1" = "standard" ]; then
         install_standard_dxvk
-    elif [ "$1" == "async" ]; then
+    elif [ "$1" = "async" ]; then
         install_async_dxvk
+    elif [ "$1" = "nvapi" ]; then
+        install_dxvk_nvapi
+    else
+        debug_print exit "Script error: Unknown argument in install_dxvk function: $1. Aborting."
     fi
 }
 
 # MARK: install_standard_dxvk()
-# Update standard dxvk in the wine prefix
+# Install or update standard dxvk in the wine prefix
+#
 # Expects that getdirs has already been called
 # Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
 install_standard_dxvk() {
@@ -2694,7 +2706,8 @@ install_standard_dxvk() {
 }
 
 # MARK: install_async_dxvk()
-# Update async dxvk in the wine prefix
+# Install or update async dxvk in the wine prefix
+#
 # Expects that getdirs has already been called
 # Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
 install_async_dxvk() {
@@ -2785,6 +2798,38 @@ install_async_dxvk() {
 
     progress_bar stop # Stop the zenity progress window
     message info "DXVK update complete."
+}
+
+# MARK: install_dxvk_nvapi()
+# Install or update dxvk-nvapi in the wine prefix
+#
+# Expects that getdirs has already been called
+# Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
+install_dxvk_nvapi() {
+    # Download winetricks
+    download_winetricks next
+
+    # Abort if the winetricks download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to install dxvk_nvapi without winetricks. Aborting."
+        return 1
+    fi
+
+    # Show a zenity pulsating progress bar
+    progress_bar start "Installing DXVK-NVAPI. Please wait..."
+    debug_print continue "Installing DXVK-NVAPI in ${wine_prefix}..."
+
+    # Update dxvk
+    "$winetricks_bin" -f dxvk_nvapi
+
+    exit_code="$?"
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
+        progress_bar stop # Stop the zenity progress window
+        message warning "DXVK-NVAPI could not be installed. See terminal output for details."
+    else
+        progress_bar stop # Stop the zenity progress window
+        message info "DXVK-NVAPI update complete. See terminal output for details."
+    fi
 }
 
 # MARK: format_urls()
@@ -2903,7 +2948,7 @@ Usage: lug-helper <options>
   -p, --preflight-check         Run system optimization checks
   -i, --install                 Install Star Citizen
   -m, --manage-runners          Install or remove Wine runners
-  -k, --update-dxvk             Update DXVK in the Wine prefix
+  -k, --manage-dxvk             Manage DXVK in the Wine prefix
   -e, --edit-launch-script      Edit the game launch script
   -c, --wine-config             Launch winecfg for the game's prefix
   -j, --wine-controllers        Launch Wine controllers configuration
@@ -2925,7 +2970,7 @@ Usage: lug-helper <options>
             --manage-runners | -m )
                 cargs+=("runner_manage")
                 ;;
-            --update-dxvk | -k )
+            --manage-dxvk | -k )
                 cargs+=("dxvk_menu")
                 ;;
             --edit-launch-script | -e )
@@ -3021,7 +3066,7 @@ while true; do
     preflight_msg="Preflight Check (System Optimization)"
     install_msg_wine="Install Star Citizen"
     runners_msg_wine="Manage Wine Runners"
-    dxvk_msg_wine="Update/Switch DXVK"
+    dxvk_msg_wine="Manage DXVK"
     maintenance_msg="Maintenance and Troubleshooting"
     randomizer_msg="Get a random Penguin's Star Citizen referral code"
     quit_msg="Quit"
