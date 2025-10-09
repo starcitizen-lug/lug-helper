@@ -3048,14 +3048,16 @@ Usage: lug-helper <options>
   -i, --install                 Install Star Citizen
   -m, --manage-runners          Install or remove Wine runners
   -k, --manage-dxvk             Manage DXVK in the Wine prefix
+  -u, --update-launch-script    Update/Repair the game launch script
   -e, --edit-launch-script      Edit the game launch script
   -c, --wine-config             Launch winecfg for the game's prefix
   -j, --wine-controllers        Launch Wine controllers configuration
-  -g, --no-gui                  Use terminal menus instead of a Zenity GUI
+  -l, --update-rsi-launcher     Update/Re-install RSI Launcher
   -r, --get-referral            Get a random LUG member's referral code
   -d, --show-directories        Show all Star Citizen and Helper directories
   -w, --show-wiki               Show the LUG Wiki
   -x, --reset-helper            Delete saved lug-helper configs
+  -g, --no-gui                  Use terminal menus instead of a Zenity GUI
   -v, --version                 Display version info and exit
 "
                 exit 0
@@ -3072,6 +3074,9 @@ Usage: lug-helper <options>
             --manage-dxvk | -k )
                 cargs+=("dxvk_menu")
                 ;;
+            --update-launch-script | -u )
+                cargs+=("update_launch_script")
+                ;;
             --edit-launch-script | -e )
                 cargs+=("edit_launch_script")
                 ;;
@@ -3081,10 +3086,8 @@ Usage: lug-helper <options>
             --wine-controllers | -j )
                 cargs+=("call_launch_script controllers")
                 ;;
-            --no-gui | -g )
-                # If zenity is unavailable, it has already been set to 0
-                # and this setting has no effect
-                use_zenity=0
+            --update-rsi-launcher | -l )
+                cargs+=("reinstall_rsi_launcher")
                 ;;
             --get-referral | -r )
                 cargs+=("referral_randomizer")
@@ -3097,6 +3100,11 @@ Usage: lug-helper <options>
                 ;;
             --reset-helper | -x )
                 cargs+=("reset_helper")
+                ;;
+            --no-gui | -g )
+                # If zenity is unavailable, it has already been set to 0
+                # and this setting has no effect
+                use_zenity=0
                 ;;
             --version | -v )
                 printf "LUG Helper %s\n" "$current_version"
