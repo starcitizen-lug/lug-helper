@@ -189,7 +189,7 @@ lug_wiki="https://wiki.starcitizen-lug.org"
 lug_wiki_nixos="https://wiki.starcitizen-lug.org/Tips-and-Tricks#nixos"
 
 # RSI Installer version and url
-rsi_installer="RSI Launcher-Setup-2.8.1.exe"
+rsi_installer="RSI Launcher-Setup-2.9.0.exe"
 rsi_installer_url="https://install.robertsspaceindustries.com/rel/2/$rsi_installer"
 
 # Winetricks download url
