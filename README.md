@@ -26,8 +26,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 `Manage Wine Runners`
 - Quickly install and delete custom Wine runners
 
-`Update DXVK`
-- Update DXVK in the game's Wine prefix
+`Manage DXVK`
+- Update or switch to a different DXVK in the game's Wine prefix
 
 `Maintenance and Troubleshooting`
 - `Target a different Star Citizen installation`
@@ -47,6 +47,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 - `Install PowerShell into Wine prefix`
   - Uses winetricks to install PowerShell
+
+- `Update/Re-install RSI Launcher`
+  - Re-install the latest version of the RSI Launcher
 
 - `Display Helper and Star Citizen directories`
   - Show all the directories currently in use by both the Helper and Star Citizen
