@@ -2581,20 +2581,10 @@ install_game() {
         return 1
     fi
 
-    # Fetch the latest RSI installer url
-    set_latest_rsi_installer
-    # Sanity check
+    download_rsi_installer
+    # Abort if the download failed
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest RSI installer! The latest.yml format may have changed or the site is down."
-        return 1
-    fi
-
-    # Download RSI installer to tmp
-    download_file "$rsi_installer_url" "$rsi_installer" "installer"
-    # Sanity check
-    if [ ! -f "$tmp_dir/$rsi_installer" ]; then
-        # Something went wrong with the download and the file doesn't exist
-        message error "Something went wrong; the installer could not be downloaded!"
+        message error "Unable to install Star Citizen. Aborting."
         return 1
     fi
 
@@ -2803,6 +2793,27 @@ download_winetricks() {
 
     # Make it executable
     chmod +x "$winetricks_bin"
+}
+
+# MARK: download_rsi_installer()
+# Downloads the latest RSI setup installer to a temporary file
+download_rsi_installer() {
+    # Fetch the latest RSI installer url
+    set_latest_rsi_installer
+    # Sanity check
+    if [ "$?" -eq 1 ]; then
+        message error "Could not fetch the latest RSI installer! The latest.yml format may have changed or the site is down."
+        return 1
+    fi
+
+    # Download RSI installer to tmp
+    download_file "$rsi_installer_url" "$rsi_installer" "installer"
+    # Sanity check
+    if [ ! -f "$tmp_dir/$rsi_installer" ]; then
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong; the installer could not be downloaded!"
+        return 1
+    fi
 }
 
 # MARK: get_current_runner()
