@@ -172,9 +172,6 @@ dxvk_async_source="https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/rel
 
 ######## Requirements ######################################################
 
-# Wine minimum version
-wine_required="9.4"
-
 # Minimum amount of RAM in GiB
 memory_required="16"
 # Minimum amount of combined RAM + swap in GiB
@@ -802,7 +799,6 @@ preflight_check() {
     fi
 
     # Call the optimization functions to perform the checks
-    #wine_check # Disabled for now. Wine dependencies may not be needed anymore with the lug-wine runners.
     memory_check
     avx_check
     mapcount_check
@@ -927,36 +923,6 @@ preflight_check() {
         fi
 
         return 1
-    fi
-}
-
-# MARK: wine_check()
-# Check the system Wine version
-# Tells the preflight check whether or not wine is installed
-# Additionally sets system_wine_ok if system wine meets the minimum version requirement
-wine_check() {
-    # Initialize variable
-    system_wine_ok="false"
-
-    # Is wine installed?
-    if [ ! -x "$(command -v wine)" ]; then
-        preflight_fail+=("Wine does not appear to be installed.\nPlease refer to our Quick Start Guide:\n$lug_wiki")
-        return 1
-    else
-        preflight_pass+=("Wine is installed on your system.")
-    fi
-
-    # Get the current wine version
-    wine_current="$(wine --version 2>/dev/null | awk '{print $1}' | awk -F '-' '{print $2}')"
-
-    # Check it against the required version
-    if [ -z "$wine_current" ]; then
-        system_wine_ok="false"
-    elif [ "$wine_required" != "$wine_current" ] &&
-        [ "$wine_current" = "$(printf "%s\n%s" "$wine_current" "$wine_required" | sort -V | head -n1)" ]; then
-        system_wine_ok="false"
-    else
-        system_wine_ok="true"
     fi
 }
 
@@ -2862,6 +2828,10 @@ get_latest_rsi_installer() {
     fi
 
     rsi_installer_url="${rsi_installer_base_url}/${rsi_installer}"
+}
+
+get_latest_lugwine_runner() {
+
 }
 
 # MARK: get_latest_release()
