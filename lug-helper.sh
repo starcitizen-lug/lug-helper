@@ -189,17 +189,17 @@ lug_wiki="https://wiki.starcitizen-lug.org"
 lug_wiki_nixos="https://wiki.starcitizen-lug.org/Tips-and-Tricks#nixos"
 
 # RSI Installer version and url
-rsi_installer="RSI Launcher-Setup-2.9.0.exe"
-rsi_installer_url="https://install.robertsspaceindustries.com/rel/2/$rsi_installer"
+rsi_installer_base_url="https://install.robertsspaceindustries.com/rel/2"
+rsi_installer_latest_yml="${rsi_installer_base_url}/latest.yml"
 
 # Winetricks download url
 winetricks_version="20250102"
-winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/$winetricks_version/src/winetricks"
+winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/${winetricks_version}/src/winetricks"
 winetricks_next_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
-releases_url="https://github.com/$repo/releases"
+releases_url="https://github.com/${repo}/releases"
 current_version="v4.4"
 
 ############################################################################
@@ -2326,6 +2326,14 @@ install_game() {
         return 1
     fi
 
+    # Get the latest RSI installer url    
+    get_latest_rsi_installer
+    # Sanity check
+    if [ "$?" -eq 1 ]; then
+        message error "Could not fetch the latest RSI installer! The latest.yml format may have changed or the site is down."
+        return 1
+    fi
+
     # Download RSI installer to tmp
     download_file "$rsi_installer_url" "$rsi_installer" "installer"
     # Sanity check
@@ -2840,6 +2848,20 @@ format_urls() {
         lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
         lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
     fi
+}
+
+# MARK: get_latest_rsi_installer()
+# Get the latest RSI installer filename and url
+get_latest_rsi_installer() {
+    # Fetch the yml and parse it for the latest filename
+    # ie. RSI Launcher-Setup-2.9.0.exe
+    rsi_installer="$(curl -s "$rsi_installer_latest_yml" | grep -Eo "url:.+" | sed 's/url:[[:space:]]*//')"
+
+    if [ -z "$rsi_installer" ]; then
+        return 1
+    fi
+
+    rsi_installer_url="${rsi_installer_base_url}/${rsi_installer}"
 }
 
 # MARK: get_latest_release()
