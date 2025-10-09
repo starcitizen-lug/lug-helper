@@ -1930,14 +1930,15 @@ maintenance_menu() {
         config_msg="Open Wine prefix configuration"
         controllers_msg="Open Wine controller configuration"
         powershell_msg="Install PowerShell into Wine prefix"
+        rsi_launcher_msg="Update/Re-install RSI Launcher"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2154,6 +2155,65 @@ install_powershell() {
         progress_bar stop # Stop the zenity progress window
         message info "PowerShell operation complete. See terminal output for details."
     fi
+}
+
+# MARK: reinstall_rsi_launcher()
+# Download and re-install the latest RSI Launcher into the wine prefix
+reinstall_rsi_launcher() {
+    # Update directories
+    getdirs
+
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message error "Unable to install or update the RSI Launcher."
+        return 1
+    fi
+
+    download_rsi_installer
+    # Abort if the download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to install or update the RSI Launcher."
+        return 1
+    fi
+
+    # Get the current wine runner from the launch script
+    get_current_runner
+    if [ "$?" -ne 1 ]; then
+        export WINE="$launcher_winepath/wine"
+        export WINESERVER="$launcher_winepath/wineserver"
+    else
+        # Default to system wine
+        launcher_winepath="$(command -v wine | xargs dirname)"
+        launcher_winepath="${launcher_winepath:-/usr/bin}" # default to /usr/bin if still empty
+    fi
+
+    # Set the correct wine prefix
+    export WINEPREFIX="$wine_prefix"
+    export WINEDLLOVERRIDES="dxwebsetup.exe,dotNetFx45_Full_setup.exe,winemenubuilder.exe=d"
+
+    # Show a zenity pulsating progress bar
+    progress_bar start "Installing RSI Launcher. Please wait..."
+
+    # Run the installer
+    debug_print continue "Installing RSI Launcher. Please wait; this will take a moment..."
+    "$launcher_winepath"/wine "$tmp_dir/$rsi_installer" /S
+
+    exit_code="$?"
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 58 ]; then
+        # User cancelled or there was an error
+        "$launcher_winepath"/wineserver -k # Kill all wine processes
+        progress_bar stop # Stop the zenity progress window
+        message error "Installation aborted. See terminal output for details."
+        return 1
+    fi
+
+    # Stop the zenity progress window
+    progress_bar stop
+
+    # Kill the wine process after installation
+    "$launcher_winepath"/wineserver -k
+
+    message info "RSI Launcher installation complete!"
 }
 
 # MARK: display_dirs()
@@ -2592,7 +2652,7 @@ install_game() {
     tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
     debug_print continue "Installation log file created at $tmp_install_log"
 
-    # Create the new prefix and install powershell
+    # Configure the wine prefix environment
     export WINE="$wine_path/wine"
     export WINESERVER="$wine_path/wineserver"
     export WINEPREFIX="$install_dir"
@@ -2601,6 +2661,7 @@ install_game() {
     # Show a zenity pulsating progress bar
     progress_bar start "Preparing Wine prefix and installing RSI Launcher. Please wait..."
 
+    # Create the new prefix and install powershell
     debug_print continue "Preparing Wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
 
@@ -2639,7 +2700,6 @@ install_game() {
     progress_bar stop
 
     # Kill the wine process after installation
-    # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
     "$wine_path"/wineserver -k
 
     # Save the install location to the Helper's config files
@@ -2822,6 +2882,7 @@ download_rsi_installer() {
 get_current_runner() {
     # Make sure we can find the launch script
     if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name"
         return 1
     fi
 
@@ -2830,6 +2891,7 @@ get_current_runner() {
 
     # Double check that we found a path in the launch script
     if [ -z "$launcher_winepath" ]; then
+        message warning "Unable to find the current wine runner in your launch script!\n$wine_prefix/$wine_launch_script_name"
         return 1
     fi
 }
