@@ -183,11 +183,6 @@ lug_wiki_nixos="https://wiki.starcitizen-lug.org/Tips-and-Tricks#nixos"
 rsi_installer_base_url="https://install.robertsspaceindustries.com/rel/2"
 rsi_installer_latest_yml="${rsi_installer_base_url}/latest.yml"
 
-# Winetricks download url
-winetricks_version="20250102"
-winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/${winetricks_version}/src/winetricks"
-winetricks_next_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
-
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
 releases_url="https://github.com/${repo}/releases"
@@ -2833,6 +2828,9 @@ download_wine() {
 # Download winetricks to a temporary file
 # Accepts an optional string argument "next" to download the latest -next version instead of the stable release
 download_winetricks() {
+    # Set variables for the latest winetricks urls
+    set_latest_winetricks
+
     if [ "$1" = "next" ]; then
         # Download the -next version
         download_file "$winetricks_next_url" "winetricks" "winetricks"
@@ -2934,6 +2932,13 @@ set_latest_default_runner() {
 
     # Set the runner_sources array index which points to the default runner source api url (must be an even number in the array, arrays start with 0)
     default_runner_source=0
+}
+
+set_latest_winetricks() {
+    # Winetricks download url
+    winetricks_version="$(get_latest_release Winetricks/winetricks)"
+    winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/${winetricks_version}/src/winetricks"
+    winetricks_next_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
 }
 
 # MARK: get_latest_release()
