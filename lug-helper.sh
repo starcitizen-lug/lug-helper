@@ -159,12 +159,6 @@ runner_sources=(
     "Mactan" "https://api.github.com/repos/mactan-sc/mactan-sc-wine/releases"
 )
 
-# Set the default runner to install when the system wine doesn't meet requirements
-# default_runner_source corresponds to an EVEN NUMBER index in runner_sources above
-default_runner="lug-wine-tkg-fsync-git-10.15-1"
-default_runner_file="${default_runner}.tar.gz"
-default_runner_source=0
-
 ######## DXVK ##############################################################
 
 # URLs for downloading dxvk versions
@@ -1224,6 +1218,14 @@ runner_manage() {
 
     # Get directories so we know where the wine prefix is
     getdirs
+
+    # Set variables for the latest default runner
+    set_latest_default_runner
+    # Sanity check
+    if [ "$?" -eq 1 ]; then
+        message error "Could not fetch the latest default wine runner.  The Github API may be down or rate limited."
+        return 1
+    fi
 
     # Set the download directory for wine runners
     download_dir="$wine_prefix/runners"
@@ -2293,7 +2295,7 @@ install_game() {
     fi
 
     # Get the latest RSI installer url    
-    get_latest_rsi_installer
+    set_latest_rsi_installer
     # Sanity check
     if [ "$?" -eq 1 ]; then
         message error "Could not fetch the latest RSI installer! The latest.yml format may have changed or the site is down."
@@ -2453,6 +2455,14 @@ Exec=\"$installed_launch_script\"" > "$prefix_desktop_file"
 download_wine() {
     if [ -z "$download_dir" ]; then
         debug_print exit "Script error: The string 'download_dir' was not set before calling the download_wine function. Aborting."
+    fi
+
+    # Set variables for the latest default runner
+    set_latest_default_runner
+    # Sanity check
+    if [ "$?" -eq 1 ]; then
+        message error "Could not fetch the latest default wine runner.  The Github API may be down or rate limited."
+        return 1
     fi
 
     # Set up variables needed for the download functions, quick and dirty
@@ -2816,9 +2826,9 @@ format_urls() {
     fi
 }
 
-# MARK: get_latest_rsi_installer()
-# Get the latest RSI installer filename and url
-get_latest_rsi_installer() {
+# MARK: set_latest_rsi_installer()
+# Fetch and store variables for the latest RSI installer filename and url
+set_latest_rsi_installer() {
     # Fetch the yml and parse it for the latest filename
     # ie. RSI Launcher-Setup-2.9.0.exe
     rsi_installer="$(curl -s "$rsi_installer_latest_yml" | grep -Eo "url:.+" | sed 's/url:[[:space:]]*//')"
@@ -2830,8 +2840,20 @@ get_latest_rsi_installer() {
     rsi_installer_url="${rsi_installer_base_url}/${rsi_installer}"
 }
 
-get_latest_lugwine_runner() {
+# MARK: set_latest_default_runner()
+# Fetch and store variables for the latest default wine runner filename
+set_latest_default_runner() {
+    default_runner_file="$(curl -s https://api.github.com/repos/starcitizen-lug/lug-wine/releases/latest | grep -Eo "\"browser_download_url\": ?\"[^\"]+\"" | grep "fsync" | grep -vie "staging" | cut -d '"' -f4 | xargs basename)"
 
+    if [ -z "$default_runner_file" ]; then
+        return 1
+    fi
+
+    # Store the filename without the file extension
+    default_runner="$(basename "$default_runner_file" .tar.gz)"
+
+    # Set the runner_sources array index which points to the default runner source api url (must be an even number in the array, arrays start with 0)
+    default_runner_source=0
 }
 
 # MARK: get_latest_release()
