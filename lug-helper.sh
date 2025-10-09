@@ -162,7 +162,7 @@ runner_sources=(
 ######## DXVK ##############################################################
 
 # URLs for downloading dxvk versions
-dxvk_async_source="https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases"
+dxvk_async_source="https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases/permalink/latest"
 
 ######## Requirements ######################################################
 
@@ -2294,7 +2294,7 @@ install_game() {
         return 1
     fi
 
-    # Get the latest RSI installer url    
+    # Fetch the latest RSI installer url
     set_latest_rsi_installer
     # Sanity check
     if [ "$?" -eq 1 ]; then
@@ -2707,7 +2707,7 @@ install_async_dxvk() {
 
     # Get the file download url
     # Assume the first item returned by the API is the latest version
-    download_url="$(curl -s "${dxvk_async_source}?per_page=$max_download_items" | grep -Eo "\"direct_asset_url\": ?\"[^\"]+\"" | grep "releases" | grep -F ".tar.gz" | cut -d '"' -f4 | cut -d '?' -f1 | head -n 1)"
+    download_url="$(curl -sL "${dxvk_async_source}" | grep -Eo "\"direct_asset_url\": ?\"[^\"]+\"" | grep "releases" | grep -F ".tar.gz" | cut -d '"' -f4 | cut -d '?' -f1)"
 
     # Sanity check
     if [ -z "$download_url" ]; then
