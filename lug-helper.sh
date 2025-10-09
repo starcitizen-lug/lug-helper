@@ -2894,16 +2894,6 @@ get_current_runner() {
     fi
 }
 
-# MARK: format_urls()
-# Format some URLs for Zenity
-format_urls() {
-    if [ "$use_zenity" -eq 1 ]; then
-        releases_url="<a href='$releases_url'>$releases_url</a>"
-        lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
-        lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
-    fi
-}
-
 # MARK: set_latest_rsi_installer()
 # Fetch and store variables for the latest RSI installer filename and url
 set_latest_rsi_installer() {
@@ -2934,6 +2924,8 @@ set_latest_default_runner() {
     default_runner_source=0
 }
 
+# MARK: set_latest_winetricks()
+# Fetch and store variables for the latest winetricks download urls
 set_latest_winetricks() {
     # Winetricks download url
     winetricks_version="$(get_latest_release Winetricks/winetricks)"
@@ -2953,6 +2945,16 @@ get_latest_release() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
         grep '"tag_name":' |                                            # Get tag line
         sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+}
+
+# MARK: format_urls()
+# Format some URLs for Zenity
+format_urls() {
+    if [ "$use_zenity" -eq 1 ]; then
+        releases_url="<a href='$releases_url'>$releases_url</a>"
+        lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
+        lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
+    fi
 }
 
 # MARK: referral_randomizer()
