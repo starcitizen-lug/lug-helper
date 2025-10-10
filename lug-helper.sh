@@ -1166,6 +1166,11 @@ download_manage() {
         # Initialize success
         unset post_download_required
 
+        # Set variables for the current wine runner configured in the launch script
+        if [ "$download_type" = "runner" ]; then
+            get_current_runner
+        fi
+
         # Loop through the download_sources array and create a menu item
         # for each one. Even numbered elements will contain the item name
         for (( i=0; i<"${#download_sources[@]}"; i=i+2 )); do
@@ -1398,7 +1403,9 @@ download_select_install() {
 
         # Build the menu item
         unset menu_option_text
-        if [ -d "${download_dir}/${download_basename}" ]; then
+        if [ -d "${download_dir}/${download_basename}" ] && [ "$download_type" = "runner" ] && [ "$current_runner_basename" = "$download_basename" ]; then
+            menu_option_text="$download_basename    [in-use]"
+        elif [ -d "${download_dir}/${download_basename}" ]; then
             menu_option_text="$download_basename    [installed]"
         else
             # The file is not installed
@@ -1657,7 +1664,18 @@ download_select_delete() {
 
     # Create menu options for the installed items
     for (( i=0; i<"${#installed_items[@]}"; i++ )); do
-        menu_options+=("${installed_item_names[i]}")
+        # Build the menu item
+        unset menu_option_text
+        # Special handling for runners currently in use
+        if [ "$download_type" = "runner" ] && [ "$current_runner_basename" = "${installed_item_names[i]}" ]; then
+            menu_option_text="${installed_item_names[i]}    [in-use]"
+        else
+            # Everything else
+            menu_option_text="${installed_item_names[i]}"
+        fi
+
+
+        menu_options+=("$menu_option_text")
         menu_actions+=("download_delete $i")
     done
 
@@ -1721,11 +1739,6 @@ download_delete() {
     done
 
     if message question "Are you sure you want to delete the following ${download_type}(s)?\n$list_to_delete"; then
-        # Get the current wine runner from the launch script
-        get_current_runner
-        if [ "$?" -ne 1 ]; then
-            current_runner_path="$(dirname "$launcher_winepath")"
-        fi
 
         unset post_delete_required
 
@@ -1735,7 +1748,7 @@ download_delete() {
             debug_print continue "Deleted ${installed_items[${item_to_delete[i]}]}"
 
             # If we just deleted the currently used runner, we need to trigger post-delete to update the launch script
-            if [ "${installed_items[${item_to_delete[i]}]}" = "$current_runner_path" ]; then
+            if [ "$download_type" = "runner" ] && [ "${installed_items[${item_to_delete[i]}]}" = "$current_runner_path" ]; then
                 post_delete_required="true"
             fi
 
@@ -1808,7 +1821,7 @@ post_download() {
         fi
 
         # We handle installs and deletions differently
-        if [ "$post_download_required" = "installed" ]; then
+        if [ "$post_download_required" = "installed" ] && [ "$download_type" = "runner" ]; then
             # We are installing a wine version and updating the launch script to use it
 
             # Replace the specified variable in the launch script
@@ -1817,7 +1830,7 @@ post_download() {
 
             # Display a confirmation message
             message info "Wine Runner installation complete!"
-        elif [ "$post_download_required" = "deleted" ]; then
+        elif [ "$post_download_required" = "deleted" ] && [ "$download_type" = "runner" ]; then
             # We deleted a custom wine version and need to revert the launch script to use the default wine runner
 
             # Check if the default wine runner is installed
@@ -2892,6 +2905,11 @@ get_current_runner() {
         message warning "Unable to find the current wine runner in your launch script!\n$wine_prefix/$wine_launch_script_name"
         return 1
     fi
+
+    # Remove the last /bin directory from the path to get the runner directory
+    current_runner_path="$(dirname "$launcher_winepath")"
+    # Get the runner filename, not including its file extension
+    current_runner_basename="$(basename "$current_runner_path")"
 }
 
 # MARK: set_latest_rsi_installer()
