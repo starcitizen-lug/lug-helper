@@ -177,7 +177,7 @@ memory_combined_required="40"
 lug_wiki="https://wiki.starcitizen-lug.org"
 
 # NixOS section in Wiki
-lug_wiki_nixos="https://wiki.starcitizen-lug.org/Tips-and-Tricks#nixos"
+lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nix-installation"
 
 # RSI Installer version and url
 rsi_installer_base_url="https://install.robertsspaceindustries.com/rel/2"
