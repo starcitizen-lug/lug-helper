@@ -6,7 +6,8 @@
 # Usage:
 # Run from your terminal or use the .desktop files installed by the Helper.
 #
-# version: 2.2
+# version: 2.3
+# License: GPLv3.0
 
 ############################################################################
 # ENVIRONMENT VARIABLES
