@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for improving the Helper tool
+about: Suggest an idea for improving the Helper tool.
 title: ''
 labels: ''
 assignees: ''

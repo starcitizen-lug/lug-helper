@@ -1,7 +1,7 @@
 ---
 name: Bug report
-about: Bugs or issues with the Helper tool. See other options below for non-Helper
-  related issues
+about: Bugs or issues with the Helper tool. See the Wiki & Discord options below for
+  problems running Star Citizen.
 title: ''
 labels: ''
 assignees: ''
@@ -9,7 +9,8 @@ assignees: ''
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+Please do not report problems running Star Citizen here; this form is for bugs in the LUG Helper tool.  
+For problems running Star Citizen, see our Wiki for troubleshooting info and links to community support: https://wiki.starcitizen-lug.org/
 
 **To Reproduce**
 Steps to reproduce the behavior:
