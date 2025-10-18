@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Wiki
-    url: https://starcitizen-lug.github.io
-    about: Installation issues, troubleshooting, and recent news/changes
+    url: https://wiki.starcitizen-lug.org
+    about: Problems running or installing Star Citizen, troubleshooting steps, and recent news/changes.
   - name: Community Support
     url: https://discord.gg/QRexSTkF25
-    about: Get help in our Discord tech support channel. It's bridged to our Matrix space too! (See wiki above for links)
+    about: Get help from the community in our Discord tech support channel.
