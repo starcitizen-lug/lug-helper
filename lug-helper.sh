@@ -2929,7 +2929,7 @@ set_latest_rsi_installer() {
 # MARK: set_latest_default_runner()
 # Fetch and store variables for the latest default wine runner filename
 set_latest_default_runner() {
-    default_runner_file="$(curl -s https://api.github.com/repos/starcitizen-lug/lug-wine/releases/latest | grep -Eo "\"browser_download_url\": ?\"[^\"]+\"" | grep "fsync" | grep -vie "staging" | cut -d '"' -f4 | xargs basename)"
+    default_runner_file="$(curl -s https://api.github.com/repos/starcitizen-lug/lug-wine/releases/253866750 | grep -Eo "\"browser_download_url\": ?\"[^\"]+\"" | grep "fsync" | grep -vie "staging" | cut -d '"' -f4 | xargs basename)"
 
     if [ -z "$default_runner_file" ]; then
         return 1
