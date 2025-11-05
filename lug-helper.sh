@@ -2565,6 +2565,12 @@ install_game() {
     if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
         # Set the default install path
         install_dir="$HOME/Games/star-citizen"
+
+        # Make sure we're not installing over an existing prefix
+        if [ -d "$install_dir" ]; then
+            message warning "A directory named \"star-citizen\" already exists!\n\n$install_dir\n\nInstalling over an existing prefix is not recommended.\nIf you need to update or re-install the RSI Launcher, use the option in the Maintenance and Troubleshooting menu."
+            return 0
+        fi
     else
         if [ "$use_zenity" -eq 1 ]; then
             message info "On the next screen, select your Star Citizen install location"
