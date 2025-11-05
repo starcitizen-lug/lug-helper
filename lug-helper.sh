@@ -44,7 +44,7 @@ if [ ! -x "$(command -v curl)" ]; then
     fi
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v od)" ] || [ ! -x "$(command -v readlink)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v touch)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through zenity or notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that 'coreutils' is installed!\n" 1>&2
@@ -2754,6 +2754,9 @@ install_game() {
         mkdir -p "$data_dir/icons/hicolor/256x256/apps" && 
         cp "$rsi_icon" "$data_dir/icons/hicolor/256x256/apps"
     fi
+
+    # Create a "no_win64_warnings" file in the prefix to supress Wine64 warnings
+    touch "${install_dir}/no_win64_warnings"
 
     # $HOME/Games/star-citizen/RSI Launcher.desktop
     prefix_desktop_file="$install_dir/RSI Launcher.desktop"
