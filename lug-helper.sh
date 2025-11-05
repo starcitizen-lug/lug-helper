@@ -256,16 +256,16 @@ debug_print() {
     # Echo the provided string and, optionally, exit the script
     case "$1" in
         "continue")
-            printf "\n%s\n" "$2"
+            printf "\n$2\n"
             ;;
         "exit")
             # Write an error to stderr and exit
-            printf "%s\n" "lug-helper.sh: $2" 1>&2
+            printf "lug-helper.sh: $2\n" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 1
             ;;
         *)
-            printf "%s\n" "lug-helper.sh: Unknown argument provided to debug_print function. Aborting." 1>&2
+            printf "lug-helper.sh: Unknown argument provided to debug_print function. Aborting.\n" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 0
             ;;
@@ -2031,14 +2031,24 @@ update_launch_script() {
         # Restore the wine path variable
         sed -i "s#^export wine_path=.*#export wine_path=\"$launcher_winepath\"#" "$wine_prefix/$wine_launch_script_name"
 
+        # Create .desktop files if needed
+        create_desktop_files needed
+
         message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
     elif [ "$launcher_wineprefix" != "$wine_prefix" ]; then
         # The launch script is the correct version, but the current prefix is pointing to the wrong location
+
+        # Create .desktop files if needed
+        create_desktop_files needed
+
         if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
             sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
             message info "Your game launch script has been repaired!"
         fi
     else
+        # Create .desktop files if needed
+        create_desktop_files needed
+
         message info "Your game launch script is already up to date!"
     fi
 }
@@ -2735,9 +2745,6 @@ install_game() {
     post_download_sed_string="export wine_path="
     sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
 
-    # Create .desktop files
-    debug_print continue "Creating .desktop files..."
-
     # Copy the bundled RSI Launcher icon to the .local icons directory
     if [ -f "$rsi_icon" ]; then
         mkdir -p "$data_dir/icons/hicolor/256x256/apps" && 
@@ -2747,13 +2754,43 @@ install_game() {
     # Create a "no_win64_warnings" file in the prefix to supress Wine64 warnings
     touch "${install_dir}/no_win64_warnings"
 
+    # Create .desktop files
+    create_desktop_files
+
+    debug_print continue "Installation finished"
+    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
+}
+
+# MARK: create_desktop_files()
+# Create .desktop files for the RSI Launcher
+# The default behavior is to overwite any existing .desktop files
+#
+# This function takes one optional string argument:
+# "needed" will only create necessary desktop files that don't exist
+create_desktop_files() {
+    # Sanity checks
+    if [ -z "$wine_prefix" ]; then
+        debug_print exit "Script error: The string 'wine_prefix' was not set before calling the create_desktop_files function. Aborting."
+    fi
+
     # $HOME/Games/star-citizen/RSI Launcher.desktop
-    prefix_desktop_file="$install_dir/RSI Launcher.desktop"
+    prefix_desktop_file="${wine_prefix}/RSI Launcher.desktop"
     # $HOME/.local/share/applications/RSI Launcher.desktop
-    localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
+    localshare_desktop_file="${data_dir}/applications/RSI Launcher.desktop"
     # $HOME/Desktop/RSI Launcher.desktop
     home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
 
+    create_desktop_files="true"
+    # If the "needed" argument is passed, determine if we need to create system desktop files
+    if [ "$1" = "needed" ]; then
+        if [ -f "$localshare_desktop_file" ] || [ -f "$home_desktop_file" ]; then
+            # If either desktop file already exists, don't overwrite/replace them
+            create_desktop_files="false"
+        fi
+    fi
+
+    debug_print continue "Creating ${prefix_desktop_file}..."
+    # The backup .desktop file in the prefix directory will always be created so it's up to date
     echo "[Desktop Entry]
 Name=RSI Launcher
 Type=Application
@@ -2762,34 +2799,35 @@ Keywords=Star Citizen;StarCitizen
 StartupNotify=true
 StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher
-Exec=\"$installed_launch_script\"" > "$prefix_desktop_file"
+Exec=\"${wine_prefix}/${wine_launch_script_name}\"" > "$prefix_desktop_file"
 
-    # Copy the new desktop file to ~/.local/share/applications
-    mkdir -p "$data_dir/applications"
-    cp "$prefix_desktop_file" "$localshare_desktop_file"
-    # Copy the new desktop file to the user's desktop directory
-    if [ -d "$(dirname "$home_desktop_file")" ]; then
-        cp "$prefix_desktop_file" "$home_desktop_file"
-    fi
+    if [ "$create_desktop_files" = "true" ]; then
+        debug_print continue "Creating system .desktop files...\n${localshare_desktop_file}\n${home_desktop_file}"
 
-    # Update the .desktop file database if the command is available
-    if [ -x "$(command -v update-desktop-database)" ]; then
-        debug_print continue "Running update-desktop-database..."
-        update-desktop-database "$data_dir/applications"
-    fi
+        # Copy the new desktop file to ~/.local/share/applications
+        mkdir -p "${data_dir}/applications"
+        cp "$prefix_desktop_file" "$localshare_desktop_file"
+        # Copy the new desktop file to the user's desktop directory
+        if [ -d "$(dirname "$home_desktop_file")" ]; then
+            cp "$prefix_desktop_file" "$home_desktop_file"
+        fi
 
-    # Check if the desktop files were created successfully
-    if [ ! -f "$home_desktop_file" ]; then
-        # Desktop file couldn't be created
-        message warning "Warning: The .desktop file could not be created!\n\n$home_desktop_file"
-    fi
-    if [ ! -f "$localshare_desktop_file" ]; then
-        # Desktop file couldn't be created
-        message warning "Warning: The .desktop file could not be created!\n\n$localshare_desktop_file"
-    fi
+        # Update the .desktop file database if the command is available
+        if [ -x "$(command -v update-desktop-database)" ]; then
+            debug_print continue "Running update-desktop-database..."
+            update-desktop-database "${data_dir}/applications"
+        fi
 
-    debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
+        # Check if the desktop files were created successfully
+        if [ ! -f "$home_desktop_file" ]; then
+            # Desktop file couldn't be created
+            message warning "Warning: The .desktop file could not be created!\n\n${home_desktop_file}"
+        fi
+        if [ ! -f "$localshare_desktop_file" ]; then
+            # Desktop file couldn't be created
+            message warning "Warning: The .desktop file could not be created!\n\n${localshare_desktop_file}"
+        fi
+    fi
 }
 
 # MARK: download_wine()
