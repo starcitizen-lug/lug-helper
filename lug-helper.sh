@@ -748,6 +748,67 @@ getdirs() {
     return "$retval"
 }
 
+# MARK: create_desktop_files()
+# Handles creating the .desktop file for the current prefix.
+create_desktop_files() {
+    unset prefix_desktop_file
+    unset localshare_desktop_file
+    unset home_desktop_file
+
+    getdirs
+
+    # Create .desktop files
+    debug_print continue "Creating .desktop files..."
+
+    # Copy the bundled RSI Launcher icon to the .local icons directory
+    if [ -f "$rsi_icon" ]; then
+        mkdir -p "$data_dir/icons/hicolor/256x256/apps" && 
+        cp "$rsi_icon" "$data_dir/icons/hicolor/256x256/apps"
+    fi
+
+    # $HOME/Games/star-citizen/RSI Launcher.desktop
+    prefix_desktop_file="$wine_prefix/RSI Launcher.desktop"
+    # $HOME/.local/share/applications/RSI Launcher.desktop
+    localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
+    # $HOME/Desktop/RSI Launcher.desktop
+    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+
+    echo "[Desktop Entry]
+Name=RSI Launcher
+Type=Application
+Comment=RSI Launcher
+Keywords=Star Citizen;StarCitizen
+StartupNotify=true
+StartupWMClass=rsi launcher.exe
+Icon=rsi-launcher.png
+Exec=\"$wine_prefix/$wine_launch_script_name\"
+Path=$(echo "$wine_prefix" | sed 's/ /\\\s/g')/dosdevices/c:/Program\sFiles/Roberts\sSpace\sIndustries/RSI\sLauncher" > "$prefix_desktop_file"
+
+    # Copy the new desktop file to ~/.local/share/applications
+    mkdir -p "$data_dir/applications"
+    cp "$prefix_desktop_file" "$localshare_desktop_file"
+    # Copy the new desktop file to the user's desktop directory
+    if [ -d "$(dirname "$home_desktop_file")" ]; then
+        cp "$prefix_desktop_file" "$home_desktop_file"
+    fi
+
+    # Update the .desktop file database if the command is available
+    if [ -x "$(command -v update-desktop-database)" ]; then
+        debug_print continue "Running update-desktop-database..."
+        update-desktop-database "$data_dir/applications"
+    fi
+
+    # Check if the desktop files were created successfully
+    if [ ! -f "$home_desktop_file" ]; then
+        # Desktop file couldn't be created
+        message warning "Warning: The .desktop file could not be created!\n\n$home_desktop_file"
+    fi
+    if [ ! -f "$localshare_desktop_file" ]; then
+        # Desktop file couldn't be created
+        message warning "Warning: The .desktop file could not be created!\n\n$localshare_desktop_file"
+    fi
+}
+
 
 ############################################################################
 ######## begin preflight check functions ###################################
@@ -1942,11 +2003,12 @@ maintenance_menu() {
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
         quit_msg="Return to the main menu"
+        create_shortcut_msg="Create/Repair desktop shortcut"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$dirs_msg" "$rsi_launcher_msg" "$create_shortcut_msg" "$reset_msg" "$quit_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launcher" "edit_wine_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "create_desktop_files" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2539,9 +2601,9 @@ install_dxvk_nvapi() {
 ######## end dxvk functions ################################################
 ############################################################################
 
-# MARK: install_game()
+# MARK: install_game_wine()
 # Install the game with Wine
-install_game() {
+install_game_wine() {
     # Check if the install script exists
     if [ ! -f "$wine_launch_script" ]; then
         message error "Game launch script not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
@@ -2588,6 +2650,12 @@ install_game() {
                     continue
                 fi
 
+                # Make sure the directory is empty
+                if [ "$(ls -A "$install_dir" 2>/dev/null)" ]; then
+                    message warning "The chosen directory is not empty!\nPlease choose a different install location.\n\n$install_dir"
+                    continue
+                fi
+
                 # Add the wine prefix subdirectory to the install path
                 install_dir="$install_dir/star-citizen"
 
@@ -2628,7 +2696,7 @@ install_game() {
 
     debug_print continue "Installing a custom wine runner..."
 
-    download_dir="$install_dir/runners"
+    download_dirs=("wine" "$install_dir/runners")
 
     # Install the default wine runner into the prefix
     download_wine
@@ -2649,10 +2717,12 @@ install_game() {
         return 1
     fi
 
-    download_rsi_installer
-    # Abort if the download failed
-    if [ "$?" -eq 1 ]; then
-        message error "Unable to install Star Citizen. Aborting."
+    # Download RSI installer to tmp
+    download_file "$rsi_installer_url" "$rsi_installer" "installer"
+    # Sanity check
+    if [ ! -f "$tmp_dir/$rsi_installer" ]; then
+        # Something went wrong with the download and the file doesn't exist
+        message error "Something went wrong; the installer could not be downloaded!"
         return 1
     fi
 
@@ -2660,7 +2730,7 @@ install_game() {
     tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
     debug_print continue "Installation log file created at $tmp_install_log"
 
-    # Configure the wine prefix environment
+    # Create the new prefix and install powershell
     export WINE="$wine_path/wine"
     export WINESERVER="$wine_path/wineserver"
     export WINEPREFIX="$install_dir"
@@ -2669,13 +2739,10 @@ install_game() {
     # Show a zenity pulsating progress bar
     progress_bar start "Preparing Wine prefix and installing RSI Launcher. Please wait..."
 
-    # Create the new prefix and install powershell
     debug_print continue "Preparing Wine prefix. Please wait; this will take a moment..."
     "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
 
-    exit_code="$?"
-    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
-        # 126 = permission denied (ie. noexec on /tmp)
+    if [ "$?" -eq 1 ]; then
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
         if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
@@ -2708,6 +2775,7 @@ install_game() {
     progress_bar stop
 
     # Kill the wine process after installation
+    # To prevent unexpected lingering background wine processes, it should be launched by the user attached to a terminal
     "$wine_path"/wineserver -k
 
     # Save the install location to the Helper's config files
@@ -2740,55 +2808,7 @@ install_game() {
     post_download_sed_string="export wine_path="
     sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
 
-    # Create .desktop files
-    debug_print continue "Creating .desktop files..."
-
-    # Copy the bundled RSI Launcher icon to the .local icons directory
-    if [ -f "$rsi_icon" ]; then
-        mkdir -p "$data_dir/icons/hicolor/256x256/apps" && 
-        cp "$rsi_icon" "$data_dir/icons/hicolor/256x256/apps"
-    fi
-
-    # $HOME/Games/star-citizen/RSI Launcher.desktop
-    prefix_desktop_file="$install_dir/RSI Launcher.desktop"
-    # $HOME/.local/share/applications/RSI Launcher.desktop
-    localshare_desktop_file="$data_dir/applications/RSI Launcher.desktop"
-    # $HOME/Desktop/RSI Launcher.desktop
-    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
-
-    echo "[Desktop Entry]
-Name=RSI Launcher
-Type=Application
-Comment=RSI Launcher
-Keywords=Star Citizen;StarCitizen
-StartupNotify=true
-StartupWMClass=rsi launcher.exe
-Icon=rsi-launcher
-Exec=\"$installed_launch_script\"" > "$prefix_desktop_file"
-
-    # Copy the new desktop file to ~/.local/share/applications
-    mkdir -p "$data_dir/applications"
-    cp "$prefix_desktop_file" "$localshare_desktop_file"
-    # Copy the new desktop file to the user's desktop directory
-    if [ -d "$(dirname "$home_desktop_file")" ]; then
-        cp "$prefix_desktop_file" "$home_desktop_file"
-    fi
-
-    # Update the .desktop file database if the command is available
-    if [ -x "$(command -v update-desktop-database)" ]; then
-        debug_print continue "Running update-desktop-database..."
-        update-desktop-database "$data_dir/applications"
-    fi
-
-    # Check if the desktop files were created successfully
-    if [ ! -f "$home_desktop_file" ]; then
-        # Desktop file couldn't be created
-        message warning "Warning: The .desktop file could not be created!\n\n$home_desktop_file"
-    fi
-    if [ ! -f "$localshare_desktop_file" ]; then
-        # Desktop file couldn't be created
-        message warning "Warning: The .desktop file could not be created!\n\n$localshare_desktop_file"
-    fi
+    create_desktop_files
 
     debug_print continue "Installation finished"
     message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
@@ -3078,6 +3098,7 @@ Usage: lug-helper <options>
   -w, --show-wiki               Show the LUG Wiki
   -x, --reset-helper            Delete saved lug-helper configs
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
+  -d, --create-desktop-files    Create the desktop files for the existing prefix
   -v, --version                 Display version info and exit
 "
                 exit 0
@@ -3120,6 +3141,9 @@ Usage: lug-helper <options>
                 ;;
             --reset-helper | -x )
                 cargs+=("reset_helper")
+                ;;
+            --create-desktop-files | -d )
+                cargs+=("create_desktop_files")
                 ;;
             --no-gui | -g )
                 # If zenity is unavailable, it has already been set to 0
