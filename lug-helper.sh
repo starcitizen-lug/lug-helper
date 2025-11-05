@@ -11,18 +11,7 @@
 # Please see the project's github repo for more information:
 # https://github.com/starcitizen-lug/lug-helper
 #
-# made with <3
-# Author: https://github.com/the-sane
-# Contributor: https://github.com/Termuellinator
-# Contributor: https://github.com/pstn
-# Contributor: https://github.com/gort818
-# Contributor: https://github.com/victort
-# Contributor: https://github.com/Wrzlprnft
-# Contributor: https://github.com/LovingMelody
-# Contributor: https://github.com/mactan-sc
-# Contributor: https://github.com/ProjectSynchro
-# Runner Downloader inspired by:
-# https://github.com/richardtatum/sc-runner-updater
+# made with <3 by https://github.com/the-sane
 #
 # License: GPLv3.0
 ############################################################################

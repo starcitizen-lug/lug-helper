@@ -78,22 +78,12 @@ _Winetricks Dependencies: **cabextract**, **unzip**_
 _Optional Dependencies: **zenity** (for GUI)_  
 
 ## Made with <3
-#### Author:
-- https://github.com/the-sane
-#### Contributors:
-- https://github.com/Termuellinator
-- https://github.com/pstn
-- https://github.com/gort818
-- https://github.com/victort
-- https://github.com/Wrzlprnft
-- https://github.com/ananace
-- https://github.com/LovingMelody
-- https://github.com/mactan-sc
-- https://github.com/ProjectSynchro
-- Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
+**Author:** https://github.com/the-sane
 
 ❤️ Many thanks to everyone who has contributed to the project!  
-You can view commit graphs for the Helper's contributors [here](https://github.com/starcitizen-lug/lug-helper/graphs/contributors).
+You can view commit graphs for our contributors [here](https://github.com/starcitizen-lug/lug-helper/graphs/contributors).
+
+Runner Downloader inspired by https://github.com/richardtatum/sc-runner-updater
 
 ## Contributing
 Please read the [Contributor's Guide](https://github.com/starcitizen-lug/lug-helper?tab=contributing-ov-file).  
