@@ -2080,8 +2080,7 @@ edit_launch_script() {
 
 # MARK: call_launch_script()
 # Call our launch script and pass it the given command line argument
-call_launch_script()
-{
+call_launch_script() {
     # This function expects a string to be passed in as an argument
     if [ -z "$1" ]; then
         debug_print exit "Script error:  The call_launch_script function expects an argument. Aborting."
