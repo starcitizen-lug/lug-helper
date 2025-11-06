@@ -256,11 +256,11 @@ debug_print() {
     # Echo the provided string and, optionally, exit the script
     case "$1" in
         "continue")
-            printf "\n$2\n"
+            printf "\n%b\n" "$2"
             ;;
         "exit")
             # Write an error to stderr and exit
-            printf "lug-helper.sh: $2\n" 1>&2
+            printf "lug-helper.sh: %b\n" "$2" 1>&2
             read -n 1 -s -p "Press any key..."
             exit 1
             ;;
@@ -335,7 +335,7 @@ message() {
             "info")
                 # info message
                 # call format: message info "text to display"
-                printf "\n$2\n\n"
+                printf "\n%b\n\n" "$2"
                 if [ "$cmd_line" != "true" ]; then
                     # Don't pause if we've been invoked via command line arguments
                     read -n 1 -s -p "Press any key..."
@@ -344,19 +344,19 @@ message() {
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                printf "\n$2\n\n"
+                printf "\n%b\n\n" "$2"
                 read -n 1 -s -p "Press any key..."
                 ;;
             "error")
                 # error message. Does not clear the screen
                 # call format: message error "text to display"
-                printf "\n$2\n\n"
+                printf "\n%b\n\n" "$2"
                 read -n 1 -s -p "Press any key..."
                 ;;
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                printf "\n$2\n"
+                printf "\n%b\n" "$2"
                 while read -p "[y/n]: " yn; do
                     case "$yn" in
                         [Yy]*)
@@ -374,7 +374,7 @@ message() {
             "options")
                 # Choose from two options
                 # call format: if message options left_button_name right_button_name "which one do you want?"; then...
-                printf "\n$4\n1: $3\n2: $2\n"
+                printf "\n%b\n1: %b\n2: %b\n" "$4" "$3" "$2"
                 while read -p "[1/2]: " option; do
                     case "$option" in
                         1*)
@@ -562,7 +562,7 @@ menu() {
     else
         # Use a text menu if Zenity is not available
         clear
-        printf "\n$menu_text_terminal\n\n"
+        printf "\n%b\n\n" "$menu_text_terminal"
 
         PS3="Enter selection number: "
         select choice in "${menu_options[@]}"
