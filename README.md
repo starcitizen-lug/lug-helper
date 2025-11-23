@@ -34,7 +34,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Select a different wine prefix for the Helper to target in its operations
 
 - `Update/Repair launch script`
-  - Update the game launch script to the latest version or repair broken paths
+  - Update the game launch script to the latest version or repair broken paths and .desktop files
 
 - `Edit launch script`
   - Edit the game launch script
