@@ -1140,9 +1140,16 @@ download_manage() {
     # The download management menu will loop until the user cancels
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
+        # Fetch wine prefix
+        if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+            game_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+        else
+            game_prefix="Not configured"
+        fi
+
         # Configure the menu
-        menu_text_zenity="<b><big>Manage Your $download_menu_heading</big>\n\n$download_menu_description</b>\n\nYou may choose from the following options:"
-        menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nYou may choose from the following options:"
+        menu_text_zenity="<b><big>Manage Your $download_menu_heading</big>\n\n$download_menu_description</b>\n\nWine prefix: <a href='file://$game_prefix'>$game_prefix</a>"
+        menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nWine prefix: $game_prefix"
         menu_text_height="$download_menu_height"
         menu_type="radiolist"
 
@@ -1909,14 +1916,14 @@ maintenance_menu() {
     while [ "$looping_menu" = "true" ]; do
         # Fetch wine prefix
         if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-            maint_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+            game_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
         else
-            maint_prefix="Not configured"
+            game_prefix="Not configured"
         fi
 
         # Configure the menu
-        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki\n\nWine prefix:</b> $maint_prefix"
-        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $maint_prefix"
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nWine prefix: <a href='file://$game_prefix'>$game_prefix</a>"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $game_prefix"
         menu_text_height="320"
         menu_type="radiolist"
 
@@ -2303,9 +2310,16 @@ reset_helper() {
 # MARK: dxvk_menu()
 # Menu to select and install a dxvk into the wine prefix
 dxvk_menu() {
+    # Fetch wine prefix
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        game_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+    else
+        game_prefix="Not configured"
+    fi
+
     # Configure the menu
-    menu_text_zenity="<b><big>Manage Your DXVK Version</big>\n\nSelect which DXVK you'd like to update or install</b>\n\nYou may choose from the following options:"
-    menu_text_terminal="Manage Your DXVK Version\n\nSelect which DXVK you'd like to update or install\nYou may choose from the following options:"
+    menu_text_zenity="<b><big>Manage Your DXVK Version</big>\n\nSelect which DXVK you'd like to update or install</b>\n\nWine prefix: <a href='file://$game_prefix'>$game_prefix</a>"
+    menu_text_terminal="Manage Your DXVK Version\n\nSelect which DXVK you'd like to update or install\nWine prefix: $game_prefix"
     menu_text_height="300"
     menu_type="radiolist"
 
