@@ -2075,7 +2075,7 @@ update_launch_script() {
         # Copy the bundled icons to the .local icons directory if they don't already exist
         copy_icons
 
-        message info "Your game launch script is already up to date!"
+        message info "Your game launch script is already up to date!\n.desktop files and icons have been repaired if they were missing."
     fi
 }
 
@@ -2787,7 +2787,7 @@ install_game() {
     create_desktop_files
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
+    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_rsi_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
 }
 
 # MARK: create_desktop_files()
@@ -2795,7 +2795,7 @@ install_game() {
 # The default behavior is to overwite any existing .desktop files
 #
 # This function takes one optional string argument:
-# "needed" will only create necessary desktop files that don't exist
+# "needed" will create desktop files that don't exist and won't overwrite existing files
 create_desktop_files() {
     # Sanity checks
     if [ -z "$wine_prefix" ]; then
@@ -2805,27 +2805,26 @@ create_desktop_files() {
     # $HOME/Games/star-citizen/RSI Launcher.exe.desktop
     prefix_desktop_file="${wine_prefix}/RSI Launcher.exe.desktop"
     # $HOME/.local/share/applications/RSI Launcher.exe.desktop
-    localshare_desktop_file="${data_dir}/applications/RSI Launcher.exe.desktop"
-    localshare_desktop_file_old="${data_dir}/applications/RSI Launcher.desktop"
+    localshare_rsi_desktop_file="${data_dir}/applications/RSI Launcher.exe.desktop"
+    localshare_rsi_desktop_file_old="${data_dir}/applications/RSI Launcher.desktop"
+    localshare_sc_desktop_file="${data_dir}/applications/starcitizen.exe.desktop"
     # $HOME/Desktop/RSI Launcher.exe.desktop
     home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.exe.desktop"
 
-    create_desktop_files="true"
-    # If the "needed" argument is passed, determine if we need to create system desktop files
+    overwrite_desktop_files="true"
+    # If the "needed" argument is passed, we won't overwrite existing desktop files
     if [ "$1" = "needed" ]; then
-        # If localshare desktop file already exists, don't overwrite/replace them
-        if [ -f "$localshare_desktop_file" ]; then
-            create_desktop_files="false"
-        fi
-        # If the old localshare desktop filename exists, remove it
-        if [ -f "$localshare_desktop_file_old" ]; then
-            debug_print continue "Old desktop filename found, removing ${localshare_desktop_file_old}..."
-            rm --interactive=never "$localshare_desktop_file_old"
-        fi
+        overwrite_desktop_files="false"
+    fi
+
+    # If the old localshare desktop filename exists, rename it
+    if [ -f "$localshare_rsi_desktop_file_old" ]; then
+        debug_print continue "Old desktop filename found, renaming ${localshare_rsi_desktop_file_old}..."
+        mv "$localshare_rsi_desktop_file_old" "$localshare_rsi_desktop_file"
     fi
 
     debug_print continue "Creating ${prefix_desktop_file}..."
-    # The backup .desktop file in the prefix directory will always be created so it's up to date
+    # The backup .desktop files in the prefix directory will always be created so it's up to date
     echo "[Desktop Entry]
 Name=RSI Launcher
 Type=Application
@@ -2836,32 +2835,45 @@ StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher
 Exec=\"${wine_prefix}/${wine_launch_script_name}\"" > "$prefix_desktop_file"
 
-    if [ "$create_desktop_files" = "true" ]; then
-        debug_print continue "Creating system .desktop files...\n${localshare_desktop_file}\n${home_desktop_file}"
+    debug_print continue "Creating system .desktop files if needed...\n${localshare_rsi_desktop_file}\n${localshare_sc_desktop_file}\n${home_desktop_file}"
 
-        # Copy the new desktop file to ~/.local/share/applications
-        mkdir -p "${data_dir}/applications"
-        cp "$prefix_desktop_file" "$localshare_desktop_file"
-        # Copy the new desktop file to the user's desktop directory
+    # Make sure ~/.local/share/applications exists
+    mkdir -p "${data_dir}/applications"
+    if [ ! -d "${data_dir}/applications" ]; then
+        debug_print continue "Failed to create applications directory. Desktop files were not installed. ${data_dir}/applications"
+        return 1
+    fi
+
+    # Create a starcitizen.exe desktop file in ~/.local/share/applications
+    if [ ! -f "$localshare_sc_desktop_file" ] || [ "$overwrite_desktop_files" = "true" ]; then
+        echo "[Desktop Entry]
+Name=Star Citizen
+Type=Application
+NoDisplay=true
+Icon=starcitizen" > "$localshare_sc_desktop_file"
+    fi
+
+    # Copy the rsi launcher desktop file to ~/.local/share/applications
+    if [ ! -f "$localshare_rsi_desktop_file" ] || [ "$overwrite_desktop_files" = "true" ]; then
+        cp "$prefix_desktop_file" "$localshare_rsi_desktop_file"
+    fi
+
+    # Copy the rsi launcher desktop file to the user's desktop directory
+    if [ ! -f "$home_desktop_file" ] || [ "$overwrite_desktop_files" = "true" ]; then
         if [ -d "$(dirname "$home_desktop_file")" ]; then
             cp "$prefix_desktop_file" "$home_desktop_file"
         fi
+    fi
 
-        # Update the .desktop file database if the command is available
-        if [ -x "$(command -v update-desktop-database)" ]; then
-            debug_print continue "Running update-desktop-database..."
-            update-desktop-database "${data_dir}/applications"
-        fi
+    # Update the .desktop file database if the command is available
+    if [ -x "$(command -v update-desktop-database)" ]; then
+        debug_print continue "Running update-desktop-database..."
+        update-desktop-database "${data_dir}/applications"
+    fi
 
-        # Check if the desktop files were created successfully
-        if [ ! -f "$home_desktop_file" ]; then
-            # Desktop file couldn't be created
-            message warning "Warning: The .desktop file could not be created!\n\n${home_desktop_file}"
-        fi
-        if [ ! -f "$localshare_desktop_file" ]; then
-            # Desktop file couldn't be created
-            message warning "Warning: The .desktop file could not be created!\n\n${localshare_desktop_file}"
-        fi
+    # Check if the desktop files were created successfully
+    if [ ! -f "$localshare_rsi_desktop_file" ] || [ ! -f "$localshare_sc_desktop_file" ] || [ ! -f "$home_desktop_file" ]; then
+        message warning "Warning: One or more .desktop files could not be created!\n\n${localshare_rsi_desktop_file}\n${localshare_sc_desktop_file}\n${home_desktop_file}"
     fi
 }
 
