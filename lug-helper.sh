@@ -106,10 +106,12 @@ default_install_path="drive_c/Program Files/Roberts Space Industries"
 ######## Bundled Files #####################################################
 
 rsi_icon_name="rsi-launcher.png"
+sc_icon_name="starcitizen.png"
 wine_launch_script_name="sc-launch.sh"
 
 # Default to files in the Helper directory for a git download
 rsi_icon="$helper_dir/$rsi_icon_name"
+sc_icon="$helper_dir/$sc_icon_name"
 wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
 
 # Build our array of search paths, supporting packaged versions of this script
@@ -124,13 +126,18 @@ for searchdir in "${data_dirs_array[@]}"; do
     fi
 
     # rsi-launcher.png
-    if [ ! -f "$rsi_icon" ] && [ -f "$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name" ]; then
-        rsi_icon="$searchdir/icons/hicolor/256x256/apps/$rsi_icon_name"
+    if [ ! -f "$rsi_icon" ] && [ -f "${searchdir}/icons/hicolor/256x256/apps/${rsi_icon_name}" ]; then
+        rsi_icon="${searchdir}/icons/hicolor/256x256/apps/${rsi_icon_name}"
+    fi
+
+    # starcitizen.png
+    if [ ! -f "$sc_icon" ] && [ -f "${searchdir}/icons/hicolor/256x256/apps/${sc_icon_name}" ]; then
+        sc_icon="${searchdir}/icons/hicolor/256x256/apps/${sc_icon_name}"
     fi
 
     # sc-launch.sh
-    if [ ! -f "$wine_launch_script" ] && [ -f "$searchdir/lug-helper/$wine_launch_script_name" ]; then
-        wine_launch_script="$searchdir/lug-helper/$wine_launch_script_name"
+    if [ ! -f "$wine_launch_script" ] && [ -f "${searchdir}/lug-helper/${wine_launch_script_name}" ]; then
+        wine_launch_script="${searchdir}/lug-helper/${wine_launch_script_name}"
     fi
 done
 
@@ -2758,11 +2765,8 @@ install_game() {
     post_download_sed_string="export wine_path="
     sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "$installed_launch_script"
 
-    # Copy the bundled RSI Launcher icon to the .local icons directory
-    if [ -f "$rsi_icon" ]; then
-        mkdir -p "$data_dir/icons/hicolor/256x256/apps" && 
-        cp "$rsi_icon" "$data_dir/icons/hicolor/256x256/apps"
-    fi
+    # Copy the bundled icons to the .local icons directory
+    copy_icons
 
     # Create a "no_win64_warnings" file in the prefix to supress Wine64 warnings
     touch "${install_dir}/no_win64_warnings"
@@ -2847,6 +2851,29 @@ Exec=\"${wine_prefix}/${wine_launch_script_name}\"" > "$prefix_desktop_file"
             message warning "Warning: The .desktop file could not be created!\n\n${localshare_desktop_file}"
         fi
     fi
+}
+
+# MARK: copy_icons()
+# Copy the bundled icons to the .local icons directory if they don't already exist
+copy_icons() {
+    if [ -f "${data_dir}/icons/hicolor/256x256/apps/${rsi_icon_name}" ] && [ -f "${data_dir}/icons/hicolor/256x256/apps/${sc_icon_name}" ]; then
+        # Icons already exist so we're done here
+        return 0
+    fi
+
+    mkdir -p "${data_dir}/icons/hicolor/256x256/apps"
+    if [ ! -d "${data_dir}/icons/hicolor/256x256/apps" ]; then
+        debug_print continue "Failed to create icon directory. Icons were not installed. ${data_dir}/icons/hicolor/256x256/apps"
+        return 1
+    fi
+
+    if [ ! -f "$rsi_icon" ] || [ ! -f "$sc_icon" ]; then
+        debug_print continue "Source icon file(s) not found, unable to install icons."
+        return 1
+    fi
+
+    cp "$rsi_icon" "${data_dir}/icons/hicolor/256x256/apps"
+    cp "$sc_icon" "${data_dir}/icons/hicolor/256x256/apps"
 }
 
 # MARK: download_wine()
