@@ -1997,6 +1997,7 @@ update_launch_script() {
         return 0
     fi
 
+    # Make sure the launch script exists. This will intentionally fail for non-helper installs to avoid confusion when third party launchers are used.
     if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
         message warning "Game launch script not found!\n\n$wine_prefix/$wine_launch_script_name"
         return 1
