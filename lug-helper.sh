@@ -1987,6 +1987,7 @@ switch_prefix() {
 
 # MARK: update_launch_script()
 # Update the game launch script if necessary
+# Also creates .desktop files and installs icons if needed
 update_launch_script() {
     getdirs
 
@@ -2048,6 +2049,9 @@ update_launch_script() {
         # Create .desktop files if needed
         create_desktop_files needed
 
+        # Copy the bundled icons to the .local icons directory if they don't already exist
+        copy_icons
+
         message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
     elif [ "$launcher_wineprefix" != "$wine_prefix" ]; then
         # The launch script is the correct version, but the current prefix is pointing to the wrong location
@@ -2055,13 +2059,21 @@ update_launch_script() {
         # Create .desktop files if needed
         create_desktop_files needed
 
+        # Copy the bundled icons to the .local icons directory if they don't already exist
+        copy_icons
+
         if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
             sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
             message info "Your game launch script has been repaired!"
         fi
     else
+        # The launch script is up to date!
+
         # Create .desktop files if needed
         create_desktop_files needed
+
+        # Copy the bundled icons to the .local icons directory if they don't already exist
+        copy_icons
 
         message info "Your game launch script is already up to date!"
     fi
@@ -2872,6 +2884,7 @@ copy_icons() {
         return 1
     fi
 
+    debug_print continue "Copying icons to ${data_dir}/icons/hicolor/256x256/apps..."
     cp "$rsi_icon" "${data_dir}/icons/hicolor/256x256/apps"
     cp "$sc_icon" "${data_dir}/icons/hicolor/256x256/apps"
 }
