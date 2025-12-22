@@ -2786,19 +2786,25 @@ create_desktop_files() {
         debug_print exit "Script error: The string 'wine_prefix' was not set before calling the create_desktop_files function. Aborting."
     fi
 
-    # $HOME/Games/star-citizen/RSI Launcher.desktop
-    prefix_desktop_file="${wine_prefix}/RSI Launcher.desktop"
-    # $HOME/.local/share/applications/RSI Launcher.desktop
-    localshare_desktop_file="${data_dir}/applications/RSI Launcher.desktop"
-    # $HOME/Desktop/RSI Launcher.desktop
-    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop"
+    # $HOME/Games/star-citizen/RSI Launcher.exe.desktop
+    prefix_desktop_file="${wine_prefix}/RSI Launcher.exe.desktop"
+    # $HOME/.local/share/applications/RSI Launcher.exe.desktop
+    localshare_desktop_file="${data_dir}/applications/RSI Launcher.exe.desktop"
+    localshare_desktop_file_old="${data_dir}/applications/RSI Launcher.desktop"
+    # $HOME/Desktop/RSI Launcher.exe.desktop
+    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.exe.desktop"
 
     create_desktop_files="true"
     # If the "needed" argument is passed, determine if we need to create system desktop files
     if [ "$1" = "needed" ]; then
-        if [ -f "$localshare_desktop_file" ] || [ -f "$home_desktop_file" ]; then
-            # If either desktop file already exists, don't overwrite/replace them
+        # If localshare desktop file already exists, don't overwrite/replace them
+        if [ -f "$localshare_desktop_file" ]; then
             create_desktop_files="false"
+        fi
+        # If the old localshare desktop filename exists, remove it
+        if [ -f "$localshare_desktop_file_old" ]; then
+            debug_print continue "Old desktop filename found, removing ${localshare_desktop_file_old}..."
+            rm --interactive=never "$localshare_desktop_file_old"
         fi
     fi
 
