@@ -2886,20 +2886,26 @@ copy_icons() {
         return 0
     fi
 
+    # Make sure the icon directory we need exists
     mkdir -p "${data_dir}/icons/hicolor/256x256/apps"
     if [ ! -d "${data_dir}/icons/hicolor/256x256/apps" ]; then
         debug_print continue "Failed to create icon directory. Icons were not installed. ${data_dir}/icons/hicolor/256x256/apps"
         return 1
     fi
 
+    # Check if we have the bundled icon files
     if [ ! -f "$rsi_icon" ] || [ ! -f "$sc_icon" ]; then
         debug_print continue "Source icon file(s) not found, unable to install icons."
         return 1
     fi
 
+    # Copy the icons over
     debug_print continue "Copying icons to ${data_dir}/icons/hicolor/256x256/apps..."
     cp "$rsi_icon" "${data_dir}/icons/hicolor/256x256/apps"
     cp "$sc_icon" "${data_dir}/icons/hicolor/256x256/apps"
+
+    # Update the timestamp on the directory so DEs re-cache/index the icons
+    touch "${data_dir}/icons/hicolor"
 }
 
 # MARK: download_wine()
