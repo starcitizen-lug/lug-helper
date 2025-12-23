@@ -2076,7 +2076,7 @@ update_launch_script() {
         # Copy the bundled icons to the .local icons directory if they don't already exist
         copy_icons
 
-        message info "Your game launch script is already up to date!\n.desktop files and icons have been repaired if they were missing."
+        message info "Your game launch script is already up to date!\n\n.desktop files and icons have been repaired if they were missing."
     fi
 }
 
@@ -2807,7 +2807,6 @@ create_desktop_files() {
     prefix_desktop_file="${wine_prefix}/rsi launcher.exe.desktop"
     # $HOME/.local/share/applications/rsi launcher.exe.desktop
     localshare_rsi_desktop_file="${data_dir}/applications/rsi launcher.exe.desktop"
-    localshare_rsi_desktop_file_old="${data_dir}/applications/RSI Launcher.desktop"
     localshare_sc_desktop_file="${data_dir}/applications/starcitizen.exe.desktop"
     # $HOME/Desktop/rsi launcher.exe.desktop
     home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/rsi launcher.exe.desktop"
@@ -2817,10 +2816,18 @@ create_desktop_files() {
         overwrite_desktop_files="false"
     fi
 
-    # If the old localshare desktop filename exists, rename it
-    if [ -f "$localshare_rsi_desktop_file_old" ]; then
-        debug_print continue "Old desktop filename found, renaming ${localshare_rsi_desktop_file_old}..."
-        mv "$localshare_rsi_desktop_file_old" "$localshare_rsi_desktop_file"
+    # If the old .desktop filenames exist, rename them
+    if [ -f "${wine_prefix}/RSI Launcher.desktop" ]; then
+        debug_print continue "Old .desktop filename found, renaming ${wine_prefix}/RSI Launcher.desktop..."
+        mv "${wine_prefix}/RSI Launcher.desktop" "$prefix_desktop_file"
+    fi
+    if [ -f "${data_dir}/applications/RSI Launcher.desktop" ]; then
+        debug_print continue "Old .desktop filename found, renaming ${data_dir}/applications/RSI Launcher.desktop..."
+        mv "${data_dir}/applications/RSI Launcher.desktop" "$localshare_rsi_desktop_file"
+    fi
+    if [ -f "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" ]; then
+        debug_print continue "Old .desktop filename found, renaming ${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop..."
+        mv "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" "$home_desktop_file"
     fi
 
     debug_print continue "Creating ${prefix_desktop_file}..."
