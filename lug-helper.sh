@@ -2057,8 +2057,8 @@ update_launch_script() {
     elif [ "$launcher_wineprefix" != "$wine_prefix" ]; then
         # The launch script is the correct version, but the current prefix is pointing to the wrong location
 
-        # Create .desktop files if needed
-        create_desktop_files needed
+        # Overwrite .desktop files to make sure they use the correct prefix
+        create_desktop_files
 
         # Copy the bundled icons to the .local icons directory if they don't already exist
         copy_icons
