@@ -2851,6 +2851,8 @@ Exec=\"${wine_prefix}/${wine_launch_script_name}\"" > "$prefix_desktop_file"
 Name=Star Citizen
 Type=Application
 NoDisplay=true
+StartupNotify=true
+StartupWMClass=starcitizen.exe
 Icon=starcitizen" > "$localshare_sc_desktop_file"
     fi
 
