@@ -2057,14 +2057,30 @@ update_launch_script() {
     elif [ "$launcher_wineprefix" != "$wine_prefix" ]; then
         # The launch script is the correct version, but the current prefix is pointing to the wrong location
 
-        # Overwrite .desktop files to make sure they use the correct prefix
-        create_desktop_files
-
         # Copy the bundled icons to the .local icons directory if they don't already exist
         copy_icons
 
         if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
-            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
+            # Update WINEPREFIX line
+            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"${wine_prefix}\"|" "${wine_prefix}/${wine_launch_script_name}"
+
+            # wine_path will also be wrong. For simplicity, install the default wine runner into the prefix and use that
+            download_dir="${wine_prefix}/runners"
+            download_wine
+            # Make sure the wine download worked
+            if [ "$?" -eq 1 ]; then
+                message error "Something went wrong while installing ${default_runner}!\nGame installation cannot proceed."
+                return 1
+            fi
+
+            # Update Wine binary in game launch script
+            wine_path="$wine_prefix/runners/$downloaded_item_name/bin"
+            post_download_sed_string="export wine_path="
+            sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "${wine_prefix}/${wine_launch_script_name}"
+
+            # Overwrite .desktop files to make sure they use the correct prefix
+            create_desktop_files
+
             message info "Your game launch script has been repaired!"
         fi
     else
@@ -2917,7 +2933,7 @@ copy_icons() {
 }
 
 # MARK: download_wine()
-# Download a default wine runner for use by the installer
+# Download and install the default wine runner
 # Expects download_dir to be set before calling
 download_wine() {
     if [ -z "$download_dir" ]; then
