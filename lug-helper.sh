@@ -2803,15 +2803,14 @@ create_desktop_files() {
         debug_print exit "Script error: The string 'wine_prefix' was not set before calling the create_desktop_files function. Aborting."
     fi
 
-    # $HOME/Games/star-citizen/RSI Launcher.exe.desktop
-    prefix_desktop_file="${wine_prefix}/RSI Launcher.exe.desktop"
-    # $HOME/.local/share/applications/RSI Launcher.exe.desktop
-    localshare_rsi_desktop_file="${data_dir}/applications/RSI Launcher.exe.desktop"
+    # $HOME/Games/star-citizen/rsi launcher.exe.desktop
+    prefix_desktop_file="${wine_prefix}/rsi launcher.exe.desktop"
+    # $HOME/.local/share/applications/rsi launcher.exe.desktop
+    localshare_rsi_desktop_file="${data_dir}/applications/rsi launcher.exe.desktop"
     localshare_rsi_desktop_file_old="${data_dir}/applications/RSI Launcher.desktop"
     localshare_sc_desktop_file="${data_dir}/applications/starcitizen.exe.desktop"
-    # $HOME/Desktop/RSI Launcher.exe.desktop
-    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.exe.desktop"
-
+    # $HOME/Desktop/rsi launcher.exe.desktop
+    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/rsi launcher.exe.desktop"
     overwrite_desktop_files="true"
     # If the "needed" argument is passed, we won't overwrite existing desktop files
     if [ "$1" = "needed" ]; then
