@@ -21,7 +21,7 @@ export WINEPREFIX="$HOME/Games/star-citizen"
 launch_log="$WINEPREFIX/sc-launch.log"
 unset SDL_VIDEODRIVER
 
-export WINEDLLOVERRIDES=winemenubuilder.exe=d # Prevent updates from overwriting our .desktop entries
+export WINEDLLOVERRIDES="winemenubuilder.exe=d" # Prevent updates from overwriting our .desktop entries
 export WINEDEBUG=-all # Cut down on console debug messages
 # Nvidia cache options
 export __GL_SHADER_DISK_CACHE=1
