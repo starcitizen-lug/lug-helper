@@ -964,14 +964,6 @@ mapcount_check() {
     if [ "$mapcount" -ge 16777216 ]; then
         # All good
         preflight_pass+=("vm.max_map_count is set to $mapcount.")
-    elif grep -E -x -q "vm.max_map_count" /etc/sysctl.conf /etc/sysctl.d/* 2>/dev/null; then
-        # Was it supposed to have been set by sysctl?
-        preflight_fail+=("vm.max_map_count is configured to at least 16777216 but the setting has not been loaded by your system.")
-        # Add the function that will be called to change the configuration
-        preflight_action_funcs+=("mapcount_once")
-
-        # Add info for manually changing the setting
-        preflight_manual+=("To change vm.max_map_count until the next reboot, run:\nsudo sysctl -w vm.max_map_count=16777216")
     else
         # The setting should be changed
         preflight_fail+=("vm.max_map_count is $mapcount\nand should be set to at least 16777216\nto give the game access to sufficient memory.")
@@ -1006,19 +998,11 @@ mapcount_set() {
     preflight_followup+=("mapcount_confirm")
 }
 
-# MARK: mapcount_once()
-# Sets vm.max_map_count for the current session only
-mapcount_once() {
-    preflight_root_actions+=('sysctl -w vm.max_map_count=16777216')
-    preflight_fix_results+=("vm.max_map_count was changed until the next boot.")
-    preflight_followup+=("mapcount_confirm")
-}
-
 # MARK: mapcount_confirm()
 # Check if setting vm.max_map_count was successful
 mapcount_confirm() {
     if [ "$(cat /proc/sys/vm/max_map_count)" -lt 16777216 ]; then
-        preflight_fix_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou will most likely experience crashes.")
+        preflight_fix_results+=("WARNING: As far as this Helper can detect, vm.max_map_count\nwas not successfully configured on your system.\nYou may experience crashes.")
     fi
 }
 
