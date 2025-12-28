@@ -2762,6 +2762,10 @@ install_game() {
         return 1
     fi
 
+    # Temporarily force DX11 while we wait for CIG to fix color inversion in Vulkan
+    mkdir -p "${game_path}/LIVE"
+    echo "r.graphicsRenderer = 0" > "${game_path}/LIVE/user.cfg"
+
     # Copy game launch script to the wine prefix root directory
     debug_print continue "Copying game launch script to ${install_dir}..."
     if [ -f "$install_dir/$wine_launch_script_name" ]; then
