@@ -364,6 +364,8 @@ message() {
                 # question
                 # call format: if message question "question to ask?"; then...
                 printf "\n%b\n" "$2"
+
+                # Checks if confirmation is needed
                 if [ $confirm == 0 ]; then
                     printf "[y/n]:"
                     return 0
