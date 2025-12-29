@@ -3211,6 +3211,7 @@ Usage: lug-helper <options>
   -w, --show-wiki               Show the LUG Wiki
   -x, --reset-helper            Delete saved lug-helper configs
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
+  -nc, --noconfirm              Ignore all question prompts and proceed
   -v, --version                 Display version info and exit
 "
                 exit 0
