@@ -364,6 +364,11 @@ message() {
                 # question
                 # call format: if message question "question to ask?"; then...
                 printf "\n%b\n" "$2"
+                if [ $confirm == 0 ]; then
+                    printf "[y/n]:"
+                    return 0
+                fi
+
                 while read -p "[y/n]: " yn; do
                     case "$yn" in
                         [Yy]*)
@@ -3252,6 +3257,9 @@ Usage: lug-helper <options>
                 # and this setting has no effect
                 use_zenity=0
                 ;;
+            --noconfirm | -nc )
+                confirm=0
+            ;;
             --version | -v )
                 printf "LUG Helper %s\n" "$current_version"
                 exit 0
