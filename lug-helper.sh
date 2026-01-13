@@ -169,8 +169,10 @@ memory_combined_required="40"
 
 ######## Links / Versions ##################################################
 
-# LUG Wiki
+# LUG community links
 lug_wiki="https://wiki.starcitizen-lug.org"
+lug_org="https://robertsspaceindustries.com/en/orgs/LUG"
+lug_discord="https://discord.gg/QRexSTkF25"
 
 # NixOS section in Wiki
 lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nix-installation"
@@ -181,8 +183,10 @@ rsi_installer_latest_yml="${rsi_installer_base_url}/latest.yml"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
-releases_url="https://github.com/${repo}/releases"
+git_url="https://github.com/${repo}"
+releases_url="${git_url}/releases"
 current_version="v4.8"
+changelog_url="${releases_url}/tag/${current_version}"
 
 ############################################################################
 ############################################################################
@@ -3095,22 +3099,27 @@ get_latest_release() {
 # Format some URLs for Zenity
 format_urls() {
     if [ "$use_zenity" -eq 1 ]; then
-        releases_url="<a href='$releases_url'>$releases_url</a>"
-        lug_wiki="<a href='$lug_wiki'>$lug_wiki</a>"
-        lug_wiki_nixos="<a href='$lug_wiki_nixos'>$lug_wiki_nixos</a>"
+        git_url="<a href='${git_url}'>${git_url}</a>"
+        releases_url="<a href='${releases_url}'>${releases_url}</a>"
+        changelog_url="<a href='${changelog_url}'>${current_version}</a>"
+        lug_wiki="<a href='${lug_wiki}'>${lug_wiki}</a>"
+        lug_wiki_nixos="<a href='${lug_wiki_nixos}'>${lug_wiki_nixos}</a>"
+        lug_org="<a href='${lug_org}'>${lug_org}</a>"
+        lug_discord="<a href='${lug_discord}'>${lug_discord}</a>"
     fi
 }
 
-# MARK: referral_randomizer()
-# Get a random Penguin's Star Citizen referral code
-referral_randomizer() {
-    # Populate the referral codes array
-    referral_codes=("STAR-4TZD-6KMM" "STAR-4XM2-VM99" "STAR-2NPY-FCR2" "STAR-T9Z9-7W6P" "STAR-VLBF-W2QR" "STAR-BYR6-YHMF" "STAR-3X2H-VZMX" "STAR-BRWN-FB9T" "STAR-FG6Y-N4Q4" "STAR-VLD6-VZRG" "STAR-T9KF-LV77" "STAR-4XHB-R7RF" "STAR-9NVF-MRN7" "STAR-3Q4W-9TC3" "STAR-3SBK-7QTT" "STAR-XFBT-9TTK" "STAR-F3H9-YPHN" "STAR-BYK6-RCCL" "STAR-XCKH-W6T7" "STAR-H292-39WK" "STAR-ZRT5-PJB7" "STAR-GMBP-SH9Y" "STAR-PLWB-LMFY" "STAR-TNZN-H4ZT" "STAR-T5G5-L2GJ" "STAR-6TPV-7QH2" "STAR-7ZFS-PK2L" "STAR-SRQN-43TB" "STAR-9TDG-D4H9" "STAR-BPH3-THJC" "STAR-HL3M-R5KC" "STAR-GBS5-LTVB" "STAR-CJ3Y-KZZ4" "STAR-5GRM-7HBY" "STAR-G2GX-Y2QJ" "STAR-YWY3-H4XX" "STAR-6VGM-PTKC" "STAR-T6MZ-QFHX" "STAR-T2K6-LXFW" "STAR-XN25-9CJJ" "STAR-47V3-4QGB" "STAR-YD4Z-TQZV" "STAR-XLN7-9XNJ" "STAR-N62T-2R39" "STAR-3S3D-9HXQ" "STAR-TRZF-NMCV" "STAR-TLLJ-SMG4" "STAR-MFT6-Q44H" "STAR-TZX2-TPWF" "STAR-WCHN-4ZMX" "STAR-2GHY-WB4F" "STAR-KLM2-R4SX" "STAR-RYXQ-PBZB" "STAR-BSTC-NQPW" "STAR-X32P-J2NS" "STAR-9DMZ-CXWW" "STAR-ZDC2-TDP9" "STAR-J3PJ-RH2K" "STAR-Q6QW-5CC4" "STAR-FLVX-2KGT" "STAR-FTFR-JN47")
-    # Pick a random array element. Scale a floating point number for
-    # a more random distribution than simply calling RANDOM
-    random_code="${referral_codes[$(awk '{srand($2); print int(rand()*$1)}' <<< "${#referral_codes[@]} $RANDOM")]}"
+# MARK: about_info()
+# Display an about message
+about_info() {
+    # Format the content
+    about_heading="The LUG Helper is provided by the Star Citizen Linux Users Group"
+    about_links="Source: ${git_url}\nChangelog: ${changelog_url}\n\nJoin our Org: ${lug_org}\n\nSupport Wiki: ${lug_wiki}\nDiscord: ${lug_discord}"
+    if [ "$use_zenity" -eq 1 ]; then
+        about_heading="<b>$about_heading</b>"
+    fi
 
-    message info "Your random Penguin's referral code is:\n\n$random_code\n\nThank you!"
+    message info "${about_heading}\n\n${about_links}"
 }
 
 # MARK: quit()
@@ -3199,11 +3208,11 @@ Usage: lug-helper <options>
   -c, --wine-config             Launch winecfg for the game's prefix
   -j, --wine-controllers        Launch Wine controllers configuration
   -l, --update-rsi-launcher     Update/Re-install RSI Launcher
-  -r, --get-referral            Get a random LUG member's referral code
   -d, --show-directories        Show all Star Citizen and Helper directories
   -w, --show-wiki               Show the LUG Wiki
   -x, --reset-helper            Delete saved lug-helper configs
   -g, --no-gui                  Use terminal menus instead of a Zenity GUI
+  -a, --about                   Show about information
   -v, --version                 Display version info and exit
 "
                 exit 0
@@ -3235,9 +3244,6 @@ Usage: lug-helper <options>
             --update-rsi-launcher | -l )
                 cargs+=("reinstall_rsi_launcher")
                 ;;
-            --get-referral | -r )
-                cargs+=("referral_randomizer")
-                ;;
             --show-directories | -d )
                 cargs+=("display_dirs")
                 ;;
@@ -3251,6 +3257,9 @@ Usage: lug-helper <options>
                 # If zenity is unavailable, it has already been set to 0
                 # and this setting has no effect
                 use_zenity=0
+                ;;
+            --about | -a )
+                cargs+=("about_info")
                 ;;
             --version | -v )
                 printf "LUG Helper %s\n" "$current_version"
@@ -3321,13 +3330,13 @@ while true; do
     runners_msg_wine="Manage Wine Runners"
     dxvk_msg_wine="Manage DXVK"
     maintenance_msg="Maintenance and Troubleshooting"
-    randomizer_msg="Get a random Penguin's Star Citizen referral code"
+    about_msg="About and Support"
     quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$randomizer_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$about_msg" "$quit_msg")
     # Set the corresponding functions to be called for each of the options
-    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_menu" "maintenance_menu" "referral_randomizer" "quit")
+    menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_menu" "maintenance_menu" "about_info" "quit")
 
     # Calculate the total height the menu should be
     # menu_option_height = pixels per menu option

@@ -57,8 +57,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
 
-`Get a random Penguin's Star Citizen referral code`
-- Display a referral code for a random member of the Star Citizen Linux Users Group
+`About and Support`
+- Display information about the LUG Helper and links to our community
 
 
 
