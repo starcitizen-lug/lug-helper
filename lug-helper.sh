@@ -3133,12 +3133,14 @@ quit() {
 ############################################################################
 
 # MARK: MAIN
-# Zenity availability/version check
-use_zenity=0
+
 # Initialize some variables
 menu_option_height="0"
 menu_text_height_zenity4="0"
 menu_height_max="0"
+
+# Zenity availability/version check
+use_zenity=0
 if [ -x "$(command -v zenity)" ]; then
     if zenity --version >/dev/null; then
         use_zenity=1
@@ -3277,12 +3279,16 @@ Usage: lug-helper <options>
     # Format some URLs for Zenity
     format_urls
 
-    # Call the requested functions and exit
-    if [ "${#cargs[@]}" -gt 0 ]; then
+    # One function at a time, but allow combining other arguments such as --no-gui
+    if [ "${#cargs[@]}" -gt 1 ]; then
+        message error "Only one Helper function can be called at a time using command line arguments."
+        exit 0
+    fi
+
+    # Call the requested function and exit
+    if [ "${#cargs[@]}" -eq 1 ]; then
         cmd_line="true"
-        for (( x=0; x<"${#cargs[@]}"; x++ )); do
-            ${cargs[x]}
-        done
+        ${cargs[0]}
         exit 0
     fi
 fi
