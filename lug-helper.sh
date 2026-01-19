@@ -612,7 +612,9 @@ menu() {
                 done
             ) | column -S 4
             # Print the cancel option
-            printf "\n0) %s\n\n" "$menu_cancel_label"
+            printf "\n0) %s" "$menu_cancel_label"
+            printf "\nq) Quit LUG-Helper"
+            printf "\n\n"
 
             if [[ -n $error ]]; then
                 # Display error message
@@ -621,6 +623,11 @@ menu() {
             fi
 
             read -r -p 'Enter selection number: ' input
+
+            if [[ $input == 'q' ]]; then
+                # User selected the quit option
+                quit
+            fi
 
             if [[ $input == '0' ]]; then
                 # User selected the cancel option
