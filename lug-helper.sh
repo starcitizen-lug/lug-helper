@@ -72,6 +72,7 @@ fi
 wine_conf="winedir.conf"
 game_conf="gamedir.conf"
 firstrun_conf="firstrun.conf"
+nixos_startup_warning_conf="nixos_startup_warning.conf"
 
 # Use XDG base directories if defined
 if [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs" ]; then
@@ -1935,9 +1936,24 @@ maintenance_menu() {
         quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper")
+
+        # Show option to disable NixOS startup warning only if running on NixOS
+        if [[ $is_nixos == 'true' ]]; then
+            if [[ $show_nixos_startup_warning == 'true' ]]; then
+                menu_options+=("$menu_item__maintenance_and_troubleshooting__disable_nixos_startup_warning")
+                menu_actions+=("set_nixos_startup_warning false")
+            else
+                menu_options+=("Enable NixOS warning at startup")
+                menu_actions+=("set_nixos_startup_warning true")
+            fi
+        fi
+
+        # Complete the menu by adding the option to go back to the previous menu
+        menu_options+=("$quit_msg")
+        menu_actions+=("menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2321,6 +2337,23 @@ reset_helper() {
     # Also wipe path variables so the reset takes immediate effect
     wine_prefix=""
     game_path=""
+}
+
+# MARK: set_nixos_startup_warning()
+# Disable / enable the NixOS startup warning
+set_nixos_startup_warning() {
+    local value="$1"
+
+    if [[ $value == 'true' ]]; then
+        message info "The NixOS startup warning has been enabled."
+    elif [[ $value == 'false' ]]; then
+        message info "The NixOS startup warning has been disabled."
+    else
+        debug_print exit "Script error: The set_nixos_startup_warning function was called with an invalid argument: '$value'. Aborting."
+    fi
+
+    show_nixos_startup_warning="$value"
+    echo "$value" > "$conf_dir/$conf_subdir/$nixos_startup_warning_conf"
 }
 
 ############################################################################
@@ -3139,6 +3172,9 @@ menu_option_height="0"
 menu_text_height_zenity4="0"
 menu_height_max="0"
 
+menu_item__maintenance_and_troubleshooting="Maintenance and Troubleshooting"
+menu_item__maintenance_and_troubleshooting__disable_nixos_startup_warning="Disable NixOS warning at startup"
+
 # Zenity availability/version check
 use_zenity=0
 if [ -x "$(command -v zenity)" ]; then
@@ -3294,8 +3330,19 @@ Usage: lug-helper <options>
 fi
 
 # Detect if NixOS is being used and direct user to wiki
+is_nixos=false
 if (grep -q '^NAME=NixOS' /etc/os-release 2> /dev/null ); then
-    message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos"
+    is_nixos=true
+
+    # Check if the user has disabled the warning
+    if [ -f "$conf_dir/$conf_subdir/$nixos_startup_warning_conf" ]; then
+        show_nixos_startup_warning="$(cat "$conf_dir/$conf_subdir/$nixos_startup_warning_conf")"
+    fi
+    if [ "$show_nixos_startup_warning" != "false" ]; then
+        show_nixos_startup_warning=true
+        disable_instructions="You can disable this warning by going to '${menu_item__maintenance_and_troubleshooting}' > '${menu_item__maintenance_and_troubleshooting__disable_nixos_startup_warning}'."
+        message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos\n\n$disable_instructions"
+    fi
 fi
 
 # Set up the main menu heading
@@ -3335,7 +3382,7 @@ while true; do
     install_msg_wine="Install Star Citizen"
     runners_msg_wine="Manage Wine Runners"
     dxvk_msg_wine="Manage DXVK"
-    maintenance_msg="Maintenance and Troubleshooting"
+    maintenance_msg="$menu_item__maintenance_and_troubleshooting"
     about_msg="About and Support"
     quit_msg="Quit"
 
