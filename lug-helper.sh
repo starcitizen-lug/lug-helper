@@ -604,8 +604,11 @@ menu() {
             printf "\n%b\n\n" "$menu_text_terminal"
             # Print the menu items
             (
+                local pad_len
+                pad_len="$(echo -n "${#menu_options[@]}" | wc -c)"
+
                 for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-                    printf "%d) %s\n" "$((i+1))" "${menu_options[i]}"
+                    printf "%${pad_len}d) %s\n" "$((i+1))" "${menu_options[i]}"
                 done
             ) | column -S 4
             # Print the cancel option
