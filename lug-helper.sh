@@ -44,7 +44,7 @@ if [ ! -x "$(command -v column)" ]; then
     fi
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v touch)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v touch)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v wc)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through zenity or notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that 'coreutils' is installed!\n" 1>&2
