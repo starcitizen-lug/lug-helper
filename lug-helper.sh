@@ -24,12 +24,23 @@ fi
 
 # Check for dependencies
 if [ ! -x "$(command -v curl)" ]; then
-# Print to stderr and also try warning the user through zenity or notify-send
+    # Print to stderr and also try warning the user through zenity or notify-send
     printf "lug-helper.sh: The required package 'curl' was not found on this system.\n" 1>&2
     if [ -x "$(command -v zenity)" ]; then
         zenity --error --width="400" --title="Star Citizen LUG Helper" --text="The required package 'curl' was not found on this system."
     elif [ -x "$(command -v notify-send)" ]; then
         notify-send "lug-helper" "The required package 'curl' was not found on this system.\n" --icon=dialog-warning
+    fi
+    exit 1
+fi
+if [ ! -x "$(command -v column)" ]; then
+    # util-linux
+    # Print to stderr and also try warning the user through zenity or notify-send
+    printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that 'util-linux' or the following packages are installed:\n- column\n" 1>&2
+    if [ -x "$(command -v zenity)" ]; then
+        zenity --error --width="400" --title="Star Citizen LUG Helper" --text="One or more required packages were not found on this system.\n\nPlease check that 'util-linux' or the following packages are installed:\n- column"
+    elif [ -x "$(command -v notify-send)" ]; then
+        notify-send "lug-helper" "One or more required packages were not found on this system.\nPlease check that 'util-linux' or the following packages are installed:\n- column\n" --icon=dialog-warning
     fi
     exit 1
 fi
