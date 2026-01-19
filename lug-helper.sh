@@ -485,6 +485,8 @@ progress_bar() {
 #
 # See MAIN at the bottom of this script for an example of generating a menu.
 menu() {
+    local error
+
     # Sanity checks
     if [ "${#menu_options[@]}" -eq 0 ]; then
         debug_print exit "Script error: The array 'menu_options' was not set before calling the menu function. Aborting."
@@ -502,13 +504,20 @@ menu() {
         debug_print exit "Script error: The string 'cancel_label' was not set before calling the menu function. Aborting."
     fi
 
+    # Get the last item in the menu arrays, to be used as the "cancel" option
+    local menu_cancel_label="${menu_options[${#menu_options[@]}-1]}"
+    local menu_cancel_action="${menu_actions[${#menu_actions[@]}-1]}"
+    # Remove the last item from the menu arrays
+    unset menu_options[${#menu_options[@]}-1]
+    unset menu_actions[${#menu_actions[@]}-1]
+
     # Use Zenity if it is available
     if [ "$use_zenity" -eq 1 ]; then
         # Format the options array for Zenity by adding
         # TRUE or FALSE to indicate default selections
         # ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
         unset zen_options
-        for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
+        for (( i=0; i<"${#menu_options[@]}"; i++ )); do
             if [ "$i" -eq 0 ]; then
                 # Set the first element
                 if [ "$menu_type" = "radiolist" ]; then
@@ -571,38 +580,56 @@ menu() {
 
         # If no match was found, the user clicked cancel
         if [ "$matched" = "false" ]; then
-            # Execute the last option in the actions array
-            "${menu_actions[${#menu_actions[@]}-1]}"
+            # Execute the cancel action
+            "$menu_cancel_action"
         fi
     else
         # Use a text menu if Zenity is not available
-        clear
-        printf "\n%b\n\n" "$menu_text_terminal"
+        unset error
+        while true; do
+            clear
 
-        PS3="Enter selection number: "
-        select choice in "${menu_options[@]}"
-        do
-            # Loop through the options array to match the chosen option
-            matched="false"
-            for (( i=0; i<"${#menu_options[@]}"; i++ )); do
-                if [ "$choice" = "${menu_options[i]}" ]; then
-                    clear
-                    # Execute the corresponding action
-                    ${menu_actions[i]}
-                    matched="true"
-                    break
-                fi
-            done
+            # Pint the menu header
+            printf "\n%b\n\n" "$menu_text_terminal"
+            # Print the menu items
+            (
+                for (( i=0; i<"${#menu_options[@]}"; i++ )); do
+                    printf "%d) %s\n" "$((i+1))" "${menu_options[i]}"
+                done
+            ) | column -S 4
+            # Print the cancel option
+            printf "\n0) %s\n\n" "$menu_cancel_label"
 
-            # Check if we're done looping the menu
-            if [ "$matched" = "true" ]; then
-                # Match was found and actioned, so exit the menu
+            if [[ -n $error ]]; then
+                # Display error message
+                printf "=> %b\n\n" "$error"
+                unset error
+            fi
+
+            read -r -p 'Enter selection number: ' input
+
+            if [[ $input == '0' ]]; then
+                # User selected the cancel option
+                clear
+                # Execute the cancel action
+                "$menu_cancel_action"
                 break
-            else
-                # If no match was found, the user entered an invalid option
-                printf "\nInvalid selection.\n"
+            fi
+
+            if [[ $input =~ ^[0-9]+$ && -n ${menu_options[$input-1]} ]]; then
+                # User selected a valid option
+                clear
+                # Execute the corresponding action
+                ${menu_actions[$input-1]}
+                break
+            fi
+
+            if [[ -z $input ]]; then
+                # User pressed enter without making a selection
                 continue
             fi
+
+            error="Invalid selection: ${input}"
         done
     fi
 }
