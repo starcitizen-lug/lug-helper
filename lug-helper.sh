@@ -464,6 +464,10 @@ progress_bar() {
 # Requires the following variables:
 # - The array "menu_options" should contain the strings of each option.
 # - The array "menu_actions" should contain function names to be called.
+# - The last item in the "menu_options" and "menu_actions" array must be the
+#   "back"/"quit"/"cancel" option. In Zenity, this will be used when the user
+#   clicks the "cancel" button, in bash it will be displayed as the first menu
+#   item.
 # - The strings "menu_text_zenity" and "menu_text_terminal" should contain
 #   the menu description formatted for zenity and the terminal, respectively.
 #   This text will be displayed above the menu options.
