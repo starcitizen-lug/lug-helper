@@ -2301,7 +2301,7 @@ display_dirs() {
 # Display the LUG Wiki
 display_wiki() {
     # Display a message containing the URL
-    message info "See the Wiki for our Quick-Start Guide, Troubleshooting,\nand Performance Tuning Recommendations:\n\n$lug_wiki"
+    message info "See the Wiki for our Quick Start Guide, Troubleshooting,\nand Performance Tuning Recommendations:\n\n$lug_wiki"
 }
 
 # MARK: reset_helper()
