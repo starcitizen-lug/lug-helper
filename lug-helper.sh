@@ -3340,8 +3340,11 @@ if (grep -q '^NAME=NixOS' /etc/os-release 2> /dev/null ); then
     fi
     if [ "$show_nixos_startup_warning" != "false" ]; then
         show_nixos_startup_warning=true
-        disable_instructions="You can disable this warning by going to '${menu_item__maintenance_and_troubleshooting}' > '${menu_item__maintenance_and_troubleshooting__disable_nixos_startup_warning}'."
-        message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos\n\n$disable_instructions"
+        message="It looks like you're using NixOS\n"
+        message+="Please see our wiki for NixOS-specific configuration requirements:\n\n"
+        message+="${lug_wiki_nixos}\n\n"
+        message+="You can disable this warning by navigating to '${menu_item__maintenance_and_troubleshooting}' > '${menu_item__maintenance_and_troubleshooting__disable_nixos_startup_warning}'."
+        message info "$message"
     fi
 fi
 
