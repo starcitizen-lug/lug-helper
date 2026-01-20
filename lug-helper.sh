@@ -602,6 +602,7 @@ menu() {
 
             # Pint the menu header
             printf "\n%b\n\n" "$menu_text_terminal"
+
             # Print the menu items
             (
                 local pad_len
@@ -610,7 +611,8 @@ menu() {
                 for (( i=0; i<"${#menu_options[@]}"; i++ )); do
                     printf "%${pad_len}d) %s\n" "$((i+1))" "${menu_options[i]}"
                 done
-            ) | column -S 4
+            ) | column -S 4 -c "${COLUMNS:-80}" | dedent
+
             # Print the cancel option
             printf "\n0) %s" "$menu_cancel_label"
             printf "\nq) Quit LUG-Helper"
@@ -798,6 +800,35 @@ getdirs() {
     fi
 
     return "$retval"
+}
+
+# MARK: dedent()
+# Remove leading whitespace from stdin
+dedent() {
+    awk '
+        BEGIN { is_first_match = 1 }
+
+        # Runs only for lines with non-whitespace content
+        NF {
+            # Match whitespace at the beginning of the line
+            match($0, /^[[:space:]]*/);
+            # Get the length of the match
+            ind = RLENGTH;
+            # Get the minimum indentation
+            min = (is_first_match == 1 || ind < min) ? ind : min
+            is_first_match = 0
+        }
+
+        # Runs for all lines: Save all lines for later
+        { lines[NR] = $0 }
+
+        # Finally, print the lines and remove leading whitespaces
+        END {
+            for (i = 1; i <= NR; i++) {
+                print substr(lines[i], min + 1)
+            }
+        }
+    '
 }
 
 
