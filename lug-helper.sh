@@ -803,7 +803,23 @@ getdirs() {
 }
 
 # MARK: dedent()
-# Remove leading whitespace from stdin
+# Remove leading whitespace from stdin to de-indent the text.
+#
+# For example:
+#
+# ```
+#     foo
+#   bar
+#       baz
+# ```
+#
+# Would become:
+#
+# ```
+#   foo
+# bar
+#     baz
+# ```
 dedent() {
     awk '
         BEGIN { is_first_match = 1 }
