@@ -471,6 +471,7 @@ progress_bar() {
 # - The integer "menu_height" specifies the height of the zenity menu.
 # - The string "menu_type" should contain either "radiolist" or "checklist".
 # - The string "cancel_label" should contain the text of the cancel button.
+# - The string "main_menu" should be set to "false" for all submenus.
 #
 # The final element in each array is expected to be a quit option.
 #
@@ -478,6 +479,7 @@ progress_bar() {
 # *MUST* correspond to the indeces in "menu_options".
 # In other words, it is expected that menu_actions[1] is the correct action
 # to be executed when menu_options[1] is selected, and so on for each element.
+# Both arrays must have the same number of elements.
 #
 # See MAIN at the bottom of this script for an example of generating a menu.
 menu() {
@@ -486,6 +488,8 @@ menu() {
         debug_print exit "Script error: The array 'menu_options' was not set before calling the menu function. Aborting."
     elif [ "${#menu_actions[@]}" -eq 0 ]; then
         debug_print exit "Script error: The array 'menu_actions' was not set before calling the menu function. Aborting."
+    elif [ "${#menu_options[@]}" -ne "${#menu_actions[@]}" ]; then
+        debug_print exit "Script error: The number of elements in the 'menu_options' and 'menu_actions' arrays must be equal. Aborting."
     elif [ -z "$menu_text_zenity" ]; then
         debug_print exit "Script error: The string 'menu_text_zenity' was not set before calling the menu function. Aborting."
     elif [ -z "$menu_text_terminal" ]; then
@@ -503,6 +507,7 @@ menu() {
         # Format the options array for Zenity by adding
         # TRUE or FALSE to indicate default selections
         # ie: "TRUE" "List item 1" "FALSE" "List item 2" "FALSE" "List item 3"
+        # Exclude the last element, which is the quit/go back option
         unset zen_options
         for (( i=0; i<"${#menu_options[@]}"-1; i++ )); do
             if [ "$i" -eq 0 ]; then
@@ -565,9 +570,9 @@ menu() {
             fi
         fi
 
-        # If no match was found, the user clicked cancel
+        # If no match was found, the user clicked cancel or quit
         if [ "$matched" = "false" ]; then
-            # Execute the last option in the actions array
+            # Execute the last option in the actions array to cancel, go back, or quit
             "${menu_actions[${#menu_actions[@]}-1]}"
         fi
     else
@@ -575,9 +580,33 @@ menu() {
         clear
         printf "\n%b\n\n" "$menu_text_terminal"
 
-        PS3="Enter selection number: "
-        select choice in "${menu_options[@]}"
+        if [ "$main_menu" = "true" ]; then
+            PS3="
+q) Quit
+Enter selection: "
+        else
+            PS3="
+b) Back
+q) Quit
+Enter selection: "
+        fi
+
+        # Count the number of options in menu_options and menu_actions, excluding the last element which is the quit/go back option
+        num_options="$((${#menu_options[@]}-1))"
+
+        # Display the menu options
+        # Use array slicing to exclude the last element which is the quit/go back option
+        select choice in "${menu_options[@]::$num_options}"
         do
+            # Handle back and quit options
+            if [ "$main_menu" = "false" ] && { [ "$REPLY" = "b" ] || [ "$REPLY" = "B" ]; }; then
+                # Execute the last option in the actions array to cancel or go back
+                "${menu_actions[${#menu_actions[@]}-1]}"
+                break
+            elif [ "$REPLY" = "q" ] || [ "$REPLY" = "Q" ]; then
+                exit 0
+            fi
+
             # Loop through the options array to match the chosen option
             matched="false"
             for (( i=0; i<"${#menu_options[@]}"; i++ )); do
@@ -1147,10 +1176,10 @@ download_manage() {
         menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nWine prefix: $game_prefix"
         menu_text_height="$download_menu_height"
         menu_type="radiolist"
+        main_menu="false"
 
         # Configure the menu options
         delete="Remove an installed $download_type"
-        back="Return to the main menu"
         unset menu_options
         unset menu_actions
 
@@ -1173,7 +1202,7 @@ download_manage() {
 
         # Complete the menu by adding options to uninstall an item
         # or go back to the previous menu
-        menu_options+=("$delete" "$back")
+        menu_options+=("$delete" "menu_loop_done")
         menu_actions+=("download_select_delete" "menu_loop_done")
 
         # Calculate the total height the menu should be
@@ -1357,7 +1386,7 @@ download_select_install() {
     menu_text_terminal="Select the $download_type you want to install:"
     menu_text_height="320"
     menu_type="radiolist"
-    goback="Return to the $download_type management menu"
+    main_menu="false"
     unset menu_options
     unset menu_actions
 
@@ -1412,7 +1441,8 @@ download_select_install() {
     done
 
     # Complete the menu by adding the option to go back to the previous menu
-    menu_options+=("$goback")
+    # The text "goback" is not displayed but is needed so the number of elements in the arrays match
+    menu_options+=("goback")
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
@@ -1637,7 +1667,7 @@ download_select_delete() {
     menu_text_terminal="Select the $download_type you want to remove:"
     menu_text_height="320"
     menu_type="checklist"
-    goback="Return to the $download_type management menu"
+    main_menu="false"
     unset installed_items
     unset installed_item_names
     unset menu_options
@@ -1677,7 +1707,8 @@ download_select_delete() {
     fi
 
     # Complete the menu by adding the option to go back to the previous menu
-    menu_options+=("$goback")
+    # The text "goback" is not displayed but is needed so the number of elements in the arrays match
+    menu_options+=("goback")
     menu_actions+=(":") # no-op
 
     # Calculate the total height the menu should be
@@ -1921,6 +1952,7 @@ maintenance_menu() {
         menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $game_prefix"
         menu_text_height="320"
         menu_type="radiolist"
+        main_menu="false"
 
         # Configure the menu options
         prefix_msg="Target a different Star Citizen installation"
@@ -1932,10 +1964,9 @@ maintenance_menu() {
         rsi_launcher_msg="Update/Re-install RSI Launcher"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
-        quit_msg="Return to the main menu"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$quit_msg")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "menu_loop_done")
         # Set the corresponding functions to be called for each of the options
         menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
 
@@ -2346,15 +2377,15 @@ dxvk_menu() {
     menu_text_terminal="Manage Your DXVK Version\n\nSelect which DXVK you'd like to update or install\nWine prefix: $game_prefix"
     menu_text_height="300"
     menu_type="radiolist"
+    main_menu="false"
 
     # Configure the menu options
     standard_msg="Update or Switch to Standard DXVK"
     async_msg="Update or Switch to Async DXVK"
     nvapi_msg="Add or Update DXVK-NVAPI"
-    quit_msg="Return to the main menu"
 
     # Set the options to be displayed in the menu
-    menu_options=("$standard_msg" "$async_msg" "$nvapi_msg" "$quit_msg")
+    menu_options=("$standard_msg" "$async_msg" "$nvapi_msg" "menu_loop_done")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("install_dxvk standard" "install_dxvk async" "install_dxvk nvapi" "menu_loop_done")
 
@@ -3329,6 +3360,7 @@ while true; do
     menu_text_terminal="$menu_heading_terminal"
     menu_text_height="300"
     menu_type="radiolist"
+    main_menu="true"
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
@@ -3337,10 +3369,9 @@ while true; do
     dxvk_msg_wine="Manage DXVK"
     maintenance_msg="Maintenance and Troubleshooting"
     about_msg="About and Support"
-    quit_msg="Quit"
 
     # Set the options to be displayed in the menu
-    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$about_msg" "$quit_msg")
+    menu_options=("$preflight_msg" "$install_msg_wine" "$runners_msg_wine" "$dxvk_msg_wine" "$maintenance_msg" "$about_msg" "quit")
     # Set the corresponding functions to be called for each of the options
     menu_actions=("preflight_check" "install_game" "runner_manage" "dxvk_menu" "maintenance_menu" "about_info" "quit")
 
