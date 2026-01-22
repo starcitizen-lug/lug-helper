@@ -175,7 +175,7 @@ lug_org="https://robertsspaceindustries.com/en/orgs/LUG"
 lug_discord="https://discord.gg/QRexSTkF25"
 
 # NixOS section in Wiki
-lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nix-installation"
+lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nixos-installation"
 
 # RSI Installer version and url
 rsi_installer_base_url="https://install.robertsspaceindustries.com/rel/2"
@@ -3324,25 +3324,25 @@ Usage: lug-helper <options>
     fi
 fi
 
-# Detect if NixOS is being used and direct user to wiki
-if (grep -q '^NAME=NixOS' /etc/os-release 2> /dev/null ); then
-    message info "It looks like you're using NixOS\nPlease see our wiki for NixOS-specific configuration requirements:\n\n$lug_wiki_nixos"
-fi
-
 # Set up the main menu heading
 menu_heading_zenity="<b><big>Greetings, Space Penguin!</big>\n\nThis tool is provided by the Star Citizen Linux Users Group</b>\nFor help, see our wiki: $lug_wiki"
 menu_heading_terminal="Greetings, Space Penguin!\n\nThis tool is provided by the Star Citizen Linux Users Group\nFor help, see our wiki: $lug_wiki"
 
 # MARK: First Run
-# First run
 firstrun_message="It looks like this is your first time running the Helper\n\nWould you like to run the Preflight Check and install Star Citizen?"
+# Format the first run message for zenity
 if [ "$use_zenity" -eq 1 ]; then
     firstrun_message="$menu_heading_zenity\n\n$firstrun_message"
 else
     firstrun_message="$menu_heading_terminal\n\n$firstrun_message"
 fi
+# Display the first run message
 if [ "$is_firstrun" = "true" ]; then
-    if message question "$firstrun_message"; then
+    # NixOS users get a special first run message
+    if grep -q '^NAME=NixOS' /etc/os-release 2> /dev/null; then
+        message info "It looks like you're using NixOS. Not all features may work on Nix!\nPlease see our wiki for NixOS-specific installation and configuration:\n\n$lug_wiki_nixos"
+    # All other distros receive the normal first run message
+    elif message question "$firstrun_message"; then
         install_game
     fi
     # Store the first run state for subsequent launches
