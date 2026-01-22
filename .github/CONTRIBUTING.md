@@ -11,7 +11,7 @@ With the above project goals in mind, please consider the following guidelines w
 - Any messages or options presented to the user should be clear and concise.
 - The Helper should not make any changes to the user's system without first asking or notifying the user.
 - Avoid duplicating code. Make use of the existing helper functions. See [Code Structure and Overview](https://github.com/starcitizen-lug/lug-helper/wiki/Code-Structure-and-Overview).
-- Please, no AI-generated code.
+- Please, **no AI-generated code**.
 
 ### Code Syntax and Formatting Guidelines
 - Match existing code styling and syntax for consistency and legibility.
