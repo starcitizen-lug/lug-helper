@@ -155,11 +155,6 @@ runner_sources=(
     "Mactan" "https://api.github.com/repos/mactan-sc/mactan-sc-wine/releases"
 )
 
-######## DXVK ##############################################################
-
-# URLs for downloading dxvk versions
-dxvk_async_source="https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases/permalink/latest"
-
 ######## Requirements ######################################################
 
 # Minimum amount of RAM in GiB
@@ -2481,60 +2476,29 @@ install_standard_dxvk() {
 # Expects that getdirs has already been called
 # Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
 install_async_dxvk() {
-    # Sanity checks
-    if [ ! -d "$wine_prefix/drive_c/windows/system32" ]; then
-        message error "Unable to find the system32 directory in your Wine prefix! Your prefix may be broken.\n\n$wine_prefix/drive_c/windows/system32"
-        return 1
-    fi
-    if [ ! -d "$wine_prefix/drive_c/windows/syswow64" ]; then
-        message error "Unable to find the syswow64 directory in your Wine prefix! Your prefix may be broken.\n\n$wine_prefix/drive_c/windows/syswow64"
-        return 1
-    fi
+    # Download winetricks
+    download_winetricks
 
-    # Get the file download url
-    # Assume the first item returned by the API is the latest version
-    download_url="$(curl -sL "${dxvk_async_source}" | grep -Eo "\"direct_asset_url\": ?\"[^\"]+\"" | grep "releases" | grep -F ".tar.gz" | cut -d '"' -f4 | cut -d '?' -f1)"
-
-    # Sanity check
-    if [ -z "$download_url" ]; then
-        message warning "Could not find the requested dxvk file.  The GitLab API may be down or rate limited."
-        return 1
-    fi
-
-    # Get file name info
-    download_filename="$(basename "$download_url")"
-    download_basename="$(basename "$download_filename" .tar.gz)"
-
-    # Download the item to the tmp directory
-    download_file "$download_url" "$download_filename" "DXVK"
-
-    # Sanity check
-    if [ ! -f "$tmp_dir/$download_filename" ]; then
-        # Something went wrong with the download and the file doesn't exist
-        message error "Something went wrong and the requested DXVK file could not be downloaded!"
-        debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
+    # Abort if the winetricks download failed
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to update dxvk without winetricks. Aborting."
         return 1
     fi
 
     # Show a zenity pulsating progress bar
     progress_bar start "Updating DXVK. Please wait..."
+    debug_print continue "Updating DXVK in ${wine_prefix}..."
 
-    # Extract the archive to the tmp directory
-    debug_print continue "Extracting DXVK into $tmp_dir/$download_basename..."
-    tar -xf "$tmp_dir/$download_filename" -C "$tmp_dir"
+    # Update dxvk
+    "$winetricks_bin" -f dxvk_async
 
-    # Make sure the expected directories exist
-    if [ ! -d "$tmp_dir/$download_basename/x64" ] || [ ! -d "$tmp_dir/$download_basename/x32" ]; then
+    # Check for errors
+    exit_code="$?"
+    if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
         progress_bar stop # Stop the zenity progress window
-        message warning "Unexpected file structure in the extracted DXVK. The file may be corrupt."
+        message warning "dxvk_async could not be installed. See terminal output for details."
         return 1
     fi
-
-    # Install the dxvk into the wine prefix
-    debug_print continue "Copying DXVK dlls into ${wine_prefix}..."
-    cp "$tmp_dir"/"$download_basename"/x64/*.dll "$wine_prefix/drive_c/windows/system32"
-    cp "$tmp_dir"/"$download_basename"/x32/*.dll "$wine_prefix/drive_c/windows/syswow64"
-
     
     # Make sure we can locate the launch script
     if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
@@ -2577,7 +2541,7 @@ install_async_dxvk() {
 # Expects that the env vars WINE, WINESERVER, and WINEPREFIX are already set
 install_dxvk_nvapi() {
     # Download winetricks
-    download_winetricks next
+    download_winetricks
 
     # Abort if the winetricks download failed
     if [ "$?" -eq 1 ]; then
