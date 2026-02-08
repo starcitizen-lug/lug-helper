@@ -1238,7 +1238,7 @@ runner_manage() {
     set_latest_default_runner
     # Sanity check
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest default wine runner.  The Github API may be down or rate limited."
+        message error "Could not fetch the latest default wine runner. The Github API may be down. Check if you are rate limited."
         return 1
     fi
 
@@ -1372,7 +1372,7 @@ download_select_install() {
 
     # Sanity check
     if [ "${#download_versions[@]}" -eq 0 ]; then
-        message warning "No $download_type versions were found.  The $download_url_type API may be down or rate limited."
+        message warning "No $download_type versions were found. The $download_url_type API may be down. Check if you are rate limited."
         return 1
     fi
 
@@ -1564,7 +1564,7 @@ download_install() {
 
     # Sanity check
     if [ -z "$download_url" ]; then
-        message warning "Could not find the requested ${download_type}.  The $download_url_type API may be down or rate limited."
+        message warning "Could not find the requested ${download_type}. The $download_url_type API may be down. Check if you are rate limited."
         return 1
     fi
 
@@ -1574,7 +1574,7 @@ download_install() {
     # Sanity check
     if [ ! -f "$tmp_dir/$download_filename" ]; then
         # Something went wrong with the download and the file doesn't exist
-        message error "Something went wrong and the requested $download_type file could not be downloaded!"
+        message error "Something went wrong and the requested $download_type file could not be downloaded!\n\nThe $download_url_type API may be down. Check if you are rate limited."
         debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
         return 1
     fi
@@ -2930,7 +2930,7 @@ download_wine() {
     set_latest_default_runner
     # Sanity check
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest default wine runner.  The Github API may be down or rate limited."
+        message error "Could not fetch the latest default wine runner. The Github API may be down. Check if you are rate limited."
         return 1
     fi
 
