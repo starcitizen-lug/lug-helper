@@ -2838,7 +2838,8 @@ create_desktop_files() {
 Name=RSI Launcher
 Type=Application
 Comment=RSI Launcher
-Keywords=Star Citizen;StarCitizen
+Keywords=Star Citizen;StarCitizen;
+Categories=Game;X-WiVRn-VR;
 StartupNotify=true
 StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher
