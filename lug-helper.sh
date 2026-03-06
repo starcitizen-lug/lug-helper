@@ -2852,8 +2852,10 @@ create_desktop_files() {
         mv "${XDG_DESKTOP_DIR:-$HOME/Desktop}/RSI Launcher.desktop" "$home_desktop_file"
     fi
 
-    debug_print continue "Creating ${prefix_desktop_file}..."
+    debug_print continue "Creating .desktop files:"
+
     # The backup .desktop files in the prefix directory will always be created so it's up to date
+    created_desktops_string="$prefix_desktop_file" # Add it to the debug string to be printed at the end
     echo "[Desktop Entry]
 Name=RSI Launcher
 Type=Application
@@ -2865,8 +2867,6 @@ StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher
 Exec=\"${wine_prefix}/${launch_script_name}\"" > "$prefix_desktop_file"
 
-    debug_print continue "Creating system .desktop files if needed...\n${localshare_rsi_desktop_file}\n${localshare_sc_desktop_file}\n${home_desktop_file}"
-
     # Make sure ~/.local/share/applications exists
     mkdir -p "${data_dir}/applications"
     if [ ! -d "${data_dir}/applications" ]; then
@@ -2876,6 +2876,9 @@ Exec=\"${wine_prefix}/${launch_script_name}\"" > "$prefix_desktop_file"
 
     # Create a starcitizen.exe desktop file in ~/.local/share/applications
     if [ ! -f "$localshare_sc_desktop_file" ] || [ "$overwrite_desktop_files" = "true" ]; then
+        # Add it to the debug string to be printed at the end
+        created_desktops_string="${created_desktops_string}\n${localshare_sc_desktop_file}"
+
         echo "[Desktop Entry]
 Name=Star Citizen
 Type=Application
@@ -2887,15 +2890,23 @@ Icon=starcitizen" > "$localshare_sc_desktop_file"
 
     # Copy the rsi launcher desktop file to ~/.local/share/applications
     if [ ! -f "$localshare_rsi_desktop_file" ] || [ "$overwrite_desktop_files" = "true" ]; then
+        # Add it to the debug string to be printed at the end
+        created_desktops_string="${created_desktops_string}\n${localshare_rsi_desktop_file}"
+
         cp "$prefix_desktop_file" "$localshare_rsi_desktop_file"
     fi
 
     # Copy the rsi launcher desktop file to the user's desktop directory
     if [ ! -f "$home_desktop_file" ] || [ "$overwrite_desktop_files" = "true" ]; then
         if [ -d "$(dirname "$home_desktop_file")" ]; then
+            # Add it to the debug string to be printed at the end
+            created_desktops_string="${created_desktops_string}\n${home_desktop_file}"
+
             cp "$prefix_desktop_file" "$home_desktop_file"
         fi
     fi
+
+    debug_print continue "$created_desktops_string"
 
     # Update the .desktop file database if the command is available
     if [ -x "$(command -v update-desktop-database)" ]; then
