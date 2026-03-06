@@ -2011,10 +2011,27 @@ update_launch_script() {
         return 0
     fi
 
-    # Make sure the launch script exists. This will intentionally fail for non-helper installs to avoid confusion when third party launchers are used.
-    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-        message warning "Game launch script not found!\n\n$wine_prefix/$wine_launch_script_name"
+    # Verify the launch script template exists
+    if [ ! -f "$wine_launch_script" ]; then
+        message error "Game launch script template not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
         return 1
+    fi
+
+    # Check if the launch script exists
+    unset update_template
+    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+        # Look for a .lughelper file which marks this prefix as created by this Helper and not a third party launcher
+        if [ ! -f "$wine_prefix/.lughelper" ]; then
+            # This prefix was created either by a third party launcher or a version of this Helper before the .lughelper file was used
+            # Offer to recreate the launch script
+            if ! message question "Game launch script not found!\n\n$wine_prefix/$wine_launch_script_name\n\nThe launch script is required when Star Citizen is installed with this Helper. It is not used by other install methods.\n\nDo you want to recreate it?"; then
+                return 1
+            fi
+        fi
+
+        # Copy in the launch script template
+        cp "$wine_launch_script" "$wine_prefix"
+        update_template="true"
     fi
 
     # Get launch script version info
@@ -2074,7 +2091,7 @@ update_launch_script() {
         # Copy the bundled icons to the .local icons directory if they don't already exist
         copy_icons
 
-        if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
+        if [ "$update_template" = "true" ] || message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
             # Update WINEPREFIX line
             sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"${wine_prefix}\"|" "${wine_prefix}/${wine_launch_script_name}"
 
@@ -2573,7 +2590,7 @@ install_dxvk_nvapi() {
 # MARK: install_game()
 # Install the game with Wine
 install_game() {
-    # Check if the install script exists
+    # Check if the launch script template exists
     if [ ! -f "$wine_launch_script" ]; then
         message error "Game launch script not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
         return 1
@@ -2788,6 +2805,9 @@ install_game() {
 
     # Create .desktop files
     create_desktop_files
+
+    # Mark the prefix as created by this version of the Helper
+    echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
     message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_rsi_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
