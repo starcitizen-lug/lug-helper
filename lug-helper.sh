@@ -107,12 +107,12 @@ default_install_path="drive_c/Program Files/Roberts Space Industries"
 
 rsi_icon_name="rsi-launcher.png"
 sc_icon_name="starcitizen.png"
-wine_launch_script_name="sc-launch.sh"
+launch_script_name="sc-launch.sh"
 
 # Default to files in the Helper directory for a git download
 rsi_icon="$helper_dir/$rsi_icon_name"
 sc_icon="$helper_dir/$sc_icon_name"
-wine_launch_script="$helper_dir/lib/$wine_launch_script_name"
+launch_script_template="$helper_dir/lib/$launch_script_name"
 
 # Build our array of search paths, supporting packaged versions of this script
 # Search XDG_DATA_DIRS and fall back to /usr/share/
@@ -121,7 +121,7 @@ IFS=':' read -r -a data_dirs_array <<< "$XDG_DATA_DIRS:/usr/share/"
 # Locate our files in the search array
 for searchdir in "${data_dirs_array[@]}"; do
     # Check if we've found all our files and break the loop
-    if [ -f "$rsi_icon" ] && [ -f "$wine_launch_script" ]; then
+    if [ -f "$rsi_icon" ] && [ -f "$launch_script_template" ]; then
         break
     fi
 
@@ -136,8 +136,8 @@ for searchdir in "${data_dirs_array[@]}"; do
     fi
 
     # sc-launch.sh
-    if [ ! -f "$wine_launch_script" ] && [ -f "${searchdir}/lug-helper/${wine_launch_script_name}" ]; then
-        wine_launch_script="${searchdir}/lug-helper/${wine_launch_script_name}"
+    if [ ! -f "$launch_script_template" ] && [ -f "${searchdir}/lug-helper/${launch_script_name}" ]; then
+        launch_script_template="${searchdir}/lug-helper/${launch_script_name}"
     fi
 done
 
@@ -1815,19 +1815,19 @@ post_download() {
     # Handle the appropriate post-download actions
     if [ "$post_download_type" = "configure-wine" ]; then
         # Make sure we can locate the launch script
-        if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-            message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
+        if [ ! -f "$wine_prefix/$launch_script_name" ]; then
+            message warning "Unable to find launch script!\n$wine_prefix/$launch_script_name\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
             return 1
         fi
 
         # Make sure the launch script has the appropriate string to be replaced
-        if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
+        if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$launch_script_name"; then
             if message question "Unable to find a required variable in your launch script! It may be out of date.\n\nWould you like to try updating your launch script?"; then
                 # Try updating the launch script
                 update_launch_script
 
                 # Check if the update was successful and we now have the required string
-                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$wine_launch_script_name"; then
+                if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$launch_script_name"; then
                     message warning "Unable to find a required variable in your launch script! The update may have failed.\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
                     return 1
                 fi
@@ -1842,8 +1842,8 @@ post_download() {
             # We are installing a wine version and updating the launch script to use it
 
             # Replace the specified variable in the launch script
-            debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${wine_launch_script_name}..."
-            sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin\"|" "$wine_prefix/$wine_launch_script_name"
+            debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${launch_script_name}..."
+            sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_prefix}/runners/${downloaded_item_name}/bin\"|" "$wine_prefix/$launch_script_name"
 
             # Display a confirmation message
             message info "Wine Runner installation complete!"
@@ -1865,8 +1865,8 @@ post_download() {
             fi
 
             # Replace the specified variable in the launch script
-            debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${wine_launch_script_name}..."
-            sed -i "s#^${post_download_sed_string}.*#${post_download_sed_string}\"${post_delete_restore_value}\"#" "$wine_prefix/$wine_launch_script_name"
+            debug_print continue "Updating \"${post_download_sed_string}\" variable in launch script ${wine_prefix}/${launch_script_name}..."
+            sed -i "s#^${post_download_sed_string}.*#${post_download_sed_string}\"${post_delete_restore_value}\"#" "$wine_prefix/$launch_script_name"
 
             # Display a confirmation message
             message info "Your launch script has been updated!"
@@ -2012,46 +2012,46 @@ update_launch_script() {
     fi
 
     # Verify the launch script template exists
-    if [ ! -f "$wine_launch_script" ]; then
-        message error "Game launch script template not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
+    if [ ! -f "$launch_script_template" ]; then
+        message error "Game launch script template not found! Unable to proceed.\n\n$launch_script_template\n\nIt is included in our official releases here:\n$releases_url"
         return 1
     fi
 
     # Check if the launch script exists
     unset update_template
-    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
         # Look for a .lughelper file which marks this prefix as created by this Helper and not a third party launcher
         if [ ! -f "$wine_prefix/.lughelper" ]; then
             # This prefix was created either by a third party launcher or a version of this Helper before the .lughelper file was used
             # Offer to recreate the launch script
-            if ! message question "Game launch script not found!\n\n$wine_prefix/$wine_launch_script_name\n\nThe launch script is required when Star Citizen is installed with this Helper. It is not used by other install methods.\n\nDo you want to recreate it?"; then
+            if ! message question "Game launch script not found!\n\n$wine_prefix/$launch_script_name\n\nThe launch script is required when Star Citizen is installed with this Helper. It is not used by other install methods.\n\nDo you want to recreate it?"; then
                 return 1
             fi
         fi
 
         # Copy in the launch script template
-        cp "$wine_launch_script" "$wine_prefix"
+        cp "$launch_script_template" "$wine_prefix"
         update_template="true"
     fi
 
     # Get launch script version info
-    current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
-    latest_launcher_ver="$(grep "^# version:" "$wine_launch_script" | awk '{print $3}')"
+    current_launcher_ver="$(grep "^# version:" "$wine_prefix/$launch_script_name" | awk '{print $3}')"
+    latest_launcher_ver="$(grep "^# version:" "$launch_script_template" | awk '{print $3}')"
 
     # Get some path variables from the existing launch script
-    launcher_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
-    launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+    launcher_wineprefix="$(grep "^export WINEPREFIX=" "$wine_prefix/$launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+    launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
 
     if [ "$latest_launcher_ver" != "$current_launcher_ver" ] &&
        [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$latest_launcher_ver" | sort -V | head -n1)" ]; then
         # The launch script is out of date and needs to be updated
 
         # Backup the file
-        cp "$wine_prefix/$wine_launch_script_name" "$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
+        cp "$wine_prefix/$launch_script_name" "$wine_prefix/$(basename "$launch_script_name" .sh).bak"
 
         # If wineprefix isn't found in the file, something is wrong and we shouldn't proceed
         if [ -z "$launcher_wineprefix" ]; then
-            message error "The WINEPREFIX env var was not found in your launch script. Unable to proceed!\n\n$wine_prefix/$wine_launch_script_name"
+            message error "The WINEPREFIX env var was not found in your launch script. Unable to proceed!\n\n$wine_prefix/$launch_script_name"
             return 1
         fi
 
@@ -2062,21 +2062,21 @@ update_launch_script() {
         fi
 
         # Copy in the new launch script
-        cp "$wine_launch_script" "$wine_prefix"
+        cp "$launch_script_template" "$wine_prefix"
 
         # Restore the wine prefix variable
         if [ "$launcher_wineprefix" != "$wine_prefix" ]; then
             # Offer to fix an incorrectly referenced wine prefix
             if message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
-                sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$wine_launch_script_name"
+                sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$wine_prefix\"|" "$wine_prefix/$launch_script_name"
             fi
         else
             # Restore the backed up prefix variable if the user doesn't want to change it
-            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$launcher_wineprefix\"|" "$wine_prefix/$wine_launch_script_name"
+            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$launcher_wineprefix\"|" "$wine_prefix/$launch_script_name"
         fi
 
         # Restore the wine path variable
-        sed -i "s#^export wine_path=.*#export wine_path=\"$launcher_winepath\"#" "$wine_prefix/$wine_launch_script_name"
+        sed -i "s#^export wine_path=.*#export wine_path=\"$launcher_winepath\"#" "$wine_prefix/$launch_script_name"
 
         # Create .desktop files if needed
         create_desktop_files needed
@@ -2084,7 +2084,7 @@ update_launch_script() {
         # Copy the bundled icons to the .local icons directory if they don't already exist
         copy_icons
 
-        message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$wine_launch_script_name" .sh).bak"
+        message info "Your game launch script has been updated!\n\nIf you had customized your script, you'll need to re-add your changes.\nA backup was created at:\n\n$wine_prefix/$(basename "$launch_script_name" .sh).bak"
     elif [ "$launcher_wineprefix" != "$wine_prefix" ]; then
         # The launch script is the correct version, but the current prefix is pointing to the wrong location
 
@@ -2093,7 +2093,7 @@ update_launch_script() {
 
         if [ "$update_template" = "true" ] || message question "Your launch script is pointing to the wrong Wine prefix.\nWould you like to update it to use the correct prefix?\n\nCurrent prefix in launch script:\n${launcher_wineprefix}\n\nCorrect prefix:\n${wine_prefix}"; then
             # Update WINEPREFIX line
-            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"${wine_prefix}\"|" "${wine_prefix}/${wine_launch_script_name}"
+            sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"${wine_prefix}\"|" "${wine_prefix}/${launch_script_name}"
 
             # wine_path will also be wrong. For simplicity, install the default wine runner into the prefix and use that
             download_dir="${wine_prefix}/runners"
@@ -2107,7 +2107,7 @@ update_launch_script() {
             # Update Wine binary in game launch script
             wine_path="$wine_prefix/runners/$downloaded_item_name/bin"
             post_download_sed_string="export wine_path="
-            sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "${wine_prefix}/${wine_launch_script_name}"
+            sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "${wine_prefix}/${launch_script_name}"
 
             # Overwrite .desktop files to make sure they use the correct prefix
             create_desktop_files
@@ -2139,16 +2139,16 @@ edit_launch_script() {
     fi
 
     # Make sure the launch script exists
-    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-        message error "Unable to find $wine_prefix/$wine_launch_script_name"
+    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
+        message error "Unable to find $wine_prefix/$launch_script_name"
         return 1
     fi
 
     # Open the launch script in the user's preferred editor
     if [ -x "$(command -v xdg-open)" ]; then
-        xdg-open "$wine_prefix/$wine_launch_script_name"
+        xdg-open "$wine_prefix/$launch_script_name"
     else
-        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n$wine_prefix/$wine_launch_script_name"
+        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n$wine_prefix/$launch_script_name"
     fi
 }
 
@@ -2171,13 +2171,13 @@ call_launch_script() {
     fi
 
     # Make sure the launch script exists
-    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-        message error "Unable to find $wine_prefix/$wine_launch_script_name"
+    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
+        message error "Unable to find $wine_prefix/$launch_script_name"
         return 1
     fi
 
     # Check if the launch script is the correct version
-    current_launcher_ver="$(grep "^# version:" "$wine_prefix/$wine_launch_script_name" | awk '{print $3}')"
+    current_launcher_ver="$(grep "^# version:" "$wine_prefix/$launch_script_name" | awk '{print $3}')"
     req_launcher_ver="1.5"
 
     if [ "$req_launcher_ver" != "$current_launcher_ver" ] &&
@@ -2187,7 +2187,7 @@ call_launch_script() {
     fi
 
     # Launch a wine shell using the launch script
-    "$wine_prefix/$wine_launch_script_name" "$launch_arg"
+    "$wine_prefix/$launch_script_name" "$launch_arg"
 }
 
 # MARK: install_powershell()
@@ -2518,20 +2518,20 @@ install_async_dxvk() {
     fi
     
     # Make sure we can locate the launch script
-    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
+    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
         progress_bar stop # Stop the zenity progress window
-        message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
+        message warning "Unable to find launch script!\n$wine_prefix/$launch_script_name\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
         return 0
     fi
     # Check if the DXVK_ASYNC variable is commented out in the launch script
-    if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$wine_launch_script_name" && ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$wine_launch_script_name"; then
+    if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$launch_script_name" && ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$launch_script_name"; then
         progress_bar stop # Stop the zenity progress window
         if message question "Could not find the DXVK_ASYNC environment variable in your launch script! It may be out of date.\n\nWould you like to try updating your launch script?"; then
             # Try updating the launch script
             update_launch_script
 
             # Check if the update was successful and we now have the env var
-            if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$wine_launch_script_name"; then
+            if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$launch_script_name"; then
                 message warning "Could not find the DXVK_ASYNC environment variable in your launch script! The update may have failed.\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
                 return 0
             fi
@@ -2542,9 +2542,9 @@ install_async_dxvk() {
     fi
 
     # Modify the launch script to uncomment the DXVK_ASYNC variable unless it's already uncommented
-    if ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$wine_launch_script_name"; then
-        debug_print continue "Updating DXVK_ASYNC env var in launch script ${wine_prefix}/${wine_launch_script_name}..."
-        sed -i "s|^#export DXVK_ASYNC=.*|export DXVK_ASYNC=1|" "$wine_prefix/$wine_launch_script_name"
+    if ! grep -q "^export DXVK_ASYNC=1" "$wine_prefix/$launch_script_name"; then
+        debug_print continue "Updating DXVK_ASYNC env var in launch script ${wine_prefix}/${launch_script_name}..."
+        sed -i "s|^#export DXVK_ASYNC=.*|export DXVK_ASYNC=1|" "$wine_prefix/$launch_script_name"
     fi
 
     progress_bar stop # Stop the zenity progress window
@@ -2591,8 +2591,8 @@ install_dxvk_nvapi() {
 # Install the game with Wine
 install_game() {
     # Check if the launch script template exists
-    if [ ! -f "$wine_launch_script" ]; then
-        message error "Game launch script not found! Unable to proceed.\n\n$wine_launch_script\n\nIt is included in our official releases here:\n$releases_url"
+    if [ ! -f "$launch_script_template" ]; then
+        message error "Game launch script not found! Unable to proceed.\n\n$launch_script_template\n\nIt is included in our official releases here:\n$releases_url"
         return 1
     fi
 
@@ -2783,12 +2783,12 @@ install_game() {
 
     # Copy game launch script to the wine prefix root directory
     debug_print continue "Copying game launch script to ${install_dir}..."
-    if [ -f "$install_dir/$wine_launch_script_name" ]; then
+    if [ -f "$install_dir/$launch_script_name" ]; then
         # Back it up if it already exists
-        cp "$install_dir/$wine_launch_script_name" "$install_dir/$(basename "$wine_launch_script_name" .sh).bak"
+        cp "$install_dir/$launch_script_name" "$install_dir/$(basename "$launch_script_name" .sh).bak"
     fi
-    cp "$wine_launch_script" "$install_dir"
-    installed_launch_script="$install_dir/$wine_launch_script_name"
+    cp "$launch_script_template" "$install_dir"
+    installed_launch_script="$install_dir/$launch_script_name"
 
     # Update WINEPREFIX in game launch script
     sed -i "s|^export WINEPREFIX=.*|export WINEPREFIX=\"$install_dir\"|" "$installed_launch_script"
@@ -2863,7 +2863,7 @@ Categories=Game;X-WiVRn-VR;
 StartupNotify=true
 StartupWMClass=rsi launcher.exe
 Icon=rsi-launcher
-Exec=\"${wine_prefix}/${wine_launch_script_name}\"" > "$prefix_desktop_file"
+Exec=\"${wine_prefix}/${launch_script_name}\"" > "$prefix_desktop_file"
 
     debug_print continue "Creating system .desktop files if needed...\n${localshare_rsi_desktop_file}\n${localshare_sc_desktop_file}\n${home_desktop_file}"
 
@@ -3037,17 +3037,17 @@ download_rsi_installer() {
 # It's expected that getdirs has already been called by the calling function to populate directory variables
 get_current_runner() {
     # Make sure we can find the launch script
-    if [ ! -f "$wine_prefix/$wine_launch_script_name" ]; then
-        message warning "Unable to find launch script!\n$wine_prefix/$wine_launch_script_name"
+    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
+        message warning "Unable to find launch script!\n$wine_prefix/$launch_script_name"
         return 1
     fi
 
     # Get the current wine runner path from the launch script
-    launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$wine_launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
+    launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
 
     # Double check that we found a path in the launch script
     if [ -z "$launcher_winepath" ]; then
-        message warning "Unable to find the current wine runner in your launch script!\n$wine_prefix/$wine_launch_script_name"
+        message warning "Unable to find the current wine runner in your launch script!\n$wine_prefix/$launch_script_name"
         return 1
     fi
 
