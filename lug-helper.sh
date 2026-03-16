@@ -2714,6 +2714,12 @@ install_game() {
     tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
     debug_print continue "Installation log file created at $tmp_install_log"
 
+    # Format the log file path for Zenity
+    tmp_install_log_path="$tmp_install_log"
+    if [ "$use_zenity" -eq 1 ]; then
+        tmp_install_log_path="<a href='file://$tmp_install_log_path'>$tmp_install_log_path</a>"
+    fi
+
     # Configure the wine prefix environment
     export WINE="$wine_path/wine"
     export WINESERVER="$wine_path/wineserver"
@@ -2732,7 +2738,7 @@ install_game() {
         # 126 = permission denied (ie. noexec on /tmp)
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
-        if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
+        if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to $tmp_install_log_path\n\nDo you want to delete\n${install_dir}?"; then
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
@@ -2751,7 +2757,7 @@ install_game() {
         # User cancelled or there was an error
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
-        if message question "Installation aborted. The install log was written to\n$tmp_install_log\n\nDo you want to delete\n${install_dir}?"; then
+        if message question "Installation aborted.\nThe install log was written to $tmp_install_log_path\n\nDo you want to delete\n${install_dir}?"; then
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
@@ -2810,7 +2816,7 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to $tmp_install_log\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_rsi_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
+    message info "Installation has finished. The install log was written to $tmp_install_log_path\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_rsi_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
 }
 
 # MARK: create_desktop_files()
