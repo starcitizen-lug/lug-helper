@@ -897,8 +897,8 @@ preflight_check() {
                 # Try to execute the actions as root
                 try_exec root "$preflight_root_actions_string"
                 if [ "$?" -eq 1 ]; then
-                    message error "The Preflight Check was unable to finish fixing problems.\nDid authentication fail? See terminal for more information.\n\nReturning to main menu."
-                    return 0
+                    message error "The Preflight Check was unable to finish fixing problems.\n\nDid authentication fail? See terminal for more information."
+                    return 1
                 fi
             fi
             # Execute the user privilege actions set by the functions
@@ -906,8 +906,8 @@ preflight_check() {
                 # Try to execute the actions as root
                 try_exec user "$preflight_user_actions_string"
                 if [ "$?" -eq 1 ]; then
-                    message error "The Preflight Check was unable to finish fixing problems.\nSee terminal for more information.\n\nReturning to main menu."
-                    return 0
+                    message error "The Preflight Check was unable to finish fixing problems.\n\nSee terminal for more information."
+                    return 1
                 fi
             fi
 
@@ -927,6 +927,9 @@ preflight_check() {
 
             # Display the results
             message info "$preflight_fix_results_string"
+            
+            # Return success
+            return 0
         else
             # User declined to automatically fix configuration issues
             # Show manual configuration options
@@ -2621,7 +2624,7 @@ install_game() {
     preflight_check "wine"
     if [ "$?" -eq 1 ]; then
         # There were errors
-        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nAre you ready to continue?"
+        install_question="Before proceeding, be sure all Preflight Checks have passed!\n\nPlease refer to our Quick Start Guide:\n$lug_wiki\n\nContinue anyway?"
     else
         # No errors
         install_question="Before proceeding, please refer to our Quick Start Guide:\n$lug_wiki\n\nAll Preflight Checks have passed\nAre you ready to continue?"
