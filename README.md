@@ -45,6 +45,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Open Wine controller configuration`
   - Opens Wine's game controller configuration in the Wine prefix
 
+- `Create joystick hidraw rules`
+  - Creates udev rules to enable joystick hidraw access
+
 - `Install PowerShell into Wine prefix`
   - Uses winetricks to install PowerShell
 
