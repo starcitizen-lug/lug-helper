@@ -1955,15 +1955,16 @@ maintenance_menu() {
         launchscript_msg="Edit launch script"
         config_msg="Open Wine prefix configuration"
         controllers_msg="Open Wine controller configuration"
+        udev_msg="Create joystick hidraw rules"
         powershell_msg="Install PowerShell into Wine prefix"
         rsi_launcher_msg="Update/Re-install RSI Launcher"
         dirs_msg="Display Helper and Star Citizen directories"
         reset_msg="Reset Helper configs"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "menu_loop_done")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "menu_loop_done")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2188,6 +2189,26 @@ call_launch_script() {
 
     # Launch a wine shell using the launch script
     "$wine_prefix/$launch_script_name" "$launch_arg"
+}
+
+# MARK: create_joystick_rules()
+# Create udev rules for common joystick vendors
+create_joystick_rules() {
+    # Format the udev file path as a clickable Zenity link
+    udev_file_formatted="/etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules"
+    if [ "$use_zenity" -eq 1 ]; then
+        udev_file_formatted="<a href='file://$udev_file_formatted'>$udev_file_formatted</a>"
+    fi
+
+    debug_print continue "Creating /etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules..."
+    try_exec root 'mkdir -p "/etc/udev/rules.d" && printf "# Set the uaccess tag for raw HID access for VKB/Virpil/Thrustmaster devices in Wine\nKERNEL==\"hidraw*\", ATTRS{idVendor}==\"231d|3344|044f\", ATTRS{idProduct}==\"*\", MODE=\"0660\", TAG+=\"uaccess\"" > /etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules'
+
+    if [ "$?" -eq 1 ]; then
+        message error "Unable to create joystick udev rules! See terminal output for details."
+        return 0
+    else
+        message info "Joystick udev rules have been created at:\n${udev_file_formatted}\n\nUnplug and replug your device for it to take effect."
+    fi 
 }
 
 # MARK: install_powershell()
@@ -2714,10 +2735,10 @@ install_game() {
     tmp_install_log="$(mktemp --suffix=".log" -t "lughelper-install-XXX")"
     debug_print continue "Installation log file created at $tmp_install_log"
 
-    # Format the log file path for Zenity
-    tmp_install_log_path="$tmp_install_log"
+    # Format the log file path as a clickable Zenity link
+    tmp_install_log_formatted="$tmp_install_log"
     if [ "$use_zenity" -eq 1 ]; then
-        tmp_install_log_path="<a href='file://$tmp_install_log_path'>$tmp_install_log_path</a>"
+        tmp_install_log_formatted="<a href='file://$tmp_install_log_formatted'>$tmp_install_log_formatted</a>"
     fi
 
     # Configure the wine prefix environment
@@ -2738,7 +2759,7 @@ install_game() {
         # 126 = permission denied (ie. noexec on /tmp)
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
-        if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to $tmp_install_log_path\n\nDo you want to delete\n${install_dir}?"; then
+        if message question "Wine prefix creation failed. Aborting installation.\nThe install log was written to ${tmp_install_log_formatted}\n\nDo you want to delete\n${install_dir}?"; then
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
@@ -2757,7 +2778,7 @@ install_game() {
         # User cancelled or there was an error
         "$wine_path"/wineserver -k # Kill all wine processes
         progress_bar stop # Stop the zenity progress window
-        if message question "Installation aborted.\nThe install log was written to $tmp_install_log_path\n\nDo you want to delete\n${install_dir}?"; then
+        if message question "Installation aborted.\nThe install log was written to ${tmp_install_log_formatted}\n\nDo you want to delete\n${install_dir}?"; then
             debug_print continue "Deleting $install_dir..."
             rm -r --interactive=never "$install_dir"
         fi
@@ -2816,7 +2837,7 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to $tmp_install_log_path\n\nTo start the RSI Launcher, use the following .desktop files:\n     $home_desktop_file\n     $localshare_rsi_desktop_file\n\nOr run the following launch script:\n     $installed_launch_script\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
+    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nTo start the RSI Launcher, use the following .desktop files:\n     ${home_desktop_file}\n     ${localshare_rsi_desktop_file}\n\nOr run the following launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
 }
 
 # MARK: create_desktop_files()
