@@ -3402,7 +3402,7 @@ while true; do
 
     # Configure the menu options
     preflight_msg="Preflight Check (System Optimization)"
-    install_msg_wine="Install Star Citizen"
+    install_msg_wine="Install Star Citizen Launcher"
     runners_msg_wine="Manage Wine Runners"
     dxvk_msg_wine="Manage DXVK"
     maintenance_msg="Maintenance and Troubleshooting"
