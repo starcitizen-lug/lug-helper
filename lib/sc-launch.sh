@@ -6,7 +6,7 @@
 # Usage:
 # Run from your terminal or use the .desktop files installed by the Helper.
 #
-# version: 2.4
+# version: 2.5
 # License: GPLv3.0
 
 ############################################################################
@@ -32,8 +32,6 @@ export __GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1
 export MESA_SHADER_CACHE_DIR="$WINEPREFIX"
 export MESA_SHADER_CACHE_MAX_SIZE="10G"
 # Performance options
-export WINEESYNC=1
-export WINEFSYNC=1
 #export DXVK_ASYNC=1
 # Optional HUDs
 #export DXVK_HUD=fps,compiler
