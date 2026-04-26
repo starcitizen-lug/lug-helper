@@ -1492,6 +1492,19 @@ download_install() {
         debug_print exit "Script error: The string 'download_dir' was not set before calling the download_install function. Aborting."
     fi
 
+    # Before swapping wine runners, check if the prefix is active
+    if [ "$download_type" = "runner" ]; then
+        if ! WINEPREFIX="${wine_prefix}" timeout 0.2s "${launcher_winepath}"/wineserver -w; then
+            # Prefix is active
+            if message options Cancel Yes "A program appears to be running in your Wine prefix!\nTo avoid problems, it's recommended to close all Wine programs before continuing.\n\nDo you want to terminate all Wine processes and proceed?"; then
+                # Kill all wine processes
+                WINEPREFIX="${wine_prefix}" "${launcher_winepath}"/wineserver -k
+            else
+                return 0
+            fi
+        fi
+    fi
+
     # Get the filename including file extension
     download_filename="${download_versions[$1]}"
 
