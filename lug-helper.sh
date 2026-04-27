@@ -166,7 +166,7 @@ memory_combined_required="40"
 
 # LUG wiki links
 lug_wiki="https://wiki.starcitizen-lug.org"
-lug_wiki_performance="https://wiki.starcitizen-lug.org/Performance-Tuning"
+lug_wiki_postinstall="https://wiki.starcitizen-lug.org/Quick-Start-Guide#after-installation"
 lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nixos-installation"
 
 # LUG community links
@@ -1243,7 +1243,7 @@ runner_manage() {
     set_latest_default_runner
     # Sanity check
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest default wine runner. The Github API may be down. Check if you are rate limited."
+        message error "Could not fetch the latest default wine runner.\nThe Github API may be down. Check if you are rate limited and try again later."
         return 1
     fi
 
@@ -1377,7 +1377,7 @@ download_select_install() {
 
     # Sanity check
     if [ "${#download_versions[@]}" -eq 0 ]; then
-        message warning "No $download_type versions were found. The $download_url_type API may be down. Check if you are rate limited."
+        message warning "No $download_type versions were found.\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
         return 1
     fi
 
@@ -1582,7 +1582,7 @@ download_install() {
 
     # Sanity check
     if [ -z "$download_url" ]; then
-        message warning "Could not find the requested ${download_type}. The $download_url_type API may be down. Check if you are rate limited."
+        message warning "Could not find the requested ${download_type}.\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
         return 1
     fi
 
@@ -1592,7 +1592,7 @@ download_install() {
     # Sanity check
     if [ ! -f "$tmp_dir/$download_filename" ]; then
         # Something went wrong with the download and the file doesn't exist
-        message error "Something went wrong and the requested $download_type file could not be downloaded!\n\nThe $download_url_type API may be down. Check if you are rate limited."
+        message error "Something went wrong and the requested $download_type file could not be downloaded!\n\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
         debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
         return 1
     fi
@@ -2993,7 +2993,7 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the following launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance tuning recommendations:\n${lug_wiki_performance}"
+    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
 }
 
 # MARK: create_desktop_files()
@@ -3159,7 +3159,7 @@ download_wine() {
     set_latest_default_runner
     # Sanity check
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest default wine runner. The Github API may be down. Check if you are rate limited."
+        message error "Could not fetch the latest default wine runner.\nThe Github API may be down. Check if you are rate limited and try again later."
         return 1
     fi
 
@@ -3329,7 +3329,7 @@ format_urls() {
         changelog_url="<a href='${changelog_url}'>${current_version}</a>"
         # wiki
         lug_wiki="<a href='${lug_wiki}'>${lug_wiki}</a>"
-        lug_wiki_performance="<a href='${lug_wiki_performance}'>${lug_wiki_performance}</a>"
+        lug_wiki_postinstall="<a href='${lug_wiki_postinstall}'>${lug_wiki_postinstall}</a>"
         lug_wiki_nixos="<a href='${lug_wiki_nixos}'>${lug_wiki_nixos}</a>"
         # community
         lug_org="<a href='${lug_org}'>${lug_org}</a>"
