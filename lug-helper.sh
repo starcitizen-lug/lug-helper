@@ -2505,6 +2505,7 @@ uninstall_game() {
     fi
 
     # Populate the list of existing .desktop files
+    set_desktop_file_paths
     desktop_list=""
     if [ -f "$localshare_rsi_desktop_file" ]; then
         desktop_list+="${localshare_rsi_desktop_file}\n"
@@ -2516,12 +2517,12 @@ uninstall_game() {
         desktop_list+="${home_desktop_file}\n"
     fi
 
-    # Add an extra newline if not empty
+    # Add formatting if not empty
     if [ -n "$desktop_list" ]; then
-        desktop_list="\n${desktop_list}"
+        desktop_list="\n.desktop files:\n${desktop_list}"
     fi
 
-    if message question "The following files and directories will be deleted:\n\n${wine_prefix}\n${desktop_list}\nDo you want to proceed?"; then
+    if message question "The following files and directories will be deleted:\n\nWine prefix:\n${wine_prefix}\n${desktop_list}\nDo you want to proceed?"; then
         # Delete wine prefix
         debug_print continue "Deleting $wine_prefix..."
         rm -r --interactive=never "$wine_prefix"
@@ -3100,7 +3101,7 @@ Icon=starcitizen" > "$localshare_sc_desktop_file"
 }
 
 # MARK: set_desktop_file_paths()
-# Set variables for .desktop file paths. Used by create_desktop_files and display_dirs
+# Set variables for .desktop file paths. Used by create_desktop_files, display_dirs, and uninstall_game
 # Expects $wine_prefix to already be set
 set_desktop_file_paths() {
     # Sanity checks
