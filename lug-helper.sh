@@ -316,7 +316,7 @@ message() {
             "question")
                 # question
                 # call format: if message question "question to ask?"; then...
-                margs=("--question" "--text=")
+                margs=("--question" "--no-wrap" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
             "options")
