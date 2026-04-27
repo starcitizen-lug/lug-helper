@@ -164,13 +164,14 @@ memory_combined_required="40"
 
 ######## Links / Versions ##################################################
 
-# LUG community links
+# LUG wiki links
 lug_wiki="https://wiki.starcitizen-lug.org"
+lug_wiki_performance="https://wiki.starcitizen-lug.org/Performance-Tuning"
+lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nixos-installation"
+
+# LUG community links
 lug_org="https://robertsspaceindustries.com/en/orgs/LUG"
 lug_discord="https://discord.gg/QRexSTkF25"
-
-# NixOS section in Wiki
-lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nixos-installation"
 
 # RSI Installer version and url
 rsi_installer_base_url="https://install.robertsspaceindustries.com/rel/2"
@@ -2853,7 +2854,7 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nTo start the RSI Launcher, use the following .desktop files:\n     ${home_desktop_file}\n     ${localshare_rsi_desktop_file}\n\nOr run the following launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\nThe RSI Launcher will offer to install the game into C:\\\Program Files\\\...\nDo not change the default path!"
+    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the following launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance tuning options:\n${lug_wiki_performance}"
 }
 
 # MARK: create_desktop_files()
@@ -3168,11 +3169,15 @@ get_latest_release() {
 # Format some URLs for Zenity
 format_urls() {
     if [ "$use_zenity" -eq 1 ]; then
+        # git
         git_url="<a href='${git_url}'>${git_url}</a>"
         releases_url="<a href='${releases_url}'>${releases_url}</a>"
         changelog_url="<a href='${changelog_url}'>${current_version}</a>"
+        # wiki
         lug_wiki="<a href='${lug_wiki}'>${lug_wiki}</a>"
+        lug_wiki_performance="<a href='${lug_wiki_performance}'>${lug_wiki_performance}</a>"
         lug_wiki_nixos="<a href='${lug_wiki_nixos}'>${lug_wiki_nixos}</a>"
+        # community
         lug_org="<a href='${lug_org}'>${lug_org}</a>"
         lug_discord="<a href='${lug_discord}'>${lug_discord}</a>"
     fi
