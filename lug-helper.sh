@@ -1975,7 +1975,7 @@ maintenance_menu() {
         udev_msg="Create joystick hidraw rules"
         powershell_msg="Install PowerShell into Wine prefix"
         rsi_launcher_msg="Update/Re-install RSI Launcher"
-        dirs_msg="Display Helper and Star Citizen directories"
+        dirs_msg="Display Helper & Star Citizen directories and files"
         reset_msg="Reset Helper configs"
 
         # Set the options to be displayed in the menu
@@ -2343,39 +2343,90 @@ display_dirs() {
     if [ -d "$conf_dir/$conf_subdir" ]; then
         dir_path="$conf_dir/$conf_subdir"
         if [ "$use_zenity" -eq 1 ]; then
-            dirs_list+="Helper configuration:\n<a href='file://$dir_path'>$dir_path</a>\n\n"
+            dirs_list+="Helper configuration:\n<a href='file://${dir_path}'>${dir_path}</a>\n\n"
         else
-            dirs_list+="Helper configuration:\n$dir_path\n\n"
+            dirs_list+="Helper configuration:\n${dir_path}\n\n"
         fi
     fi
 
     # Wine prefix
     if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        dir_path="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+        wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+
+        # Add a warning if the prefix has been deleted
+        prefix_missing_text=""
+        if [ ! -d "$wine_prefix" ]; then
+            prefix_missing_text=" (missing!)"
+        fi
+
         if [ "$use_zenity" -eq 1 ]; then
-            dirs_list+="Wine prefix:\n<a href='file://$dir_path'>$dir_path</a>\n\n"
+            dirs_list+="Wine prefix:${prefix_missing_text}\n<a href='file://${wine_prefix}'>${wine_prefix}</a>\n\n"
         else
-            dirs_list+="Wine prefix:\n$dir_path\n\n"
+            dirs_list+="Wine prefix:${prefix_missing_text}\n${wine_prefix}\n\n"
         fi
     fi
 
     # Star Citizen installation
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         dir_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
+
+        # Add a warning if the prefix has been deleted
+        prefix_missing_text=""
+        if [ ! -d "$dir_path" ]; then
+            prefix_missing_text=" (missing!)"
+        fi
+
         if [ "$use_zenity" -eq 1 ]; then
-            dirs_list+="Star Citizen game directory:\n<a href='file://$dir_path'>$dir_path</a>\n\n"
+            dirs_list+="Star Citizen game directory:${prefix_missing_text}\n<a href='file://${dir_path}'>${dir_path}</a>\n\n"
         else
-            dirs_list+="Star Citizen game directory:\n$dir_path\n\n"
+            dirs_list+="Star Citizen game directory:${prefix_missing_text}\n${dir_path}\n\n"
+        fi
+    fi
+
+    # Other files installed by the Helper
+    if [ -n "$wine_prefix" ] && [ -d "$wine_prefix" ]; then
+        # Prepare variables containing paths to the .desktop files
+        set_desktop_file_paths
+        if [ "$use_zenity" -eq 1 ]; then
+            desktop_list=""
+            if [ -f "$localshare_rsi_desktop_file" ]; then
+                desktop_list+="<a href='file://${localshare_rsi_desktop_file}'>${localshare_rsi_desktop_file}</a>\n"
+            fi
+            if [ -f "$localshare_sc_desktop_file" ]; then
+                desktop_list+="<a href='file://${localshare_sc_desktop_file}'>${localshare_sc_desktop_file}</a>\n"
+            fi
+            if [ -f "$home_desktop_file" ]; then
+                desktop_list+="<a href='file://${home_desktop_file}'>${home_desktop_file}</a>\n"
+            fi
+
+            if [ -n "$desktop_list" ]; then
+                dirs_list+=".desktop files:\n${desktop_list}\n"
+            fi
+        else
+            desktop_list=""
+            if [ -f "$localshare_rsi_desktop_file" ]; then
+                desktop_list+="${localshare_rsi_desktop_file}\n"
+            fi
+            if [ -f "$localshare_sc_desktop_file" ]; then
+                desktop_list+="${localshare_sc_desktop_file}\n"
+            fi
+            if [ -f "$home_desktop_file" ]; then
+                desktop_list+="${home_desktop_file}\n"
+            fi
+
+            if [ -n "$desktop_list" ]; then
+                dirs_list+=".desktop files:\n${desktop_list}\n"
+            fi
         fi
     fi
 
     # Format the info header
-    message_heading="These directories are currently being used by this Helper and Star Citizen"
+    message_heading="These directories and files are currently being used by this Helper and Star Citizen"
     if [ "$use_zenity" -eq 1 ]; then
-        message_heading="<b>$message_heading</b>"
+        message_heading="<b>${message_heading}</b>"
     fi
 
-    message info "$message_heading\n$dirs_list"
+    message info "${message_heading}\n${dirs_list}"
 }
 
 # MARK: display_wiki()
@@ -2869,13 +2920,9 @@ create_desktop_files() {
         debug_print exit "Script error: The string 'wine_prefix' was not set before calling the create_desktop_files function. Aborting."
     fi
 
-    # $HOME/Games/star-citizen/rsi launcher.exe.desktop
-    prefix_desktop_file="${wine_prefix}/rsi launcher.exe.desktop"
-    # $HOME/.local/share/applications/rsi launcher.exe.desktop
-    localshare_rsi_desktop_file="${data_dir}/applications/rsi launcher.exe.desktop"
-    localshare_sc_desktop_file="${data_dir}/applications/starcitizen.exe.desktop"
-    # $HOME/Desktop/rsi launcher.exe.desktop
-    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/rsi launcher.exe.desktop"
+    # Prepare variables containing paths to the .desktop files
+    set_desktop_file_paths
+
     overwrite_desktop_files="true"
     # If the "needed" argument is passed, we won't overwrite existing desktop files
     if [ "$1" = "needed" ]; then
@@ -2962,6 +3009,24 @@ Icon=starcitizen" > "$localshare_sc_desktop_file"
     if [ ! -f "$localshare_rsi_desktop_file" ] || [ ! -f "$localshare_sc_desktop_file" ] || [ ! -f "$home_desktop_file" ]; then
         message warning "Warning: One or more .desktop files could not be created!\n\n${localshare_rsi_desktop_file}\n${localshare_sc_desktop_file}\n${home_desktop_file}"
     fi
+}
+
+# Mark: set_desktop_file_paths()
+# Set variables for .desktop file paths. Used by create_desktop_files and display_dirs
+# Expects $wine_prefix to already be set
+set_desktop_file_paths() {
+    # Sanity checks
+    if [ -z "$wine_prefix" ]; then
+        debug_print exit "Script error: The string 'wine_prefix' was not set before calling the set_desktop_file_paths function. Aborting."
+    fi
+
+    # $HOME/Games/star-citizen/rsi launcher.exe.desktop
+    prefix_desktop_file="${wine_prefix}/rsi launcher.exe.desktop"
+    # $HOME/.local/share/applications/rsi launcher.exe.desktop
+    localshare_rsi_desktop_file="${data_dir}/applications/rsi launcher.exe.desktop"
+    localshare_sc_desktop_file="${data_dir}/applications/starcitizen.exe.desktop"
+    # $HOME/Desktop/rsi launcher.exe.desktop
+    home_desktop_file="${XDG_DESKTOP_DIR:-$HOME/Desktop}/rsi launcher.exe.desktop"
 }
 
 # MARK: copy_icons()
