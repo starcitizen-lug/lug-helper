@@ -2335,7 +2335,7 @@ reinstall_rsi_launcher() {
 }
 
 # MARK: display_dirs()
-# Display all directories currently used by this helper and Star Citizen
+# Display all directories and files currently used by this helper and Star Citizen
 display_dirs() {
     dirs_list="\n"
 
