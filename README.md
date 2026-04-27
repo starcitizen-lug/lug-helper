@@ -20,8 +20,8 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Checks that the hard open file descriptors limit is set to at least 524288
     - This limits the maximum number of open files on your system.  On some Linux distributions, the default is set too low for Star Citizen
 
-`Install Star Citizen`
-- Installs Star Citizen using Wine
+`Install Star Citizen Launcher`
+- Installs the Star Citizen RSI Launcher using Wine
 
 `Manage Wine Runners`
 - Quickly install and delete custom Wine runners
@@ -54,7 +54,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Update/Re-install RSI Launcher`
   - Re-install the latest version of the RSI Launcher
 
-- `Display Helper and Star Citizen directories`
+- `Display Helper & Star Citizen directories and files`
   - Show all the directories currently in use by both the Helper and Star Citizen
 
 - `Reset Helper configs`
