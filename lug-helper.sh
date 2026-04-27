@@ -685,7 +685,7 @@ getdirs() {
                     return 1
                 elif [ -z "$wine_prefix" ]; then
                     # User clicked cancel
-                    message warning "Operation cancelled.\nNo changes have been made to your game."
+                    message warning "Wine prefix selection cancelled.\nNo changes have been made."
                     return 1
                 fi
 
@@ -1133,6 +1133,7 @@ filelimit_confirm() {
 # - The string "download_menu_description" should contain a description of
 #   the item being downloaded.  It will appear in the menu subheading.
 # - The integer "download_menu_height" specifies the height of the zenity menu.
+# - The string "wine_prefix" is set by the getdirs function.
 #
 # This function also expects one string argument containing the type of item to
 # be downloaded.  ie. runner or dxvk.
@@ -1155,6 +1156,8 @@ download_manage() {
         debug_print exit "Script error: The string 'download_menu_description' was not set before calling the download_manage function. Aborting."
     elif [ -z "$download_menu_height" ]; then
         debug_print exit "Script error: The string 'download_menu_height' was not set before calling the download_manage function. Aborting."
+    elif [ -z "$wine_prefix" ]; then
+        debug_print exit "Script error: The string 'wine_prefix' was not set before calling the download_manage function. Aborting."
     fi
 
     # Get the type of item we're downloading from the function arguments
@@ -1163,16 +1166,9 @@ download_manage() {
     # The download management menu will loop until the user cancels
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
-        # Fetch wine prefix
-        if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-            game_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
-        else
-            game_prefix="Not configured"
-        fi
-
         # Configure the menu
-        menu_text_zenity="<b><big>Manage Your $download_menu_heading</big>\n\n$download_menu_description</b>\n\nWine prefix: <a href='file://$game_prefix'>$game_prefix</a>"
-        menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nWine prefix: $game_prefix"
+        menu_text_zenity="<b><big>Manage Your $download_menu_heading</big>\n\n$download_menu_description</b>\n\nWine prefix: <a href='file://$wine_prefix'>$wine_prefix</a>"
+        menu_text_terminal="Manage Your $download_menu_heading\n\n$download_menu_description\nWine prefix: $wine_prefix"
         menu_text_height="$download_menu_height"
         menu_type="radiolist"
         main_menu="false"
@@ -1237,6 +1233,11 @@ runner_manage() {
 
     # Get directories so we know where the wine prefix is
     getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message warning "Unable to install a Wine runner in the configured Wine prefix."
+        return 1
+    fi
 
     # Set variables for the latest default runner
     set_latest_default_runner
@@ -2473,15 +2474,16 @@ reset_helper() {
 # Menu to select and install a dxvk into the wine prefix
 dxvk_menu() {
     # Fetch wine prefix
-    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        game_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
-    else
-        game_prefix="Not configured"
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message warning "Unable to update dxvk in the configured Wine prefix."
+        return 1
     fi
 
     # Configure the menu
-    menu_text_zenity="<b><big>Manage Your DXVK Version</big>\n\nSelect which DXVK you'd like to update or install</b>\n\nWine prefix: <a href='file://$game_prefix'>$game_prefix</a>"
-    menu_text_terminal="Manage Your DXVK Version\n\nSelect which DXVK you'd like to update or install\nWine prefix: $game_prefix"
+    menu_text_zenity="<b><big>Manage Your DXVK Version</big>\n\nSelect which DXVK you'd like to update or install</b>\n\nWine prefix: <a href='file://$wine_prefix'>$wine_prefix</a>"
+    menu_text_terminal="Manage Your DXVK Version\n\nSelect which DXVK you'd like to update or install\nWine prefix: $wine_prefix"
     menu_text_height="300"
     menu_type="radiolist"
     main_menu="false"
@@ -2519,15 +2521,6 @@ install_dxvk() {
     # Sanity checks
     if [ "$#" -lt 1 ]; then
         debug_print exit "Script error: The install_dxvk function expects one argument. Aborting."
-    fi
-
-    # Update directories
-    getdirs
-
-    if [ "$?" -eq 1 ]; then
-        # User cancelled getdirs or there was an error
-        message warning "Unable to update dxvk."
-        return 1
     fi
 
     # Get the current wine runner from the launch script
