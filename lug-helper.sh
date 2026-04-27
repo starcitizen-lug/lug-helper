@@ -2050,7 +2050,7 @@ update_launch_script() {
         if [ ! -f "$wine_prefix/.lughelper" ]; then
             # This prefix was created either by a third party launcher or a version of this Helper before the .lughelper file was used
             # Offer to recreate the launch script
-            if ! message question "Game launch script not found!\n\n$wine_prefix/$launch_script_name\n\nThe launch script is required when Star Citizen is installed with this Helper. It is not used by other install methods.\n\nDo you want to recreate it?"; then
+            if ! message question "Game launch script not found!\n\n$wine_prefix/$launch_script_name\n\nThe launch script is required when Star Citizen is installed with this Helper.\nIt is not used by other install methods.\n\nDo you want to recreate it?"; then
                 return 1
             fi
         fi
