@@ -1495,7 +1495,7 @@ download_install() {
     fi
 
     # Before swapping wine runners in an existing install, check if the prefix is active
-    if [ "$download_type" = "runner" ] && [ -n "$wine_prefix" ] && [ -n "$launcher_winepath" ]; then
+    if [ "$download_type" = "runner" ] && [ -n "$wine_prefix" ] && [ -f "${launcher_winepath}/wineserver" ]; then
         if ! WINEPREFIX="${wine_prefix}" timeout 0.2s "${launcher_winepath}"/wineserver -w; then
             # Prefix is active
             if message question "A program appears to be running in your Wine prefix!\nTo avoid problems, it's recommended to close all Wine programs before continuing.\n\nDo you want to terminate all Wine processes and proceed?"; then
@@ -3224,8 +3224,9 @@ get_current_runner() {
     launcher_winepath="$(grep -e "^export wine_path=" -e "^wine_path=" "$wine_prefix/$launch_script_name" | awk -F '=' '{print $2}' | tr -d '"')"
 
     # Double check that we found a path in the launch script
-    if [ -z "$launcher_winepath" ]; then
-        message warning "Unable to find the current wine runner in your launch script!\n$wine_prefix/$launch_script_name"
+    if [ ! -d "$launcher_winepath" ] || [ -z "$launcher_winepath" ]; then
+        launcher_winepath=""
+        message warning "Unable to find the current Wine runner in your launch script! Defaulting to system Wine.\n$wine_prefix/$launch_script_name"
         return 1
     fi
 
