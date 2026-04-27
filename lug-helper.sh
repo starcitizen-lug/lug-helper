@@ -1953,15 +1953,21 @@ maintenance_menu() {
     looping_menu="true"
     while [ "$looping_menu" = "true" ]; do
         # Fetch wine prefix
+        prefix_missing_text=""
         if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
             game_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+
+            # Add a warning if the prefix has been deleted
+            if [ ! -d "$game_prefix" ]; then
+                prefix_missing_text=" (missing!)"
+            fi
         else
             game_prefix="Not configured"
         fi
 
         # Configure the menu
-        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nWine prefix: <a href='file://$game_prefix'>$game_prefix</a>"
-        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix: $game_prefix"
+        menu_text_zenity="<b><big>Game Maintenance and Troubleshooting</big>\n\nLUG Wiki: $lug_wiki</b>\n\nWine prefix:$prefix_missing_text <a href='file://$game_prefix'>$game_prefix</a>"
+        menu_text_terminal="Game Maintenance and Troubleshooting\n\nLUG Wiki: $lug_wiki\n\nWine prefix:$prefix_missing_text $game_prefix"
         menu_text_height="320"
         menu_type="radiolist"
         main_menu="false"
