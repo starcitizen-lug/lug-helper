@@ -2854,7 +2854,7 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the following launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance tuning options:\n${lug_wiki_performance}"
+    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the following launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance tuning recommendations:\n${lug_wiki_performance}"
 }
 
 # MARK: create_desktop_files()
