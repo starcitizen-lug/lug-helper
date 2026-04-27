@@ -242,7 +242,7 @@ try_exec() {
             return 1
         fi
     else
-        debug_print exit "Script Error: Invalid arguemnt passed to the try_exec function. Aborting."
+        debug_print exit "Script Error: Invalid argument passed to the try_exec function. Aborting."
     fi
 
     return 0
@@ -472,7 +472,7 @@ progress_bar() {
 # The final element in each array is expected to be a quit option.
 #
 # IMPORTANT: The indices of the elements in "menu_actions"
-# *MUST* correspond to the indeces in "menu_options".
+# *MUST* correspond to the indices in "menu_options".
 # In other words, it is expected that menu_actions[1] is the correct action
 # to be executed when menu_options[1] is selected, and so on for each element.
 # Both arrays must have the same number of elements.
@@ -2844,7 +2844,7 @@ install_game() {
     # Copy the bundled icons to the .local icons directory
     copy_icons
 
-    # Create a "no_win64_warnings" file in the prefix to supress Wine64 warnings
+    # Create a "no_win64_warnings" file in the prefix to suppress Wine64 warnings
     touch "${install_dir}/no_win64_warnings"
 
     # Create .desktop files
@@ -2859,7 +2859,7 @@ install_game() {
 
 # MARK: create_desktop_files()
 # Create .desktop files for the RSI Launcher
-# The default behavior is to overwite any existing .desktop files
+# The default behavior is to overwrite any existing .desktop files
 #
 # This function takes one optional string argument:
 # "needed" will create desktop files that don't exist and won't overwrite existing files
@@ -3255,7 +3255,7 @@ if [ "$#" -eq 0 ]; then
     format_urls
 fi
 
-# Check if a newer verison of the script is available
+# Check if a newer version of the script is available
 latest_version="$(get_latest_release "$repo")"
 
 # Sort the versions and check if the installed Helper is smaller
