@@ -55,7 +55,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
   - Re-install the latest version of the RSI Launcher
 
 - `Display Helper & Star Citizen directories and files`
-  - Show all the directories currently in use by both the Helper and Star Citizen
+  - Show all the directories and files currently in use by both the Helper and Star Citizen
 
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
