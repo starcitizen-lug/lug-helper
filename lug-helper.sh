@@ -1984,11 +1984,12 @@ maintenance_menu() {
         rsi_launcher_msg="Update/Re-install RSI Launcher"
         dirs_msg="Display Helper & Star Citizen directories and files"
         reset_msg="Reset Helper configs"
+        uninstall_msg="Uninstall Star Citizen"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "menu_loop_done")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$uninstall_msg" "menu_loop_done")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "uninstall_game" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2447,7 +2448,7 @@ display_wiki() {
 # Delete the helper's config directory
 reset_helper() {
     if [ "$1" = "switchprefix" ]; then
-        # This gets called by the switch_prefix and install_game functions
+        # This gets called by the switch_prefix, install_game, and uninstall_game functions
         # We only want to delete configs related to the game path in order to target a different game install
         debug_print continue "Deleting $conf_dir/$conf_subdir/{$wine_conf,$game_conf}..."
         rm --interactive=never "${conf_dir:?}/$conf_subdir/"{"$wine_conf","$game_conf"}
@@ -2460,6 +2461,64 @@ reset_helper() {
     # Also wipe path variables so the reset takes immediate effect
     wine_prefix=""
     game_path=""
+}
+
+# MARK: uninstall_game()
+# Uninstall the game by deleting the Wine prefix and any other installed files
+uninstall_game() {
+    # Fetch wine prefix
+    getdirs
+    if [ "$?" -eq 1 ]; then
+        # User cancelled getdirs or there was an error
+        message warning "Unable to uninstall the configured Wine prefix."
+        return 1
+    fi
+
+    # Populate the list of existing .desktop files
+    desktop_list=""
+    if [ -f "$localshare_rsi_desktop_file" ]; then
+        desktop_list+="${localshare_rsi_desktop_file}\n"
+    fi
+    if [ -f "$localshare_sc_desktop_file" ]; then
+        desktop_list+="${localshare_sc_desktop_file}\n"
+    fi
+    if [ -f "$home_desktop_file" ]; then
+        desktop_list+="${home_desktop_file}\n"
+    fi
+
+    # Add an extra newline if not empty
+    if [ -n "$desktop_list" ]; then
+        desktop_list="\n${desktop_list}"
+    fi
+
+    if message question "The following files and directories will be deleted:\n\n${wine_prefix}\n${desktop_list}\nDo you want to proceed?"; then
+        # Delete wine prefix
+        debug_print continue "Deleting $wine_prefix..."
+        rm -r --interactive=never "$wine_prefix"
+
+        # Delete .desktop files
+        debug_print continue "Deleting .desktop files..."
+        if [ -f "$localshare_rsi_desktop_file" ]; then
+            rm --interactive=never "$localshare_rsi_desktop_file"
+        fi
+        if [ -f "$localshare_sc_desktop_file" ]; then
+            rm --interactive=never "$localshare_sc_desktop_file"
+        fi
+        if [ -f "$home_desktop_file" ]; then
+            rm --interactive=never "$home_desktop_file"
+        fi
+
+        # Update the .desktop file database if the command is available
+        if [ -n "$desktop_list" ] && [ -x "$(command -v update-desktop-database)" ]; then
+            debug_print continue "Running update-desktop-database..."
+            update-desktop-database "${data_dir}/applications"
+        fi
+
+        # Reset Helper prefix configs since this prefix has been removed
+        reset_helper "switchprefix"
+
+        message info "Star Citizen has been uninstalled."
+    fi
 }
 
 ############################################################################
@@ -3010,7 +3069,7 @@ Icon=starcitizen" > "$localshare_sc_desktop_file"
     fi
 }
 
-# Mark: set_desktop_file_paths()
+# MARK: set_desktop_file_paths()
 # Set variables for .desktop file paths. Used by create_desktop_files and display_dirs
 # Expects $wine_prefix to already be set
 set_desktop_file_paths() {
