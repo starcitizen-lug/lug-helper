@@ -2071,6 +2071,7 @@ update_launch_script() {
     if [ "$latest_launcher_ver" != "$current_launcher_ver" ] &&
        [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$latest_launcher_ver" | sort -V | head -n1)" ]; then
         # The launch script is out of date and needs to be updated
+        debug_print continue "Launch script is out of date. Updating..."
 
         # Backup the file
         cp "$wine_prefix/$launch_script_name" "$wine_prefix/$(basename "$launch_script_name" .sh).bak"
@@ -2081,10 +2082,18 @@ update_launch_script() {
             return 1
         fi
 
-        # If wine_path is empty, it may be an older version of the launch script. Default to system wine
+        # If wine_path is empty, it may be an older version of the launch script. For simplicity, install the default wine runner into the prefix and use that
         if [ -z "$launcher_winepath" ]; then
-            launcher_winepath="$(command -v wine | xargs dirname)"
-            launcher_winepath="${launcher_winepath:-/usr/bin}" # default to /usr/bin if still empty
+            download_dir="${wine_prefix}/runners"
+            download_wine
+            # Make sure the wine download worked
+            if [ "$?" -eq 1 ]; then
+                message error "Something went wrong while installing ${default_runner}!\nThe update cannot proceed."
+                return 1
+            fi
+
+            # Store the new Wine binary path
+            launcher_winepath="$wine_prefix/runners/$downloaded_item_name/bin"
         fi
 
         # Copy in the new launch script
@@ -2126,7 +2135,7 @@ update_launch_script() {
             download_wine
             # Make sure the wine download worked
             if [ "$?" -eq 1 ]; then
-                message error "Something went wrong while installing ${default_runner}!\nGame installation cannot proceed."
+                message error "Something went wrong while installing ${default_runner}!\nThe repair cannot proceed."
                 return 1
             fi
 
@@ -2140,6 +2149,27 @@ update_launch_script() {
 
             message info "Your game launch script has been repaired!"
         fi
+    elif [ ! -d "$launcher_winepath" ]; then
+        # The wine path isn't valid. For simplicity, install the default wine runner into the prefix and use that
+        debug_print continue "Invalid Wine path found in launch script. Repairing..."
+
+        download_dir="${wine_prefix}/runners"
+        download_wine
+        # Make sure the wine download worked
+        if [ "$?" -eq 1 ]; then
+            message error "Something went wrong while installing ${default_runner}!\nThe repair cannot proceed."
+            return 1
+        fi
+
+        # Update Wine binary in game launch script
+        wine_path="$wine_prefix/runners/$downloaded_item_name/bin"
+        post_download_sed_string="export wine_path="
+        sed -i "s|^${post_download_sed_string}.*|${post_download_sed_string}\"${wine_path}\"|" "${wine_prefix}/${launch_script_name}"
+
+        # Overwrite .desktop files to make sure they use the correct prefix
+        create_desktop_files
+
+        message info "Your game launch script has been repaired!"
     else
         # The launch script is up to date!
 
