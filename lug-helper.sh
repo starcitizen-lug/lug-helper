@@ -1496,8 +1496,8 @@ download_install() {
     if [ "$download_type" = "runner" ]; then
         if ! WINEPREFIX="${wine_prefix}" timeout 0.2s "${launcher_winepath}"/wineserver -w; then
             # Prefix is active
-            if message options Cancel Yes "A program appears to be running in your Wine prefix!\nTo avoid problems, it's recommended to close all Wine programs before continuing.\n\nDo you want to terminate all Wine processes and proceed?"; then
-                # Kill all wine processes
+            if message question "A program appears to be running in your Wine prefix!\nTo avoid problems, it's recommended to close all Wine programs before continuing.\n\nDo you want to terminate all Wine processes and proceed?"; then
+                # Kill all wine processes and then continue on
                 WINEPREFIX="${wine_prefix}" "${launcher_winepath}"/wineserver -k
             else
                 return 0
