@@ -60,6 +60,9 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
 
+- `Uninstall Star Citizen`
+  - Deletes the currently used Wine prefix and other installed files
+
 `About and Support`
 - Display information about the LUG Helper and links to our community
 
