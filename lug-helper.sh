@@ -305,7 +305,7 @@ message() {
             "warning")
                 # warning message
                 # call format: message warning "text to display"
-                margs=("--warning" "--text=")
+                margs=("--warning" "--no-wrap" "--text=")
                 shift 1   # drop the message type argument and shift up to the text
                 ;;
             "error")
@@ -1847,7 +1847,7 @@ post_download() {
 
                 # Check if the update was successful and we now have the required string
                 if ! grep -q "^${post_download_sed_string}" "$wine_prefix/$launch_script_name"; then
-                    message warning "Unable to find a required variable in your launch script! The update may have failed.\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
+                    message warning "Unable to find a required variable in your launch script!\nThe update may have failed.\n\nYou will need to edit your launch script's \"${post_download_sed_string}\" variable manually."
                     return 1
                 fi
             else
@@ -2711,7 +2711,7 @@ install_async_dxvk() {
 
             # Check if the update was successful and we now have the env var
             if ! grep -q "^#export DXVK_ASYNC=" "$wine_prefix/$launch_script_name"; then
-                message warning "Could not find the DXVK_ASYNC environment variable in your launch script! The update may have failed.\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
+                message warning "Could not find the DXVK_ASYNC environment variable in your launch script!\nThe update may have failed.\n\nTo enable async, set the environment variable: DXVK_ASYNC=1"
                 return 0
             fi
         else
@@ -2795,7 +2795,7 @@ install_game() {
 
         # Make sure we're not installing over an existing prefix
         if [ -d "$install_dir" ]; then
-            message warning "A directory named \"star-citizen\" already exists!\n\n$install_dir\n\nInstalling over an existing prefix is not recommended.\nIf you need to update or re-install the RSI Launcher, use the option in the Maintenance and Troubleshooting menu."
+            message warning "A directory named \"star-citizen\" already exists!\n\n$install_dir\n\nInstalling over an existing prefix is not recommended.\nIf you need to update or re-install the RSI Launcher, use\nthe option in the Maintenance and Troubleshooting menu."
             return 0
         fi
     else
@@ -3258,7 +3258,7 @@ get_current_runner() {
     # Double check that we found a path in the launch script
     if [ ! -d "$launcher_winepath" ] || [ -z "$launcher_winepath" ]; then
         launcher_winepath=""
-        message warning "Unable to find the current Wine runner in your launch script! Defaulting to system Wine.\n$wine_prefix/$launch_script_name"
+        message warning "Unable to find the current Wine runner in your launch script!\nDefaulting to system Wine.\n$wine_prefix/$launch_script_name"
         return 1
     fi
 
