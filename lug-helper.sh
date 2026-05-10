@@ -1244,7 +1244,7 @@ runner_manage() {
     set_latest_default_runner
     # Sanity check
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest default wine runner.\nThe Github API may be down. Check if you are rate limited and try again later."
+        message warning "Could not fetch the latest default wine runner.\nThe Github API may be down. Check if you are rate limited and try again later."
         return 1
     fi
 
