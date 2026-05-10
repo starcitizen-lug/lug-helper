@@ -160,13 +160,14 @@ runner_sources=(
 # Minimum amount of RAM in GiB
 memory_required="16"
 # Minimum amount of combined RAM + swap in GiB
-memory_combined_required="40"
+memory_combined_required="50"
 
 ######## Links / Versions ##################################################
 
 # LUG wiki links
 lug_wiki="https://wiki.starcitizen-lug.org"
 lug_wiki_postinstall="https://wiki.starcitizen-lug.org/Quick-Start-Guide#after-installation"
+lug_wiki_swap="https://wiki.starcitizen-lug.org/Performance-Tuning#zram--swap"
 lug_wiki_nixos="https://wiki.starcitizen-lug.org/Alternative-Installations#nixos-installation"
 
 # LUG community links
@@ -970,7 +971,7 @@ memory_check() {
     else
         # Recommend swap
         swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
-        preflight_fail+=("Your system has $memtotal memory and $swaptotal swap.\nWe recommend at least ${swap_recommended}GiB swap to avoid crashes.")
+        preflight_fail+=("Your system has $memtotal memory and $swaptotal swap.\nWe recommend at least ${swap_recommended}GiB swap to avoid crashes.\n${lug_wiki_swap}")
     fi
 }
 
@@ -3331,6 +3332,7 @@ format_urls() {
         # wiki
         lug_wiki="<a href='${lug_wiki}'>${lug_wiki}</a>"
         lug_wiki_postinstall="<a href='${lug_wiki_postinstall}'>${lug_wiki_postinstall}</a>"
+        lug_wiki_swap="<a href='${lug_wiki_swap}'>${lug_wiki_swap}</a>"
         lug_wiki_nixos="<a href='${lug_wiki_nixos}'>${lug_wiki_nixos}</a>"
         # community
         lug_org="<a href='${lug_org}'>${lug_org}</a>"
