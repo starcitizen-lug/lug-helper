@@ -1593,7 +1593,7 @@ download_install() {
     # Sanity check
     if [ ! -f "$tmp_dir/$download_filename" ]; then
         # Something went wrong with the download and the file doesn't exist
-        message error "Something went wrong and the requested $download_type file could not be downloaded!\n\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
+        message warning "Something went wrong and the requested $download_type file could not be downloaded!\n\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
         debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
         return 1
     fi
@@ -2239,7 +2239,7 @@ call_launch_script() {
 
     if [ "$req_launcher_ver" != "$current_launcher_ver" ] &&
        [ "$current_launcher_ver" = "$(printf "%s\n%s" "$current_launcher_ver" "$req_launcher_ver" | sort -V | head -n1)" ]; then
-        message error "Your launch script is out of date!\nPlease update your launch script before proceeding."
+        message warning "Your launch script is out of date!\nPlease update your launch script before proceeding."
         return 1
     fi
 
@@ -3161,7 +3161,7 @@ download_wine() {
     set_latest_default_runner
     # Sanity check
     if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest default wine runner.\nThe Github API may be down. Check if you are rate limited and try again later."
+        message warning "Could not fetch the latest default wine runner.\nThe Github API may be down. Check if you are rate limited and try again later."
         return 1
     fi
 
