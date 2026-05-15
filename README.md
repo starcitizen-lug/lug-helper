@@ -1,17 +1,46 @@
 # LUG Helper
 **Star Citizen's Linux Users Group Helper Script**  
-https://robertsspaceindustries.com/orgs/LUG
+Org: https://robertsspaceindustries.com/orgs/LUG  
+Wiki: https://wiki.starcitizen-lug.org/  
 
-### *Greetings, fellow Penguin!*
-_**This script is designed to help you manage and optimize Star Citizen on Linux.**_
+### *Greetings, Space Penguin!*
+This script helps you quickly and easily install and manage Star Citizen on Linux.  
+It's maintained by the Star Citizen Linux Users Group org and community.
 
-Zenity menus are used for a GUI experience with a fallback to terminal-based menus where Zenity is unavailable.  
-Command line arguments are available for quickly launching functions from the terminal.  
+For our Quick Start Guide, troubleshooting steps, news, and other useful information such as input devices and head tracking setup, see our community's wiki link above.
 
-Configuration is saved in *$XDG_CONFIG_HOME/starcitizen-lug/*  
-Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
+
+## Installation
+
+### Distro packages:
+_These packages are maintained by the community_  
+
+**Arch Linux:** https://aur.archlinux.org/packages/lug-helper/  
+**Fedora:** https://copr.fedorainfracloud.org/coprs/jackgreiner/lug-helper  
+**NixOS:** https://github.com/LovingMelody/nix-citizen  
+
+### From source:
+1. [Download](https://github.com/starcitizen-lug/lug-helper/releases) and extract the **.tar.gz** archive.
+2. To run `lug-helper.sh` from your file manager:
+    1. Navigate to the extracted lug-helper directory.
+    2. Right click on `lug-helper.sh` and select **Run as a Program**.
+4. To run `lug-helper.sh` from a terminal:
+    1. Open your terminal and cd into the extracted lug-helper directory:  
+       `cd /path/to/extracted/lug-helper` (List files with the `ls` command)
+    3. Once you are in the directory containing lug-helper.sh, run it by typing:  
+       `./lug-helper.sh`
+
+_Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
+_Winetricks Dependencies: **cabextract**, **unzip**_  
+_Optional Dependencies: **zenity** (for GUI)_  
+
 
 ## Options
+Zenity menus are used for a GUI experience with a fallback to terminal-based menus where Zenity is unavailable.  
+Command line arguments are available for quickly launching functions from the terminal. (`./lug-helper.sh --help`)  
+
+Configuration is saved in *$XDG_CONFIG_HOME/starcitizen-lug/*  
+
 
 `Preflight Check`
 - Runs a series of system optimization checks and offers to fix any issues
@@ -68,23 +97,7 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 
 
-## Installation
 
-### Distro packages:
-_These packages are maintained by the community_  
-
-**Arch Linux:** https://aur.archlinux.org/packages/lug-helper/  
-**Fedora:** https://copr.fedorainfracloud.org/coprs/jackgreiner/lug-helper  
-**NixOS:** https://github.com/LovingMelody/nix-citizen  
-
-### From source:
-1. [Download it!](https://github.com/starcitizen-lug/lug-helper/releases)
-2. Extract it!
-3. Run it! 
-
-_Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
-_Winetricks Dependencies: **cabextract**, **unzip**_  
-_Optional Dependencies: **zenity** (for GUI)_  
 
 ## Made with <3
 **Author:** https://github.com/the-sane
