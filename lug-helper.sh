@@ -2378,7 +2378,7 @@ reinstall_rsi_launcher() {
 display_dirs() {
     dirs_list="\n"
 
-    # Helper configs and keybinds
+    # Helper config files
     if [ -d "$conf_dir/$conf_subdir" ]; then
         dir_path="$conf_dir/$conf_subdir"
         if [ "$use_zenity" -eq 1 ]; then
