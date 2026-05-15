@@ -70,12 +70,14 @@ Keybinds are backed up to *$XDG_CONFIG_HOME/starcitizen-lug/keybinds/*
 
 ## Installation
 
-### Distro packages (community maintained):
+### Distro packages:
+_These packages are maintained by the community_  
+
 **Arch Linux:** https://aur.archlinux.org/packages/lug-helper/  
 **Fedora:** https://copr.fedorainfracloud.org/coprs/jackgreiner/lug-helper  
 **NixOS:** https://github.com/LovingMelody/nix-citizen  
 
-### From source (portable):
+### From source:
 1. [Download it!](https://github.com/starcitizen-lug/lug-helper/releases)
 2. Extract it!
 3. Run it! 
