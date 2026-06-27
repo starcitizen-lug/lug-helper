@@ -1297,9 +1297,20 @@ download_select_install() {
     contributor_url="${download_sources[$1+1]}"
 
     # For runners, check GlibC version against runner requirements
-    if [ "$download_type" = "runner" ] && { [ "$contributor_name" = "TKG" ] || [ "$contributor_name" = "RawFox" ] || [ "$contributor_name" = "Mactan" ]; }; then
+    if [ "$download_type" = "runner" ]; then
         glibc_fail="false"
-        required_glibc="2.38"
+
+        if [ "$contributor_name" = "Kron4ek" ]; then
+            required_glibc="2.27"
+        elif [ "$contributor_name" = "RawFox" ]; then
+            required_glibc="2.38"
+        elif [ "$contributor_name" = "LUG Wine" ]; then
+            required_glibc="2.39"
+        elif [ "$contributor_name" = "LUG Experimental" ]; then
+            required_glibc="2.39"
+        else
+            required_glibc="0.00"
+        fi
 
         # Check the system glibc
         if [ -x "$(command -v ldd)" ]; then
