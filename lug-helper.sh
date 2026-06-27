@@ -1298,7 +1298,6 @@ download_select_install() {
 
     # For runners, check GlibC version against runner requirements
     if [ "$download_type" = "runner" ]; then
-        glibc_fail="false"
 
         if [ "$contributor_name" = "Kron4ek" ]; then
             required_glibc="2.27"
@@ -1312,18 +1311,8 @@ download_select_install() {
             required_glibc="0.00"
         fi
 
-        # Check the system glibc
-        if [ -x "$(command -v ldd)" ]; then
-            system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
-        else
-            system_glibc="0 (Not installed)"
-        fi
-
-        # Sort the versions and check if the installed glibc is smaller
-        if [ "$required_glibc" != "$system_glibc" ] &&
-        [ "$system_glibc" = "$(printf "%s\n%s" "$system_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
-            glibc_fail="true"
-        fi
+        # Check the system glibc version
+        check_glibc
 
         # Display a warning message
         if [ "$glibc_fail" = "true" ]; then
@@ -2786,6 +2775,16 @@ install_game() {
         return 1
     fi
 
+    # Check glibc version against default runner requirements
+    required_glibc="2.39"
+    check_glibc
+
+    # Display a warning message
+    if [ "$glibc_fail" = "true" ]; then
+        message error "Your glibc version is incompatible with the default Wine runner! You may need to update your OS.\n\nSystem glibc: ${system_glibc}\nMinimum required glibc: $required_glibc"
+        return 1
+    fi
+
     # Call the preflight check and confirm the user is ready to proceed
     preflight_check "wine"
     if [ "$?" -eq 1 ]; then
@@ -3297,6 +3296,7 @@ set_latest_rsi_installer() {
 # Fetch and store variables for the latest default wine runner filename
 set_latest_default_runner() {
     default_runner_file="$(curl -s https://api.github.com/repos/starcitizen-lug/lug-wine/releases/latest | grep -Eo "\"browser_download_url\": ?\"[^\"]+\"" | grep -vie "staging" | cut -d '"' -f4 | xargs basename)"
+    # Important: If changing the default runner, adjust the glibc version check in the install_game function
 
     if [ -z "$default_runner_file" ]; then
         return 1
@@ -3316,6 +3316,29 @@ set_latest_winetricks() {
     winetricks_version="$(get_latest_release Winetricks/winetricks)"
     winetricks_url="https://raw.githubusercontent.com/Winetricks/winetricks/refs/tags/${winetricks_version}/src/winetricks"
     winetricks_next_url="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
+}
+
+# MARK: check_glibc
+check_glibc() {
+    # Sanity checks
+    if [ -z "$required_glibc" ]; then
+        debug_print exit "Script error: The string 'required_glibc' was not set before calling the check_glibc function. Aborting."
+    fi
+
+    glibc_fail="false"
+
+    # Check the system glibc
+    if [ -x "$(command -v ldd)" ]; then
+        system_glibc="$(ldd --version | awk '/ldd/{print $NF}')"
+    else
+        system_glibc="0 (Not installed)"
+    fi
+
+    # Sort the versions and check if the installed glibc is smaller
+    if [ "$required_glibc" != "$system_glibc" ] &&
+    [ "$system_glibc" = "$(printf "%s\n%s" "$system_glibc" "$required_glibc" | sort -V | head -n1)" ]; then
+        glibc_fail="true"
+    fi
 }
 
 # MARK: get_latest_release()
