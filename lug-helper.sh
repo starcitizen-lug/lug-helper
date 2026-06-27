@@ -2326,6 +2326,12 @@ reinstall_rsi_launcher() {
         return 1
     fi
 
+    # Delete the RSI Launcher's AppData directory (fixes some broken launcher issues)
+    if [ -d "${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher" ]; then
+        debug_print continue "Deleting RSI Launcher AppData directory:\n${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher..."
+        rm -r --interactive=never "${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher"
+    fi
+
     download_rsi_installer
     # Abort if the download failed
     if [ "$?" -eq 1 ]; then
