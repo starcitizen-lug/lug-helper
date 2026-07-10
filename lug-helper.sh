@@ -1590,7 +1590,7 @@ download_install() {
     download_file "$download_url" "$download_filename" "$download_type"
 
     # Sanity check
-    if [ ! -f "$tmp_dir/$download_filename" ]; then
+    if [ "$?" -eq 1 ] || [ ! -f "$tmp_dir/$download_filename" ]; then
         # Something went wrong with the download and the file doesn't exist
         message warning "Something went wrong and the requested $download_type file could not be downloaded!\n\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
         debug_print continue "Download failed! File not found: $tmp_dir/$download_filename"
@@ -1924,18 +1924,37 @@ download_file() {
             trap 'kill "$curlpid"; trap - ERR' ERR
             zenity --progress --auto-close --title="Star Citizen LUG Helper" --text="Downloading ${download_type}.  This might take a moment.\n" 2>/dev/null
         )
+        zenity_exit="$?"
 
-        if [ "$?" -eq 1 ]; then
-            # User clicked cancel
+        # Capture curl's exit status
+        wait "$curlpid"
+        curl_exit="$?"
+
+        # Clean up the pipe
+        rm --interactive=never "${tmp_dir:?}/lugpipe"
+
+        # Check if the user clicked cancel in zenity
+        if [ "$zenity_exit" -eq 1 ]; then
             debug_print continue "Download aborted. Removing $tmp_dir/$download_filename..."
             rm --interactive=never "${tmp_dir:?}/$download_filename"
-            rm --interactive=never "${tmp_dir:?}/lugpipe"
             return 1
         fi
-        rm --interactive=never "${tmp_dir:?}/lugpipe"
+
+        # Check for curl errors
+        if [ "$curl_exit" -ne 0 ]; then
+            debug_print continue "Curl reported an error. Exit code: $curl_exit"
+            return 1
+        fi
     else
         # Standard curl progress bar
         (cd "$tmp_dir" && curl -#L "$download_url" -o "$download_filename")
+        curl_exit="$?"
+
+        # Catch curl errors
+        if [ "$curl_exit" -ne 0 ]; then
+            debug_print continue "Curl reported an error. Exit code: $curl_exit"
+            return 1
+        fi
     fi
 }
 
@@ -3223,7 +3242,7 @@ download_winetricks() {
     fi
 
     # Sanity check
-    if [ ! -f "$tmp_dir/winetricks" ]; then
+    if [ "$?" -eq 1 ] || [ ! -f "$tmp_dir/winetricks" ]; then
         # Something went wrong with the download and the file doesn't exist
         message error "Something went wrong; winetricks could not be downloaded!"
         return 1
@@ -3254,7 +3273,7 @@ download_rsi_installer() {
     # Download RSI installer to tmp
     download_file "$rsi_installer_url" "$rsi_installer" "installer"
     # Sanity check
-    if [ ! -f "$tmp_dir/$rsi_installer" ]; then
+    if [ "$?" -eq 1 ] || [ ! -f "$tmp_dir/$rsi_installer" ]; then
         # Something went wrong with the download and the file doesn't exist
         message error "Something went wrong; the installer could not be downloaded!"
         return 1
