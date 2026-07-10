@@ -152,7 +152,6 @@ runner_sources=(
     "LUG Wine" "https://api.github.com/repos/starcitizen-lug/lug-wine/releases"
     "LUG Experimental" "https://api.github.com/repos/starcitizen-lug/lug-wine-experimental/releases"
     "RawFox" "https://api.github.com/repos/starcitizen-lug/raw-wine/releases"
-    "Kron4ek" "https://api.github.com/repos/Kron4ek/Wine-Builds/releases"
 )
 
 ######## Requirements ######################################################
