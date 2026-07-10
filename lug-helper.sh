@@ -3230,6 +3230,10 @@ download_winetricks() {
         return 1
     fi
 
+    # Use an emphemeral cache for winetricks verbs
+    mkdir "$tmp_dir/winetricks_cache"
+    export W_CACHE="$tmp_dir/winetricks_cache"
+
     # Save the path to the downloaded binary
     winetricks_bin="$tmp_dir/winetricks"
 
