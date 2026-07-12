@@ -2827,10 +2827,42 @@ install_game() {
         # Set the default install path
         install_dir="$HOME/Games/star-citizen"
 
+        do_migration="false"
         # Make sure we're not installing over an existing prefix
         if [ -d "$install_dir" ]; then
-            message warning "A directory named \"star-citizen\" already exists!\n\n$install_dir\n\nInstalling over an existing prefix is not recommended.\nIf you need to update or re-install the RSI Launcher, use\nthe option in the Maintenance and Troubleshooting menu."
-            return 0
+            # star-citizen exists
+            if [ -f "${install_dir}/${default_install_path}/${sc_base_dir}/LIVE/Data.p4k" ]; then
+                # Data.p4k exists so we can do a migration
+                timestamp="$(date +'%Y%m%d-%H%M%S')"
+                if message question "A directory named \"star-citizen\" already exists!\n\n${install_dir}\n\nIf you proceed, the old installation will be backed up as \"star-citizen-${timestamp}\"\nand your downloaded game file (Data.p4k) will be moved into the new install.\n\nDo you want to perform a new installation?"; then
+                    debug_print continue "Moving "$install_dir" to backup location: "${install_dir}-${timestamp}"..."
+                    # Move the old installation to a backup dir
+                    progress_bar start "Backing up old installation..."
+                    mv "$install_dir" "${install_dir}-${timestamp}"
+
+                    if [ "$?" -ne 0 ]; then
+                        message error "There was an error moving ${install_dir}.\nThe installation cannot continue.\n\nPlease move or delete the old install and try again."
+                        return 1
+                    fi
+
+                    # Stop the zenity progress window
+                    progress_bar stop
+
+                    datap4k="${install_dir}-${timestamp}/${default_install_path}/${sc_base_dir}/LIVE/Data.p4k"
+                    if [ -f "$datap4k" ]; then
+                        do_migration="true"
+                    else
+                        message info "Data.p4k file not found!\nThe install will continue without migration."
+                        do_migration="false"
+                    fi
+                else
+                    message warning "Installation cancelled."
+                    return 0
+                fi
+            else
+                message warning "A directory named \"star-citizen\" already exists!\n\n$install_dir\n\nInstalling over an existing prefix is not recommended.\nIf you need to re-install, delete the above directory and try again."
+                return 0
+            fi
         fi
     else
         if [ "$use_zenity" -eq 1 ]; then
@@ -3000,6 +3032,24 @@ install_game() {
     # Ensure the LIVE directory exists. The RSI Launcher sometimes fails to create it
     mkdir -p "${game_path}/LIVE"
 
+    # Migrate the Data.p4k file if re-installing
+    if [ "$do_migration" = "true" ]; then
+        datap4k_error="false"
+
+        debug_print continue "Moving ${datap4k} to new install location: ${game_path}/LIVE/..."
+        # Move the old installation to a backup dir
+        progress_bar start "Moving Data.p4k file to new installation..."
+        mv "$datap4k" "${game_path}/LIVE/"
+
+        if [ "$?" -ne 0 ]; then
+            datap4k_error="true"
+            message warning "There was an error moving your Data.p4k file to the new installation.\nYou may need to move it manually.\n\n$datap4k"
+        fi
+
+        # Stop the zenity progress window
+        progress_bar stop
+    fi
+
     # Copy game launch script to the wine prefix root directory
     debug_print continue "Copying game launch script to ${install_dir}..."
     if [ -f "$install_dir/$launch_script_name" ]; then
@@ -3029,7 +3079,15 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    if [ "$do_migration" = "true" ] && [ "$datap4k_error" = "true" ]; then
+        # Recommend manually moving the data.p4k file
+        message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nYou may need to manually move your Data.p4k file from the old installation:\n     ${install_dir}-${timestamp}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    elif [ "$do_migration" = "true" ]; then
+        # Auto migration succeeded
+        message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nYou can safely delete the old installation:\n     ${install_dir}-${timestamp}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    else
+        message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    fi
 }
 
 # MARK: create_desktop_files()
