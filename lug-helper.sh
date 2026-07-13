@@ -2213,17 +2213,28 @@ edit_launch_script() {
         return 0
     fi
 
+    launch_script_path="$wine_prefix/$launch_script_name"
+
     # Make sure the launch script exists
-    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
-        message error "Unable to find $wine_prefix/$launch_script_name"
+    if [ ! -f "$launch_script_path" ]; then
+        message error "Unable to find ${launch_script_path}"
         return 1
     fi
 
     # Open the launch script in the user's preferred editor
     if [ -x "$(command -v xdg-open)" ]; then
-        xdg-open "$wine_prefix/$launch_script_name"
+        xdg-open "$launch_script_path"
+
+        # Use a fallback if xdg-open failed. KDE security forbids opening scripts with xdg-open
+        if [ "$?" -ne 0 ]; then
+            if [ "$use_zenity" -eq 1 ]; then
+                launch_script_path="<a href='file://${launch_script_path}'>${launch_script_path}</a>"
+            fi
+
+            message info "xdg-open was unable to open the launch script for editing.\n\nYou can manually open it in a text editor here:\n${launch_script_path}"
+        fi
     else
-        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n$wine_prefix/$launch_script_name"
+        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n${launch_script_path}"
     fi
 }
 
