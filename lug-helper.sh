@@ -2877,8 +2877,17 @@ install_game() {
             # No Zenity, use terminal-based menus
             clear
             # Get the install path from the user
-            printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games/star-citizen\n\n"
+            printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/${USER}/Games/star-citizen\n\n"
             while read -rp "Install path: " install_dir; do
+                # Expand ~ to the user home dir
+                case "$install_dir" in
+                    ~*)
+                        install_dir="${HOME}${install_dir#\~}"
+                        ;;
+                    *)
+                        ;;
+                esac
+
                 if [ -z "$install_dir" ]; then
                     printf "Invalid directory. Please try again.\n\n"
                 elif [ ! -d "$install_dir" ]; then
