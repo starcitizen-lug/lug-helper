@@ -2213,17 +2213,28 @@ edit_launch_script() {
         return 0
     fi
 
+    launch_script_path="$wine_prefix/$launch_script_name"
+
     # Make sure the launch script exists
-    if [ ! -f "$wine_prefix/$launch_script_name" ]; then
-        message error "Unable to find $wine_prefix/$launch_script_name"
+    if [ ! -f "$launch_script_path" ]; then
+        message error "Unable to find ${launch_script_path}"
         return 1
     fi
 
     # Open the launch script in the user's preferred editor
     if [ -x "$(command -v xdg-open)" ]; then
-        xdg-open "$wine_prefix/$launch_script_name"
+        xdg-open "$launch_script_path"
+
+        # Use a fallback if xdg-open failed. KDE security forbids opening scripts with xdg-open
+        if [ "$?" -ne 0 ]; then
+            if [ "$use_zenity" -eq 1 ]; then
+                launch_script_path="<a href='file://${launch_script_path}'>${launch_script_path}</a>"
+            fi
+
+            message info "xdg-open was unable to open the launch script for editing.\n\nYou can manually open it in a text editor here:\n${launch_script_path}"
+        fi
     else
-        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n$wine_prefix/$launch_script_name"
+        message error "xdg-open is not installed.\nYou may open the launch script manually:\n\n${launch_script_path}"
     fi
 }
 
@@ -2822,56 +2833,89 @@ install_game() {
         return 1
     fi
 
+    # Initialize re-install flag
+    move_datap4k="false"
+
     # Get the install path from the user
     if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
         # Set the default install path
         install_dir="$HOME/Games/star-citizen"
+        
+        # Are we trying to re-install over an existing prefix?
+        if [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
+            # star-citizen exists and is not empty
 
-        # Make sure we're not installing over an existing prefix
-        if [ -d "$install_dir" ]; then
-            message warning "A directory named \"star-citizen\" already exists!\n\n$install_dir\n\nInstalling over an existing prefix is not recommended.\nIf you need to update or re-install the RSI Launcher, use\nthe option in the Maintenance and Troubleshooting menu."
-            return 0
+            # Back up the old install and check for a Data.p4k file. Sets the move_datap4k flag based on results.
+            prepare_reinstall "$install_dir"
+            
+            # Cancel installation if prepare_reinstall returns failure
+            if [ "$?" -eq 1 ]; then
+                return 1
+            fi
         fi
     else
         if [ "$use_zenity" -eq 1 ]; then
             message info "On the next screen, select your Star Citizen install location"
 
             # Get the install path from the user
-            while true; do
-                install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+            install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
 
-                if [ "$?" -eq -1 ]; then
-                    message error "An unexpected error has occurred. The Helper is unable to proceed."
-                    return 1
-                elif [ -z "$install_dir" ]; then
-                    # User clicked cancel or something else went wrong
-                    message warning "Installation cancelled."
-                    return 1
-                fi
+            if [ "$?" -eq -1 ]; then
+                message error "An unexpected error has occurred. The Helper is unable to proceed."
+                return 1
+            elif [ -z "$install_dir" ]; then
+                # User clicked cancel or something else went wrong with the zenity file picker
+                message warning "Installation cancelled."
+                return 1
+            fi
 
-                # Make sure we're not installing over an existing prefix
-                if [ -d "$install_dir/star-citizen" ]; then
-                    message warning "A directory named \"star-citizen\" already exists!\nPlease choose a different install location.\n\n$install_dir"
-                    continue
-                fi
-
-                # Add the wine prefix subdirectory to the install path
+            # If the selected path doesn't end in a star-citizen directory, set that as the install directory to be created
+            if [ "$(basename "$install_dir")" != "star-citizen" ]; then
                 install_dir="$install_dir/star-citizen"
+            fi
 
-                break
-            done
+            # Are we trying to re-install over an existing prefix?
+            if [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
+                # Back up the old install and check for a Data.p4k file. Sets the move_datap4k flag based on results.
+                prepare_reinstall "$install_dir"
+                
+                # Cancel installation if prepare_reinstall returns failure
+                if [ "$?" -eq 1 ]; then
+                    return 1
+                fi
+            fi
         else
             # No Zenity, use terminal-based menus
             clear
             # Get the install path from the user
-            printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/USER/Games/star-citizen\n\n"
+            printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/${USER}/Games/star-citizen\n\n"
             while read -rp "Install path: " install_dir; do
+                # Expand ~ to the user home dir
+                case "$install_dir" in
+                    ~*)
+                        install_dir="${HOME}${install_dir#\~}"
+                        ;;
+                    *)
+                        ;;
+                esac
+
                 if [ -z "$install_dir" ]; then
                     printf "Invalid directory. Please try again.\n\n"
                 elif [ ! -d "$install_dir" ]; then
                     if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
                         break
                     fi
+                elif [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
+                    # Are we trying to re-install over an existing prefix?
+                    # Back up the old install and check for a Data.p4k file. Sets the move_datap4k flag based on results.
+                    prepare_reinstall "$install_dir"
+
+                    # Cancel installation if prepare_reinstall returns failure
+                    if [ "$?" -eq 1 ]; then
+                        return 1
+                    fi
+
+                    break
                 else
                     break
                 fi
@@ -3000,6 +3044,24 @@ install_game() {
     # Ensure the LIVE directory exists. The RSI Launcher sometimes fails to create it
     mkdir -p "${game_path}/LIVE"
 
+    # Migrate the Data.p4k file if re-installing
+    if [ "$move_datap4k" = "true" ]; then
+        datap4k_error="false"
+
+        debug_print continue "Moving ${datap4k} to new install location: ${game_path}/LIVE/..."
+        # Move the old installation to a backup dir
+        progress_bar start "Moving Data.p4k file to new installation..."
+        mv "$datap4k" "${game_path}/LIVE/"
+
+        if [ "$?" -ne 0 ]; then
+            datap4k_error="true"
+            message warning "There was an error moving your Data.p4k file to the new installation.\nYou may need to move it manually.\n\n${datap4k}"
+        fi
+
+        # Stop the zenity progress window
+        progress_bar stop
+    fi
+
     # Copy game launch script to the wine prefix root directory
     debug_print continue "Copying game launch script to ${install_dir}..."
     if [ -f "$install_dir/$launch_script_name" ]; then
@@ -3029,7 +3091,72 @@ install_game() {
     echo "$current_version" > "${install_dir}/.lughelper"
 
     debug_print continue "Installation finished"
-    message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    if [ "$move_datap4k" = "true" ] && [ "$datap4k_error" = "true" ]; then
+        # Recommend manually moving the data.p4k file
+        message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nYou may need to manually move your Data.p4k file from the old installation:\n     ${backed_up_install_path}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    elif [ "$move_datap4k" = "true" ]; then
+        # Auto migration succeeded
+        message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nYou can safely delete the old installation:\n     ${backed_up_install_path}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    else
+        message info "Installation has finished. The install log was written to ${tmp_install_log_formatted}\n\nStart the RSI Launcher from your applications list or run the launch script:\n     ${installed_launch_script}\n\nIMPORTANT!\n     The RSI Launcher will offer to install the game into C:\\\Program Files\\\...\n     Do not change the default path!\n\nSee our wiki for performance and post-install recommendations:\n${lug_wiki_postinstall}"
+    fi
+}
+
+# MARK: prepare_reinstall()
+# Back up a previous installation to prepare for re-install
+# Checks the passed install directory for a Data.p4k file and sets move_datap4k flag
+# install_game() uses this flag to move the Data.p4k file to the new installation location
+#
+# This function expects an existing install path to be passed as an argument
+prepare_reinstall() {
+    # Sanity checks
+    if [ "$#" -lt 1 ]; then
+        debug_print exit "Script error: The prepare_reinstall function expects one argument. Aborting."
+    fi
+
+    previous_install_path="$1"
+    previous_install_basedir="$(basename "$previous_install_path")"
+
+    if [ -f "${previous_install_path}/${default_install_path}/${sc_base_dir}/LIVE/Data.p4k" ]; then
+        # Data.p4k exists so we can do a migration
+        timestamp="$(date +'%Y%m%d-%H%M%S')"
+        backed_up_install_path="${previous_install_path}-backup-${timestamp}"
+        backed_up_install_dir="${previous_install_basedir}-backup-${timestamp}"
+
+        if message question "A previous install was found in this directory!\n\n${previous_install_path}\n\nIf you proceed, the old installation will be backed up as \"${backed_up_install_dir}\"\nand your downloaded game file (Data.p4k) will be moved into a new game install.\n\nDo you want to perform the re-installation?"; then
+            debug_print continue "Moving ${previous_install_path} to backup location: ${backed_up_install_path}..."
+            # Move the old installation to a backup dir
+            progress_bar start "Backing up old installation..."
+            mv "$previous_install_path" "$backed_up_install_path"
+
+            # Did the mv complete successfully?
+            if [ "$?" -ne 0 ]; then
+                message error "There was an error moving ${previous_install_path}.\nThe installation cannot continue.\n\nPlease move or delete the old install and try again."
+                return 1
+            fi
+
+            # Stop the zenity progress window
+            progress_bar stop
+
+            datap4k="${backed_up_install_path}/${default_install_path}/${sc_base_dir}/LIVE/Data.p4k"
+            # Double check that the Data.p4k file still exists after the prefix was renamed
+            if [ -f "$datap4k" ]; then
+                move_datap4k="true"
+            else
+                # We should not get here unless something went really wrong
+                message info "Unable to locate an existing Data.p4k file for migration!\nThe install will continue and you will need to redownload the full game."
+                move_datap4k="false"
+            fi
+        else
+            # The user selected cancel
+            message warning "Installation cancelled."
+            return 1
+        fi
+    else
+        # There's an existing directory at that location but no Data.p4k file was found for migration
+        message warning "A directory named \"${previous_install_basedir}\" already exists!\n\n${previous_install_path}\n\nInstalling over an existing prefix is not recommended.\nPlease move or delete the above directory and try again."
+        return 1
+    fi
 }
 
 # MARK: create_desktop_files()
