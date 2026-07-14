@@ -1,5 +1,5 @@
 # LUG Helper
-**The official installer of the Star Citizen's Linux Users Group**  
+**The official installer of the Star Citizen Linux Users Group**  
 Org: https://robertsspaceindustries.com/orgs/LUG  
 Wiki: https://wiki.starcitizen-lug.org/  
 
