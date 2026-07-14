@@ -58,7 +58,7 @@ jobs:
           Type=Application
           Name=LUG Helper
           GenericName=Star Citizen LUG Helper
-          Comment=Star Citizen LUG helper and launcher installer
+          Comment=Star Citizen LUG Helper and launcher installer
           Exec=AppRun
           Icon=lug-helper
           Terminal=true
@@ -73,11 +73,11 @@ jobs:
             <project_license>GPL-3.0-or-later</project_license>
             <name>LUG Helper</name>
             <developer id="org.starcitizen_lug">
-              <name>Star Citizen Linux User Group</name>
+              <name>Star Citizen Linux Users Group</name>
             </developer>
-            <summary>Star Citizen LUG helper and launcher installer</summary>
+            <summary>Star Citizen LUG Helper and launcher installer</summary>
             <description>
-              <p>The official installer of Star Citizen's Linux Users Group</p>
+              <p>The official installer of the Star Citizen Linux Users Group</p>
             </description>
             <launchable type="desktop-id">org.starcitizen_lug.lug-helper.desktop</launchable>
             <url type="homepage">https://wiki.starcitizen-lug.org/</url>
