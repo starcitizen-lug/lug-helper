@@ -948,8 +948,8 @@ preflight_check() {
 memory_check() {
     # Get totals in bytes
     memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2}' /proc/meminfo)"
-    swaptotal="$(LC_NUMERIC=C awk 'NR>1 && !/zram/ {sum += $3} END {print sum}' /proc/swaps)" # Sum all non-zram columns
-    zramtotal="$(LC_NUMERIC=C awk '/zram/ {sum += $3} END {print sum}' /proc/swaps)" # Sum all zram columns
+    swaptotal="$(LC_NUMERIC=C awk 'NR>1 && !/zram/ {sum += $3} END {print sum+0}' /proc/swaps)" # Sum all non-zram columns
+    zramtotal="$(LC_NUMERIC=C awk '/zram/ {sum += $3} END {print sum+0}' /proc/swaps)" # Sum all zram columns
     memtotal="$(($memtotal * 1024))"
     swaptotal="$(($swaptotal * 1024))"
     zramtotal="$(($zramtotal * 1024))"
