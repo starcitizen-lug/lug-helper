@@ -159,7 +159,7 @@ runner_sources=(
 # Minimum amount of RAM in GiB
 memory_required="16"
 # Minimum amount of combined RAM + swap in GiB
-memory_combined_required="50"
+memory_combined_required="48"
 
 ######## Links / Versions ##################################################
 
@@ -972,60 +972,74 @@ memory_check() {
     fi
 
     # Minimum requirements check
-    # Subtracts 1 from memory_required for rounding errors
-    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required-1))" ]; then
+    # Subtracts 2 from memory_required for rounding errors
+    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required - 2))" ]; then
         preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.\n${lug_wiki_swap}")
         return 0
     fi
 
+    # Check of both zram and zswap are enabled at the same time
     if [ "$zram_enabled" = "true" ] && [ "$zswap_enabled" = "true" ]; then
+        # Add fail message and continue with the other checks
         preflight_fail+=("Your system has zram and zswap enabled.\nIt is recommended to disable zswap to avoid performance issues.\n${lug_wiki_swap}")
     fi
 
-    # Check if physical ram exceeds the need for swap
-    if [ "${memtotal::-3}" -ge "$memory_combined_required" ]; then
-        # System has sufficient RAM and so passes. Do a soft zram check.
-        if [ "$zram_enabled" = "true" ]; then
-            # Any amount in zram is fine
-            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.")
-        else
-            # No zram configured. Provide a soft zram recommendation
-            preflight_pass+=("Your system has ${memtotal} memory.\nNote: zram is recommended to improve performance.\n${lug_wiki_swap}")
-        fi
-
-        return 0
-    fi
-
-    # Calculate recommended swapfile size
-    swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
-
     # Calculate sufficient swap size
+    swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
     unset sufficient_swap
     if [ "${swaptotal: -3}" = "GiB" ] && [ "${swaptotal::-3}" -ge "$swap_recommended" ]; then
         sufficient_swap="true"
     fi
 
     # Calculate sufficient zram size
+    if [ "${memtotal::-3}" -ge 62 ]; then
+        # 64GB (-2 for rounding errors) and up, ram/4
+        zram_recommended="$((${memtotal::-3} / 4))"
+    elif [ "${memtotal::-3}" -ge "$(($memory_combined_required - 2))" ]; then
+        # memory_combined_required (-2 for rounding errors) and up, ram/2
+        zram_recommended="$((${memtotal::-3} / 2))"
+    else
+        # Everything else, zram=ram
+        zram_recommended="$((${memtotal::-3}))"
+    fi
+    # Append human readable GiB
+    zram_recommended="${zram_recommended}GiB"
+    # Check if we have enough
+    # Subtracts 2GB from zram_recommended for rounding errors
     unset sufficient_zram
-    if [ "${zramtotal: -3}" = "GiB" ] && [ "${zramtotal::-3}" -ge "$((${memtotal::-3} - 2))" ]; then
+    if [ "${zramtotal: -3}" = "GiB" ] && [ "${zramtotal::-3}" -ge "$((${zram_recommended::-3} - 2))" ]; then
         sufficient_zram="true"
     fi
 
-    # We don't have enough physical ram. If zram is configured, for sufficient zram and swap.
+    # Check if physical ram exceeds the need for swap
+    # 64GB -2 for rounding errors
+    if [ "${memtotal::-3}" -ge 62 ]; then
+        # System has sufficient RAM and so passes. Do a soft zram check.
+        if [ "$zram_enabled" = "true" ]; then
+            # Any amount in zram is fine
+            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.")
+        else
+            # No zram configured. Provide a soft zram recommendation
+            preflight_pass+=("Your system has ${memtotal} memory.\nNote: ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        fi
+
+        return 0
+    fi
+
+    # We don't have enough physical ram. If zram is configured, check for sufficient zram and swap.
     if [ "$zram_enabled" = "true" ]; then
-        # Subtracts 2 from memtotal for rounding errors.
         if [ "$sufficient_zram" = "true" ] && [ "$sufficient_swap" = "true" ]; then
             # Sufficient zram and sufficient swap
             preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.")
-        elif [ "$sufficient_zram" != "true" ]; then
-            # Insufficient zram. Performance will suffer.
-            preflight_fail+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\n${memtotal} zram and at least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${lug_wiki_swap}")
-        elif [ "$sufficient_swap" != "true" ]; then
-            # Sufficient zram but insufficient swap.
+        elif [ "$sufficient_zram" != "true" ] && [ "$sufficient_swap" = "true" ]; then
+            # Insufficient zram, sufficient swap
+            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\nNote: ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        elif [ "$sufficient_swap" != "true" ] && [ "$sufficient_zram" = "true" ]; then
+            # Insufficient swap, sufficient zram
             preflight_fail+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${lug_wiki_swap}")
         else
-            # We can't get here, but show a generic message in case
-            preflight_fail+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\n${memtotal} zram and at least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${lug_wiki_swap}")
+            # Insufficient zram and insufficient swap
+            preflight_fail+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
         fi
 
         return 0
@@ -1044,13 +1058,13 @@ memory_check() {
         return 0
     fi
 
-    # We don't have enough physical ram and neither zram nor is not configured. Check for sufficient swap.
+    # We don't have enough physical ram and neither zram nor is configured. Check for sufficient swap.
     if [ "$sufficient_swap" = "true" ]; then
         # Sufficient swap so it technically passes, but performance will suffer without zram.
-        preflight_pass+=("Your system has ${memtotal} memory and ${swaptotal} swap, but zram is not configured.\n${memtotal} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        preflight_pass+=("Your system has ${memtotal} memory and ${swaptotal} swap, but zram is not configured.\n${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
     else
         # Insufficient swap.
-        preflight_fail+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zram is not configured.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${memtotal} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        preflight_fail+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zram is not configured.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
     fi
 }
 
