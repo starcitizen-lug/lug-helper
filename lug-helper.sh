@@ -987,7 +987,7 @@ memory_check() {
         # System has sufficient RAM and so passes. Do a soft zram check.
         if [ "$zram_enabled" = "true" ]; then
             # Any amount in zram is fine
-            preflight_pass+=("Your system has ${memtotal} memory and ${zramtotal} zram.")
+            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.")
         else
             # No zram configured. Provide a soft zram recommendation
             preflight_pass+=("Your system has ${memtotal} memory.\nNote: zram is recommended to improve performance.\n${lug_wiki_swap}")
