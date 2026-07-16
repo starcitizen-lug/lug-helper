@@ -1054,10 +1054,10 @@ memory_check() {
     if [ "$zswap_enabled" = "true" ]; then
         if [ "$sufficient_swap" = "true" ]; then
             # Sufficient swap.
-            preflight_pass+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zswap is enabled.\nTip: It is also recommended to optimize zswap to improve performance.\n${lug_wiki_swap}")
+            preflight_pass+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zswap is enabled.\nNote: Switching from zswap to ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
         else
             # Insufficient swap.
-            preflight_fail+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zswap is enabled.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\nTip: It is also recommended to optimize zswap to improve performance.\n${lug_wiki_swap}")
+            preflight_fail+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zswap is enabled.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\nNote: Switching from zswap to ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
         fi
 
         return 0
