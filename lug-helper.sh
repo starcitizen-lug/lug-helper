@@ -967,7 +967,8 @@ memory_check() {
 
     # Check if zswap is enabled
     unset zswap_enabled
-    if [ "$(cat /sys/module/zswap/parameters/enabled)" = "Y" ] || [ "$(cat /sys/module/zswap/parameters/enabled)" = "1" ]; then
+    zswap_status="$(cat /sys/module/zswap/parameters/enabled 2>/dev/null)"
+    if [ "$zswap_status" = "Y" ] || [ "$zswap_status" = "1" ]; then
         zswap_enabled="true"
     fi
 
@@ -986,8 +987,12 @@ memory_check() {
 
     # Calculate sufficient swap size
     swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
+    # Don't go negative
+    if [ "$swap_recommended" -lt 0 ]; then
+        swap_recommended=0
+    fi
     unset sufficient_swap
-    if [ "${swaptotal: -3}" = "GiB" ] && [ "${swaptotal::-3}" -ge "$swap_recommended" ]; then
+    if [ "$swap_recommended" -le 0 ] || { [ "${swaptotal: -3}" = "GiB" ] && [ "${swaptotal::-3}" -ge "$swap_recommended" ]; }; then
         sufficient_swap="true"
     fi
 
