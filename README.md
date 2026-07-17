@@ -83,8 +83,11 @@ Configuration is saved in *$XDG_CONFIG_HOME/starcitizen-lug/*
 - `Update/Re-install RSI Launcher`
   - Re-install the latest version of the RSI Launcher
 
-- `Display Helper & Star Citizen directories and files`
+- `List Helper & Star Citizen directories and files`
   - Show all the directories and files currently in use by both the Helper and Star Citizen
+
+- `Show logs`
+  - Show Star Citizen and Easy Anti-Cheat log files for troubleshooting
 
 - `Reset Helper configs`
   - Delete the configs saved by the helper in *$XDG_CONFIG_HOME/starcitizen-lug/*
