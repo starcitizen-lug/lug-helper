@@ -98,8 +98,12 @@ max_download_items=25
 
 # The game's base directory name
 sc_base_dir="StarCitizen"
-# The default install location within a WINE prefix:
+# The default install location within the WINE prefix
 default_install_path="drive_c/Program Files/Roberts Space Industries"
+# AppData paths within the WINE prefix
+appdata_path="drive_c/users/${USER}/AppData/Roaming"
+rsilauncher_appdata_path="${appdata_path}/rsilauncher"
+eac_appdata_path="${appdata_path}/EasyAntiCheat"
 
 # Remaining directory paths are set at the end of the getdirs() function
 
@@ -159,7 +163,7 @@ runner_sources=(
 # Minimum amount of RAM in GiB
 memory_required="16"
 # Minimum amount of combined RAM + swap in GiB
-memory_combined_required="50"
+memory_combined_required="48"
 
 ######## Links / Versions ##################################################
 
@@ -948,29 +952,128 @@ preflight_check() {
 memory_check() {
     # Get totals in bytes
     memtotal="$(LC_NUMERIC=C awk '/MemTotal/ {printf $2}' /proc/meminfo)"
-    swaptotal="$(LC_NUMERIC=C awk '/SwapTotal/ {printf $2}' /proc/meminfo)"
+    swaptotal="$(LC_NUMERIC=C awk 'NR>1 && !/zram/ {sum += $3} END {print sum+0}' /proc/swaps)" # Sum all non-zram columns
+    zramtotal="$(LC_NUMERIC=C awk '/zram/ {sum += $3} END {print sum+0}' /proc/swaps)" # Sum all zram columns
     memtotal="$(($memtotal * 1024))"
     swaptotal="$(($swaptotal * 1024))"
-    combtotal="$(($memtotal + $swaptotal))"
+    zramtotal="$(($zramtotal * 1024))"
 
     # Convert to whole number GiB
     memtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$memtotal")"
     swaptotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$swaptotal")"
-    combtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$combtotal")"
+    zramtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$zramtotal")"
 
-    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required-1))" ]; then
-        # Minimum requirements are not met
-        preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.")
-    elif [ "${memtotal::-3}" -ge "$memory_combined_required" ]; then
-        # System has sufficient RAM
-        preflight_pass+=("Your system has $memtotal of memory.")
-    elif [ "${combtotal::-3}" -ge "$memory_combined_required" ]; then
-        # System has sufficient combined RAM + swap
-        preflight_pass+=("Your system has $memtotal memory and $swaptotal swap.")
+    # Check if zram is enabled
+    unset zram_enabled
+    if [ "$zramtotal" != "0B" ]; then
+        zram_enabled="true"
+    fi
+
+    # Check if zswap is enabled
+    unset zswap_enabled
+    zswap_status="$(cat /sys/module/zswap/parameters/enabled 2>/dev/null)"
+    if [ "$zswap_status" = "Y" ] || [ "$zswap_status" = "1" ]; then
+        zswap_enabled="true"
+    fi
+
+    # Minimum requirements check
+    # Subtracts 2 from memory_required for rounding errors
+    if [ "${memtotal: -3}" != "GiB" ] || [ "${memtotal::-3}" -lt "$(($memory_required - 2))" ]; then
+        preflight_fail+=("Your system has $memtotal of memory.\n${memory_required}GiB is the minimum required to avoid crashes.\n${lug_wiki_swap}")
+        return 0
+    fi
+
+    # Check of both zram and zswap are enabled at the same time
+    if [ "$zram_enabled" = "true" ] && [ "$zswap_enabled" = "true" ]; then
+        # Add fail message and continue with the other checks
+        preflight_fail+=("Your system has zram and zswap enabled.\nIt is recommended to disable zswap to avoid performance issues.\n${lug_wiki_swap}")
+    fi
+
+    # Calculate sufficient swap size
+    swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
+    # Don't go negative
+    if [ "$swap_recommended" -lt 0 ]; then
+        swap_recommended=0
+    fi
+    unset sufficient_swap
+    if [ "$swap_recommended" -le 0 ] || { [ "${swaptotal: -3}" = "GiB" ] && [ "${swaptotal::-3}" -ge "$swap_recommended" ]; }; then
+        sufficient_swap="true"
+    fi
+
+    # Calculate sufficient zram size
+    if [ "${memtotal::-3}" -ge 62 ]; then
+        # 64GB (-2 for rounding errors) and up, ram/4
+        zram_recommended="$((${memtotal::-3} / 4))"
+    elif [ "${memtotal::-3}" -ge "$(($memory_combined_required - 2))" ]; then
+        # memory_combined_required (-2 for rounding errors) and up, ram/2
+        zram_recommended="$((${memtotal::-3} / 2))"
     else
-        # Recommend swap
-        swap_recommended="$(($memory_combined_required - ${memtotal::-3}))"
-        preflight_fail+=("Your system has $memtotal memory and $swaptotal swap.\nWe recommend at least ${swap_recommended}GiB swap to avoid crashes.\n${lug_wiki_swap}")
+        # Everything else, zram=ram
+        zram_recommended="$((${memtotal::-3}))"
+    fi
+    # Append human readable GiB
+    zram_recommended="${zram_recommended}GiB"
+    # Check if we have enough
+    # Subtracts 2GB from zram_recommended for rounding errors
+    unset sufficient_zram
+    if [ "${zramtotal: -3}" = "GiB" ] && [ "${zramtotal::-3}" -ge "$((${zram_recommended::-3} - 2))" ]; then
+        sufficient_zram="true"
+    fi
+
+    # Check if physical ram exceeds the need for swap
+    # 64GB -2 for rounding errors
+    if [ "${memtotal::-3}" -ge 62 ]; then
+        # System has sufficient RAM and so passes. Do a soft zram check.
+        if [ "$zram_enabled" = "true" ]; then
+            # Any amount in zram is fine
+            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.")
+        else
+            # No zram configured. Provide a soft zram recommendation
+            preflight_pass+=("Your system has ${memtotal} memory.\nNote: ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        fi
+
+        return 0
+    fi
+
+    # We don't have enough physical ram. If zram is configured, check for sufficient zram and swap.
+    if [ "$zram_enabled" = "true" ]; then
+        if [ "$sufficient_zram" = "true" ] && [ "$sufficient_swap" = "true" ]; then
+            # Sufficient zram and sufficient swap
+            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.")
+        elif [ "$sufficient_zram" != "true" ] && [ "$sufficient_swap" = "true" ]; then
+            # Insufficient zram, sufficient swap
+            preflight_pass+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\nNote: ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        elif [ "$sufficient_swap" != "true" ] && [ "$sufficient_zram" = "true" ]; then
+            # Insufficient swap, sufficient zram
+            preflight_fail+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${lug_wiki_swap}")
+        else
+            # Insufficient zram and insufficient swap
+            preflight_fail+=("Your system has ${memtotal} memory, ${zramtotal} zram, ${swaptotal} swap.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        fi
+
+        return 0
+    fi
+
+    # We don't have enough physical ram. zram is not configured. Check for zswap and swap.
+    if [ "$zswap_enabled" = "true" ]; then
+        if [ "$sufficient_swap" = "true" ]; then
+            # Sufficient swap.
+            preflight_pass+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zswap is enabled.\nNote: Switching from zswap to ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        else
+            # Insufficient swap.
+            preflight_fail+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zswap is enabled.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\nNote: Switching from zswap to ${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+        fi
+
+        return 0
+    fi
+
+    # We don't have enough physical ram and neither zram nor is configured. Check for sufficient swap.
+    if [ "$sufficient_swap" = "true" ]; then
+        # Sufficient swap so it technically passes, but performance will suffer without zram.
+        preflight_pass+=("Your system has ${memtotal} memory and ${swaptotal} swap, but zram is not configured.\n${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
+    else
+        # Insufficient swap.
+        preflight_fail+=("Your system has ${memtotal} memory, ${swaptotal} swap, and zram is not configured.\nAt least ${swap_recommended}GiB swap is recommended to avoid crashes.\n${zram_recommended} zram is recommended to improve performance.\n${lug_wiki_swap}")
     fi
 }
 
@@ -2001,14 +2104,15 @@ maintenance_menu() {
         udev_msg="Create joystick hidraw rules"
         powershell_msg="Install PowerShell into Wine prefix"
         rsi_launcher_msg="Update/Re-install RSI Launcher"
-        dirs_msg="Display Helper & Star Citizen directories and files"
+        dirs_msg="List Helper & Star Citizen directories and files"
+        logs_msg="Show logs"
         reset_msg="Reset Helper configs"
         uninstall_msg="Uninstall Star Citizen"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$uninstall_msg" "menu_loop_done")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$logs_msg" "$reset_msg" "$uninstall_msg" "menu_loop_done")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "uninstall_game" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "show_logs" "reset_helper" "uninstall_game" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2356,9 +2460,9 @@ reinstall_rsi_launcher() {
     fi
 
     # Delete the RSI Launcher's AppData directory (fixes some broken launcher issues)
-    if [ -d "${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher" ]; then
-        debug_print continue "Deleting RSI Launcher AppData directory:\n${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher..."
-        rm -r --interactive=never "${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher"
+    if [ -d "${wine_prefix}/${rsilauncher_appdata_path}" ]; then
+        debug_print continue "Deleting RSI Launcher AppData directory:\n${wine_prefix}/${rsilauncher_appdata_path}..."
+        rm -r --interactive=never "${wine_prefix}/${rsilauncher_appdata_path}"
     fi
 
     download_rsi_installer
@@ -2501,6 +2605,84 @@ display_dirs() {
     fi
 
     message info "${message_heading}\n${dirs_list}"
+}
+
+# MARK: show_logs()
+# Display game log files
+show_logs() {
+    logs_list="\n"
+
+    # Verify the configured wine prefix exists
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+
+        if [ ! -d "$wine_prefix" ]; then
+            message warning "The configured Wine prefix was not found! No logs to show.\n\n${wine_prefix}\n\nUse the menu option to target the correct installation."
+            return 0
+        fi
+    else
+        message warning "No Wine prefix configured! No logs to show.\n\nUse the menu option to target the correct installation."
+        return 0
+    fi
+
+    # Wine sc-launch.log
+    wine_log="${wine_prefix}/sc-launch.log"
+    if [ -f "$wine_log" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            logs_list+="Wine log:\n<a href='file://${wine_log}'>${wine_log}</a>\n\n"
+        else
+            logs_list+="Wine log:\n${wine_log}\n\n"
+        fi
+    fi
+
+    # RSI Launcher log
+    rsilauncher_log="${wine_prefix}/${rsilauncher_appdata_path}/logs/log.log"
+    if [ -f "$rsilauncher_log" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            logs_list+="RSI Launcher log:\n<a href='file://${rsilauncher_log}'>${rsilauncher_log}</a>\n\n"
+        else
+            logs_list+="RSI Launcher log:\n${rsilauncher_log}\n\n"
+        fi
+    fi
+
+    # Game log
+    game_log="${wine_prefix}/${default_install_path}/${sc_base_dir}/LIVE/Game.log"
+    if [ -f "$game_log" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            logs_list+="Game log:\n<a href='file://${game_log}'>${game_log}</a>\n\n"
+        else
+            logs_list+="Game log:\n${game_log}\n\n"
+        fi
+    fi
+
+    # EAC log
+    eac_settings_json="${wine_prefix}/${default_install_path}/${sc_base_dir}/LIVE/EasyAntiCheat/Settings.json"
+    if [ -f "$eac_settings_json" ]; then
+        productid="$(awk -F'"' '/"productid":/ {print $4}' "$eac_settings_json")"
+        deploymentid="$(awk -F'"' '/"deploymentid":/ {print $4}' "$eac_settings_json")"
+
+        if [ -z "$productid" ] || [ -z "$deploymentid" ]; then
+            debug_print continue "Script error: Could not parse EasyAntiCheat/Settings.json. The file format may have changed. Please report this error."
+        else
+            eac_log="${wine_prefix}/${eac_appdata_path}/${productid}/${deploymentid}/anticheatlauncher.log"
+
+            if [ -f "$eac_log" ]; then
+                if [ "$use_zenity" -eq 1 ]; then
+                    logs_list+="Easy Anti-Cheat log:\n<a href='file://${eac_log}'>${eac_log}</a>\n\n"
+                else
+                    logs_list+="Easy Anti-Cheat log:\n${eac_log}\n\n"
+                fi
+            fi
+        fi
+    fi
+
+    # Format the info header
+    message_heading="Star Citizen Logs\n${lug_wiki}"
+    if [ "$use_zenity" -eq 1 ]; then
+        message_heading="<b>${message_heading}</b>"
+    fi
+
+    message info "${message_heading}\n${logs_list}"
 }
 
 # MARK: display_wiki()
