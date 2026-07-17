@@ -2665,10 +2665,11 @@ show_logs() {
             debug_print continue "Script error: Could not parse EasyAntiCheat/Settings.json. The file format may have changed. Please report this error."
         else
             eac_log="${wine_prefix}/${eac_appdata_path}/${productid}/${deploymentid}/anticheatlauncher.log"
+            eac_log_linebreak="${wine_prefix}/${eac_appdata_path}/\n${productid}/${deploymentid}/anticheatlauncher.log"
 
             if [ -f "$eac_log" ]; then
                 if [ "$use_zenity" -eq 1 ]; then
-                    logs_list+="Easy Anti-Cheat log:\n<a href='file://${eac_log}'>${eac_log}</a>\n\n"
+                    logs_list+="Easy Anti-Cheat log:\n<a href='file://${eac_log}'>${eac_log_linebreak}</a>\n\n"
                 else
                     logs_list+="Easy Anti-Cheat log:\n${eac_log}\n\n"
                 fi
