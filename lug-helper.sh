@@ -98,8 +98,12 @@ max_download_items=25
 
 # The game's base directory name
 sc_base_dir="StarCitizen"
-# The default install location within a WINE prefix:
+# The default install location within the WINE prefix
 default_install_path="drive_c/Program Files/Roberts Space Industries"
+# AppData paths within the WINE prefix
+appdata_path="drive_c/users/${USER}/AppData/Roaming"
+rsilauncher_appdata_path="${appdata_path}/rsilauncher"
+eac_appdata_path="${appdata_path}/EasyAntiCheat"
 
 # Remaining directory paths are set at the end of the getdirs() function
 
@@ -2100,14 +2104,15 @@ maintenance_menu() {
         udev_msg="Create joystick hidraw rules"
         powershell_msg="Install PowerShell into Wine prefix"
         rsi_launcher_msg="Update/Re-install RSI Launcher"
-        dirs_msg="Display Helper & Star Citizen directories and files"
+        dirs_msg="List Helper & Star Citizen directories and files"
+        logs_msg="Show logs"
         reset_msg="Reset Helper configs"
         uninstall_msg="Uninstall Star Citizen"
 
         # Set the options to be displayed in the menu
-        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$reset_msg" "$uninstall_msg" "menu_loop_done")
+        menu_options=("$prefix_msg" "$launcher_msg" "$launchscript_msg" "$config_msg" "$controllers_msg" "$udev_msg" "$powershell_msg" "$rsi_launcher_msg" "$dirs_msg" "$logs_msg" "$reset_msg" "$uninstall_msg" "menu_loop_done")
         # Set the corresponding functions to be called for each of the options
-        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "reset_helper" "uninstall_game" "menu_loop_done")
+        menu_actions=("switch_prefix" "update_launch_script" "edit_launch_script" "call_launch_script config" "call_launch_script controllers" "create_joystick_rules" "install_powershell" "reinstall_rsi_launcher" "display_dirs" "show_logs" "reset_helper" "uninstall_game" "menu_loop_done")
 
         # Calculate the total height the menu should be
         # menu_option_height = pixels per menu option
@@ -2455,9 +2460,9 @@ reinstall_rsi_launcher() {
     fi
 
     # Delete the RSI Launcher's AppData directory (fixes some broken launcher issues)
-    if [ -d "${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher" ]; then
-        debug_print continue "Deleting RSI Launcher AppData directory:\n${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher..."
-        rm -r --interactive=never "${wine_prefix}/drive_c/users/${USER}/AppData/Roaming/rsilauncher"
+    if [ -d "${wine_prefix}/${rsilauncher_appdata_path}" ]; then
+        debug_print continue "Deleting RSI Launcher AppData directory:\n${wine_prefix}/${rsilauncher_appdata_path}..."
+        rm -r --interactive=never "${wine_prefix}/${rsilauncher_appdata_path}"
     fi
 
     download_rsi_installer
@@ -2600,6 +2605,84 @@ display_dirs() {
     fi
 
     message info "${message_heading}\n${dirs_list}"
+}
+
+# MARK: show_logs()
+# Display game log files
+show_logs() {
+    logs_list="\n"
+
+    # Verify the configured wine prefix exists
+    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
+        wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+
+        if [ ! -d "$wine_prefix" ]; then
+            message warning "The configured Wine prefix was not found! No logs to show.\n\n${wine_prefix}\n\nUse the menu option to target the correct installation."
+            return 0
+        fi
+    else
+        message warning "No Wine prefix configured! No logs to show.\n\nUse the menu option to target the correct installation."
+        return 0
+    fi
+
+    # Wine sc-launch.log
+    wine_log="${wine_prefix}/sc-launch.log"
+    if [ -f "$wine_log" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            logs_list+="Wine log:\n<a href='file://${wine_log}'>${wine_log}</a>\n\n"
+        else
+            logs_list+="Wine log:\n${wine_log}\n\n"
+        fi
+    fi
+
+    # RSI Launcher log
+    rsilauncher_log="${wine_prefix}/${rsilauncher_appdata_path}/logs/log.log"
+    if [ -f "$rsilauncher_log" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            logs_list+="RSI Launcher log:\n<a href='file://${rsilauncher_log}'>${rsilauncher_log}</a>\n\n"
+        else
+            logs_list+="RSI Launcher log:\n${rsilauncher_log}\n\n"
+        fi
+    fi
+
+    # Game log
+    game_log="${wine_prefix}/${default_install_path}/${sc_base_dir}/LIVE/Game.log"
+    if [ -f "$game_log" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            logs_list+="Game log:\n<a href='file://${game_log}'>${game_log}</a>\n\n"
+        else
+            logs_list+="Game log:\n${game_log}\n\n"
+        fi
+    fi
+
+    # EAC log
+    eac_settings_json="${wine_prefix}/${default_install_path}/${sc_base_dir}/LIVE/EasyAntiCheat/Settings.json"
+    if [ -f "$eac_settings_json" ]; then
+        productid="$(awk -F'"' '/"productid":/ {print $4}' "$eac_settings_json")"
+        deploymentid="$(awk -F'"' '/"deploymentid":/ {print $4}' "$eac_settings_json")"
+
+        if [ -z "$productid" ] || [ -z "$deploymentid" ]; then
+            debug_print continue "Script error: Could not parse EasyAntiCheat/Settings.json. The file format may have changed. Please report this error."
+        else
+            eac_log="${wine_prefix}/${eac_appdata_path}/${productid}/${deploymentid}/anticheatlauncher.log"
+
+            if [ -f "$eac_log" ]; then
+                if [ "$use_zenity" -eq 1 ]; then
+                    logs_list+="Easy Anti-Cheat log:\n<a href='file://${eac_log}'>${eac_log}</a>\n\n"
+                else
+                    logs_list+="Easy Anti-Cheat log:\n${eac_log}\n\n"
+                fi
+            fi
+        fi
+    fi
+
+    # Format the info header
+    message_heading="Star Citizen Logs\n${lug_wiki}"
+    if [ "$use_zenity" -eq 1 ]; then
+        message_heading="<b>${message_heading}</b>"
+    fi
+
+    message info "${message_heading}\n${logs_list}"
 }
 
 # MARK: display_wiki()
