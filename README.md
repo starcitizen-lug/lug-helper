@@ -24,13 +24,18 @@ _These packages are maintained by the community_
 2. To run `lug-helper.sh` from your file manager:
     1. Navigate to the extracted lug-helper directory.
     2. Right click on `lug-helper.sh` and select **Run as a Program**.
-4. To run `lug-helper.sh` from a terminal:
+3. To run `lug-helper.sh` from a terminal:
     1. Open your terminal and cd into the extracted lug-helper directory:  
        `cd /path/to/extracted/lug-helper` (List files with the `ls` command)
-    3. Once you are in the directory containing lug-helper.sh, run it by typing:  
+    2. Once you are in the directory containing lug-helper.sh, run it by typing:  
        `./lug-helper.sh`
 
-_Dependencies: **bash**, **coreutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
+### AppImage:
+1. [Download](https://github.com/starcitizen-lug/lug-helper/releases) the .AppImage.
+2. Give it executable permissions in your file manager.
+3. Double click to launch it.
+
+_Dependencies: **bash**, **coreutils**, **findutils**, **curl**, **polkit** (these should be installed by default on most distributions)_  
 _Winetricks Dependencies: **cabextract**, **unzip**_  
 _Optional Dependencies: **zenity** (for GUI)_  
 
