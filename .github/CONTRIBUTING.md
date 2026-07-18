@@ -4,6 +4,8 @@ The LUG Helper is a purpose-built bash script for the [Star Citizen Linux Users 
 
 The Helper is designed to be easy and intuitive for novice Penguins who may be using Linux for the very first time. It clearly communicates to the user what is being done and aims to provide working defaults without overwhelming the user with too many unnecessary choices.
 
+The launch script is intentionally as simple and short as possible so novice Linux users can read it, understand what it's doing, and trust that it's safe to run.
+
 ### Pull Request Guidelines
 With the above project goals in mind, please consider the following guidelines when submitting Pull Requests:
 - For significant changes, **please ask first** if it's desired or already being worked on.
