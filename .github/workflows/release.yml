@@ -1,5 +1,4 @@
 on:
-  workflow_dispatch:
   create:
     tags:
       - 'v[0-9].[0-9]'
@@ -11,152 +10,29 @@ permissions:
   contents: write
 
 jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+    with:
+      tag: ${{ github.ref_name }}
+    permissions:
+      contents: write
+
   release:
-    name: Build and Release
+    name: Release
+    needs: build
     runs-on: ubuntu-latest
-    outputs:
-      TAG: ${{ steps.fetch_lug.outputs.TAG }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-      - name: Fetch latest tag
-        id: fetch_lug
-        run: |
-          git fetch --tags
-          echo "TAG=$(git describe --tags "$(git rev-list --tags --max-count=1)")" >> $GITHUB_OUTPUT
-      - name: Prepare
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cabextract unzip curl libappimage-dev libfuse3-3 libmspack0
-
-          sudo wget -q \
-            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
-            -O /usr/local/bin/appimagetool
-
-          sudo wget -q \
-            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
-            -O /usr/local/bin/linuxdeploy
-
-          sudo chmod +x \
-            /usr/local/bin/appimagetool \
-            /usr/local/bin/linuxdeploy
-
-      - name: Build
-        run: |
-          cat > AppRun <<'EOF'
-          #!/usr/bin/env bash
-          set -euo pipefail
-
-          HERE="$(cd "$(dirname "$0")" && pwd -P)"
-          export PATH="$HERE/usr/bin:$PATH"
-          export LD_LIBRARY_PATH="$HERE/usr/lib:$HERE/lib:${LD_LIBRARY_PATH:-}"
-          exec "$HERE/lug-helper.sh" "$@"
-          EOF
-
-          cat > org.starcitizen_lug.lug-helper.desktop <<EOF
-          [Desktop Entry]
-          Type=Application
-          Name=LUG Helper
-          GenericName=Star Citizen LUG Helper
-          Comment=Star Citizen LUG Helper and launcher installer
-          Exec=AppRun
-          Icon=lug-helper
-          Terminal=true
-          Categories=Game;
-          EOF
-
-          cat > org.starcitizen_lug.lug-helper.appdata.xml <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <component type="desktop-application">
-            <id>org.starcitizen_lug.lug-helper</id>
-            <metadata_license>CC0-1.0</metadata_license>
-            <project_license>GPL-3.0-or-later</project_license>
-            <name>LUG Helper</name>
-            <developer id="org.starcitizen_lug">
-              <name>Star Citizen Linux Users Group</name>
-            </developer>
-            <summary>Star Citizen LUG Helper and launcher installer</summary>
-            <description>
-              <p>The official installer of the Star Citizen Linux Users Group</p>
-            </description>
-            <launchable type="desktop-id">org.starcitizen_lug.lug-helper.desktop</launchable>
-            <url type="homepage">https://wiki.starcitizen-lug.org/</url>
-            <provides>
-              <id>org.starcitizen_lug.lug-helper.desktop</id>
-            </provides>
-          </component>
-          EOF
-
-          APPDIR="${PWD}/AppDir"
-          OUTPUT="${PWD}/LUG-Helper-${{ steps.fetch_lug.outputs.TAG }}.AppImage"
-
-          rm -rf "$APPDIR" "$OUTPUT"
-          mkdir -p "$APPDIR"
-          mkdir -p "$APPDIR/usr/bin"
-          mkdir -p "$APPDIR/usr/lib"
-          mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
-          mkdir -p "$APPDIR/usr/share/metainfo"
-          mkdir -p "$APPDIR/usr/share/applications"
-          mkdir -p "$APPDIR/lib"
-
-          cp "AppRun" "$APPDIR/"
-          cp "org.starcitizen_lug.lug-helper.desktop" "$APPDIR/"
-          cp "org.starcitizen_lug.lug-helper.desktop" "$APPDIR/usr/share/applications/"
-          cp "lug-helper.sh" "$APPDIR/"
-          cp "lib/sc-launch.sh" "$APPDIR/lib/"
-          cp "lug-logo.png" "$APPDIR/lug-helper.png"
-          cp "lug-logo.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/lug-helper.png"
-          cp "org.starcitizen_lug.lug-helper.appdata.xml" "$APPDIR/usr/share/metainfo/"
-          cp "rsi-launcher.png" "$APPDIR/rsi-launcher.png"
-          cp "starcitizen.png" "$APPDIR/starcitizen.png"
-
-          ln -sf "lug-helper.png" "$APPDIR/.DirIcon"
-          ln -sf "org.starcitizen_lug.lug-helper.appdata.xml" "$APPDIR/usr/share/metainfo/org.starcitizen_lug.lug-helper.metainfo.xml"
-
-          # bundle host tools
-          for cmd in \
-              find \
-              realpath \
-              sort \
-              tr \
-              xargs \
-              sort \
-              cut \
-              grep \
-              sed \
-              unzip \
-              cabextract \
-              curl
-          do
-              linuxdeploy \
-                --appdir "$APPDIR" \
-                --executable "$(command -v "$cmd")" \
-                --exclude-library="libpcre2*"
-          done
-
-          # Add desktop integration
-          linuxdeploy \
-            --appdir "$APPDIR" \
-            --desktop-file "$APPDIR/org.starcitizen_lug.lug-helper.desktop" \
-            --icon-file "$APPDIR/lug-helper.png"
-
-          find "$APPDIR/usr/lib" -maxdepth 1 -name 'libpcre2*.so*' -delete
-
-          chmod +x "$APPDIR/AppRun"
-          chmod +x "$APPDIR/lug-helper.sh"
-
-          ARCH="${ARCH:-x86_64}" appimagetool "$APPDIR" "$OUTPUT"
-          printf "AppImage created: %s\n" "$OUTPUT"
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
+      - name: Download artifact
+        uses: actions/download-artifact@v6
         with:
-          name: LUG-Helper-${{ steps.fetch_lug.outputs.TAG }}.AppImage
-          path: LUG-Helper-${{ steps.fetch_lug.outputs.TAG }}.AppImage
+          name: LUG-Helper-${{ github.ref_name }}.AppImage
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          name: lug helper ${{ steps.fetch_lug.outputs.TAG }}
-          files: LUG-Helper-${{ steps.fetch_lug.outputs.TAG }}.AppImage
-          tag_name: ${{ steps.fetch_lug.outputs.TAG }}
+          name: lug helper ${{ github.ref_name }}
+          files: LUG-Helper-${{ github.ref_name }}.AppImage
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

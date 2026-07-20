@@ -1,0 +1,11 @@
+on:
+  workflow_dispatch:
+
+name: CI
+
+permissions:
+  contents: write
+
+jobs:
+  ci_run:
+    uses: "./.github/workflows/build.yml"
