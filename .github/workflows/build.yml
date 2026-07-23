@@ -35,7 +35,7 @@ jobs:
       - name: Prepare dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cabextract unzip curl libappimage-dev libfuse3-3 libmspack0
+          sudo apt-get install -y cabextract unzip curl libappimage-dev libfuse3-3 libmspack0 zenity
 
           sudo wget -q \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
@@ -134,7 +134,8 @@ jobs:
               sed \
               unzip \
               cabextract \
-              curl
+              curl \
+              zenity
           do
               linuxdeploy \
                 --appdir "$APPDIR" \
