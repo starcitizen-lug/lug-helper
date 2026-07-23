@@ -2872,7 +2872,7 @@ install_standard_dxvk() {
     debug_print continue "Updating DXVK in ${wine_prefix}..."
 
     # Update dxvk
-    "$winetricks_bin" -f dxvk
+    "$winetricks_bin" -f dxvk2071
 
     exit_code="$?"
     if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
@@ -3171,7 +3171,7 @@ install_game() {
 
     # Create the new prefix and install powershell
     debug_print continue "Preparing Wine prefix. Please wait; this will take a moment..."
-    "$winetricks_bin" -q arial tahoma dxvk powershell win11 >"$tmp_install_log" 2>&1
+    "$winetricks_bin" -q arial tahoma dxvk2071 powershell win11 >"$tmp_install_log" 2>&1
 
     exit_code="$?"
     if [ "$exit_code" -eq 1 ] || [ "$exit_code" -eq 130 ] || [ "$exit_code" -eq 126 ]; then
