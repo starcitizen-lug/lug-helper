@@ -640,7 +640,7 @@ menu_loop_done() {
 }
 
 # MARK: getdirs()
-# Get paths to the user's wine prefix, game directory, and a backup directory
+# Get paths to the user's wine prefix and game directory
 # Returns 3 if the user was asked to select new directories
 getdirs() {
     # Sanity checks
@@ -667,7 +667,7 @@ getdirs() {
     if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
         game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
         # Note: We check for the parent dir here because the game may not have been fully installed yet
-        # which  means sc_base_dir may not yet have been created. But the parent RSI dir must exist
+        # which means sc_base_dir may not yet have been created. But the parent RSI dir must exist
         if [ ! -d "$(dirname "$game_path")" ] || [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
             debug_print continue "Unexpected game path found in config file, ignoring."
             game_path=""
@@ -682,7 +682,7 @@ getdirs() {
         if [ "$use_zenity" -eq 1 ]; then
             # Using Zenity file selection menus
             # Get the wine prefix directory
-            while [ -z "$wine_prefix" ]; do
+            while [ -z "$wine_prefix" ] || [ -z "$game_path" ]; do
                 wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen Wine prefix directory" --filename="$HOME/Games/star-citizen" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
                     message error "An unexpected error has occurred. The Helper is unable to proceed."
@@ -695,70 +695,40 @@ getdirs() {
 
                 if ! message question "You selected:\n\n$wine_prefix\n\nIs this correct?"; then
                     wine_prefix=""
+                    continue
+                fi
+
+                # Set the game path
+                if [ -d "${wine_prefix}/${default_install_path}" ]; then
+                    # Note: We check for the parent dir here because the game may not have been fully installed yet
+                    # which means sc_base_dir may not yet have been created. But the parent RSI dir must exist
+                    # prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen
+                    game_path="${wine_prefix}/${default_install_path}/${sc_base_dir}"
+                else
+                    message warning "Unable to locate a game install within the selected Wine prefix! This path does not exist:\n\n${wine_prefix}/${default_install_path}\n\nAt the next screen, please select the directory where you installed Star Citizen (your Wine prefix)\nFor example, the default Wine prefix is: ~/Games/star-citizen"
+                    game_path=""
                 fi
             done
-
-            # Get the game path
-            if [ -z "$game_path" ]; then
-                if [ -d "$wine_prefix/$default_install_path" ]; then
-                    # Default: prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen
-                    game_path="$wine_prefix/$default_install_path/$sc_base_dir"
-                else
-                    message info "Unable to detect the default game install path!\n\n$wine_prefix/$default_install_path/$sc_base_dir\n\nDid you change the install location in the RSI Setup?\nDoing that is generally a bad idea but, if you are sure you want to proceed,\nselect your '$sc_base_dir' game directory on the next screen"
-                    while true; do
-                        game_path="$(zenity --file-selection --directory --title="Select your Star Citizen directory" --filename="$wine_prefix/$default_install_path" 2>/dev/null)"
-
-                        if [ "$?" -eq -1 ]; then
-                            message error "An unexpected error has occurred. The Helper is unable to proceed."
-                            return 1
-                        elif [ -z "$game_path" ]; then
-                            # User clicked cancel or something else went wrong
-                            message warning "Operation cancelled.\nNo changes have been made to your game."
-                            return 1
-                        elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
-                            message warning "You must select the base game directory named '$sc_base_dir'\n\nie. [prefix]/drive_c/Program Files/Roberts Space Industries/StarCitizen"
-                        else
-                            # All good
-                            break
-                        fi
-                    done
-                fi
-            fi
         else
             # No Zenity, use terminal-based menus
             clear
             # Get the wine prefix directory
             if [ -z "$wine_prefix" ]; then
-                printf "Enter the full path to your Star Citizen Wine prefix directory (case sensitive)\n"
+                printf "Enter the full path, case sensitive, to the directory where you installed Star Citizen (your Wine prefix)\n"
                 printf "ie. /home/USER/Games/star-citizen\n"
                 while read -rp ": " wine_prefix; do
                     if [ ! -d "$wine_prefix" ]; then
                         printf "That directory is invalid or does not exist. Please try again.\n\n"
+                    elif [ ! -d "${wine_prefix}/${default_install_path}" ]; then
+                        # prefix/drive_c/Program Files/Roberts Space Industries
+                        printf "Unable to locate a game install within the selected Wine prefix! This path does not exist:\n${wine_prefix}/${default_install_path}\nPlease enter the directory where you installed Star Citizen (your Wine prefix)\nFor example, the default Wine prefix is: /home/USER/Games/star-citizen\n\n"
                     else
+                        # Set the game path
+                        # prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen
+                        game_path="${wine_prefix}/${default_install_path}/${sc_base_dir}"
                         break
                     fi
                 done
-            fi
-
-            # Get the game path
-            if [ -z "$game_path" ]; then
-                if [ -d "$wine_prefix/$default_install_path/s" ]; then
-                    # Default: prefix/drive_c/Program Files/Roberts Space Industries/StarCitizen
-                    game_path="$wine_prefix/$default_install_path/$sc_base_dir"
-                else
-                    printf "\nUnable to detect the default game install path!\nDid you change the install location in the RSI Setup?\nDoing that is generally a bad idea but, if you are sure you want to proceed...\n\n"
-                    printf "Enter the full path to your %s installation directory (case sensitive)\n" "$sc_base_dir"
-                    printf "ie. /home/USER/Games/star-citizen/drive_c/Program Files/Roberts Space Industries/StarCitizen\n"
-                    while read -rp ": " game_path; do
-                        if [ ! -d "$game_path" ]; then
-                            printf "That directory is invalid or does not exist. Please try again.\n\n"
-                        elif [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
-                            printf "You must enter the full path to the directory named '%s'\n\n" "$sc_base_dir"
-                        else
-                            break
-                        fi
-                    done
-                fi
             fi
         fi
 
