@@ -648,30 +648,30 @@ getdirs() {
         message error "Config directory not found. The Helper is unable to proceed.\n\n$conf_dir"
         return 1
     fi
-    if [ ! -d "$conf_dir/$conf_subdir" ]; then
-        mkdir -p "$conf_dir/$conf_subdir"
+    if [ ! -d "${conf_dir}/${conf_subdir}" ]; then
+        mkdir -p "${conf_dir}/${conf_subdir}"
     fi
 
     # Initialize a return value
     retval=0
 
     # Check if the config files already exist
-    if [ -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        wine_prefix="$(cat "$conf_dir/$conf_subdir/$wine_conf")"
+    if [ -f "${conf_dir}/${conf_subdir}/${wine_conf}" ]; then
+        wine_prefix="$(cat "${conf_dir}/${conf_subdir}/${wine_conf}")"
         if [ ! -d "$wine_prefix" ]; then
             debug_print continue "The saved wine prefix does not exist, ignoring."
             wine_prefix=""
-            rm --interactive=never "${conf_dir:?}/$conf_subdir/$wine_conf"
+            rm --interactive=never "${conf_dir:?}/${conf_subdir}/${wine_conf}"
         fi
     fi
-    if [ -f "$conf_dir/$conf_subdir/$game_conf" ]; then
-        game_path="$(cat "$conf_dir/$conf_subdir/$game_conf")"
+    if [ -f "${conf_dir}/${conf_subdir}/${game_conf}" ]; then
+        game_path="$(cat "${conf_dir}/${conf_subdir}/${game_conf}")"
         # Note: We check for the parent dir here because the game may not have been fully installed yet
         # which means sc_base_dir may not yet have been created. But the parent RSI dir must exist
         if [ ! -d "$(dirname "$game_path")" ] || [ "$(basename "$game_path")" != "$sc_base_dir" ]; then
             debug_print continue "Unexpected game path found in config file, ignoring."
             game_path=""
-            rm --interactive=never "${conf_dir:?}/$conf_subdir/$game_conf"
+            rm --interactive=never "${conf_dir:?}/${conf_subdir}/${game_conf}"
         fi
     fi
 
@@ -683,7 +683,7 @@ getdirs() {
             # Using Zenity file selection menus
             # Get the wine prefix directory
             while [ -z "$wine_prefix" ] || [ -z "$game_path" ]; do
-                wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen Wine prefix directory" --filename="$HOME/Games/star-citizen" 2>/dev/null)"
+                wine_prefix="$(zenity --file-selection --directory --title="Select your Star Citizen Wine prefix directory" --filename="${HOME}/Games/star-citizen" 2>/dev/null)"
                 if [ "$?" -eq -1 ]; then
                     message error "An unexpected error has occurred. The Helper is unable to proceed."
                     return 1
@@ -693,7 +693,7 @@ getdirs() {
                     return 1
                 fi
 
-                if ! message question "You selected:\n\n$wine_prefix\n\nIs this correct?"; then
+                if ! message question "You selected:\n\n${wine_prefix}\n\nIs this correct?"; then
                     wine_prefix=""
                     continue
                 fi
@@ -737,11 +737,11 @@ getdirs() {
     fi
 
     # Save the paths to config files
-    if [ ! -f "$conf_dir/$conf_subdir/$wine_conf" ]; then
-        echo "$wine_prefix" > "$conf_dir/$conf_subdir/$wine_conf"
+    if [ ! -f "${conf_dir}/${conf_subdir}/${wine_conf}" ]; then
+        echo "$wine_prefix" > "${conf_dir}/${conf_subdir}/${wine_conf}"
     fi
-    if [ ! -f "$conf_dir/$conf_subdir/$game_conf" ]; then
-        echo "$game_path" > "$conf_dir/$conf_subdir/$game_conf"
+    if [ ! -f "${conf_dir}/${conf_subdir}/${game_conf}" ]; then
+        echo "$game_path" > "${conf_dir}/${conf_subdir}/${game_conf}"
     fi
 
     return "$retval"
