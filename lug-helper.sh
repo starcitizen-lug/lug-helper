@@ -3532,6 +3532,9 @@ download_winetricks() {
     mkdir "$tmp_dir/winetricks_cache"
     export W_CACHE="$tmp_dir/winetricks_cache"
 
+    # Tell winetricks to prefer curl
+    export WINETRICKS_DOWNLOADER="curl"
+
     # Save the path to the downloaded binary
     winetricks_bin="$tmp_dir/winetricks"
 
