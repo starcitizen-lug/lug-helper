@@ -58,7 +58,6 @@ jobs:
           HERE="$(cd "$(dirname "$0")" && pwd -P)"
           export PATH="$HERE/usr/bin:$PATH"
           export LD_LIBRARY_PATH="$HERE/usr/lib:$HERE/lib:${LD_LIBRARY_PATH:-}"
-          export WINETRICKS_DOWNLOADER="curl"
           exec "$HERE/lug-helper.sh" "$@"
           EOF
 
