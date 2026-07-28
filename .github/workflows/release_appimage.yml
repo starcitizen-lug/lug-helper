@@ -8,7 +8,6 @@ name: Release AppImage
 
 permissions:
   contents: write
-
 jobs:
   build:
     name: Build
@@ -17,7 +16,6 @@ jobs:
       tag: ${{ github.ref_name }}
     permissions:
       contents: write
-
   release:
     name: Release
     needs: build
@@ -32,7 +30,5 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           name: lug helper ${{ github.ref_name }}
-          files: LUG-Helper-${{ github.ref_name }}.AppImage
           tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: LUG-Helper-${{ github.ref_name }}.AppImage
