@@ -1,0 +1,26 @@
+name: Add custom source tarball asset
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  upload-source-asset:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download GitHub-generated source archive
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          curl -L \
+            -o "lug-helper-${TAG}.tar.gz" \
+            "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+
+      - name: Upload as a real release asset
+        uses: softprops/action-gh-release@v3
+        with:
+          files: lug-helper-${{ github.event.release.tag_name }}.tar.gz
