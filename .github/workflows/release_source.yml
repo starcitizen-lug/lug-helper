@@ -17,8 +17,15 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           curl -L \
-            -o "lug-helper-${TAG}.tar.gz" \
+            -o "archive.tar.gz" \
             "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+
+          tar xzf archive.tar.gz
+          mv "lug-helper-${TAG#v}" "lug-helper-${TAG}"
+          tar czf "lug-helper-${TAG}.tar.gz" \
+            --exclude="lug-helper-${TAG}/.github" \
+            "lug-helper-${TAG}"
+          rm -rf "lug-helper-${TAG}" archive.tar.gz
 
       - name: Upload as a real release asset
         uses: softprops/action-gh-release@v3
