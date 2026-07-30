@@ -1457,9 +1457,10 @@ download_select_install() {
         already_in_latest="false"
         if [ "${#latest_versions[@]}" -gt 0 ]; then
             for latest in "${latest_versions[@]}"; do
-                # If it matches, then skip it because it'll already be listed at the top
+                # If it matches, then we're going to skip it because it'll already be listed at the top
                 if [ "$line" = "$latest" ]; then
                     already_in_latest="true"
+                    break
                 fi
             done
         fi
