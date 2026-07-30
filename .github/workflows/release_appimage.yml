@@ -24,11 +24,11 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v6
         with:
-          name: LUG-Helper-${{ github.ref_name }}.AppImage
+          name: lug-helper-${{ github.ref_name }}.appimage
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
           name: lug helper ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          files: LUG-Helper-${{ github.ref_name }}.AppImage
+          files: lug-helper-${{ github.ref_name }}.appimage
