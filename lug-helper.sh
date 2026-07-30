@@ -1443,8 +1443,31 @@ download_select_install() {
 
     # Fetch a list of versions from the selected contributor
     unset download_versions
+    unset latest_versions
+    # For github, fetch the latest release to put it at the top of the list
+    if [ "$download_url_type" = "github" ]; then
+        while IFS='' read -r line; do
+            latest_versions+=("$line")
+        done < <(curl -s "${contributor_url}/latest" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep -viE "$filter_keywords")
+    fi
+
+    # Build the rest of the list
     while IFS='' read -r line; do
-        download_versions+=("$line")
+        # Check if the current item is in the latest_versions array
+        already_in_latest="false"
+        if [ "${#latest_versions[@]}" -gt 0 ]; then
+            for latest in "${latest_versions[@]}"; do
+                # If it matches, then skip it because it'll already be listed at the top
+                if [ "$line" = "$latest" ]; then
+                    already_in_latest="true"
+                fi
+            done
+        fi
+
+        # Append the download unless it's the latest already listed at the top
+        if [ "$already_in_latest" != "true" ]; then
+            download_versions+=("$line")
+        fi
     done < <(curl -s "$contributor_url$query_string" | grep -Eo "\"$search_key\": ?\"[^\"]+\"" | grep "$match_url_keyword" | cut -d '"' -f4 | cut -d '?' -f1 | xargs basename -a | grep -viE "$filter_keywords")
     # Note: match from search_key until " or EOL (Handles embedded commas and escaped quotes). Cut out quotes and gitlab's extraneous query strings.
 
@@ -1452,6 +1475,11 @@ download_select_install() {
     if [ "${#download_versions[@]}" -eq 0 ]; then
         message warning "No $download_type versions were found.\nThe $download_url_type API may be down. Check if you are rate limited and try again later."
         return 1
+    fi
+
+    # Prepend the latest versions to the download list so they're at the top
+    if [ "${#latest_versions[@]}" -gt 0 ]; then
+        download_versions=("${latest_versions[@]}" "${download_versions[@]}")
     fi
 
     # Configure the menu
@@ -1496,12 +1524,20 @@ download_select_install() {
 
         # Build the menu item
         unset menu_option_text
+        unset is_default_runner
+        menu_option_text="${download_basename}   "
+        # Label the default wine runner
+        if [ "$download_type" = "runner" ] && [ "$download_basename" = "$default_runner" ]; then
+            menu_option_text="${menu_option_text} [default]"
+            is_default_runner="true"
+        fi
+        # Label the in-use wine runner and installed versions
         if [ -d "${download_dir}/${download_basename}" ] && [ "$download_type" = "runner" ] && [ "$current_runner_basename" = "$download_basename" ]; then
-            menu_option_text="$download_basename    [in-use]"
+            menu_option_text="${menu_option_text} [in-use]"
         elif [ -d "${download_dir}/${download_basename}" ]; then
-            menu_option_text="$download_basename    [installed]"
-        else
-            # The file is not installed
+            menu_option_text="${menu_option_text} [installed]"
+        elif [ "$is_default_runner" != "true" ]; then
+            # The file is not installed and it's not marked as the default wine runner
             menu_option_text="$download_basename"
         fi
 
