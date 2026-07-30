@@ -185,7 +185,7 @@ rsi_installer_latest_yml="${rsi_installer_base_url}/latest.yml"
 repo="starcitizen-lug/lug-helper"
 git_url="https://github.com/${repo}"
 releases_url="${git_url}/releases"
-current_version="v4.14"
+current_version="v4.15"
 changelog_url="${releases_url}/tag/${current_version}"
 
 ############################################################################
