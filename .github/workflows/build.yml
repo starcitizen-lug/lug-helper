@@ -27,9 +27,9 @@ jobs:
         run: |
           TAG="${{ inputs.tag }}"
           if [ -n "$TAG" ]; then
-            echo "name=LUG-Helper-${TAG}.AppImage" >> "$GITHUB_OUTPUT"
+            echo "name=lug-helper-${TAG}.appimage" >> "$GITHUB_OUTPUT"
           else
-            echo "name=LUG-Helper.AppImage" >> "$GITHUB_OUTPUT"
+            echo "name=lug-helper.appimage" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prepare dependencies
