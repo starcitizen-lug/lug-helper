@@ -933,6 +933,14 @@ memory_check() {
     swaptotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$swaptotal")"
     zramtotal="$(numfmt --to=iec-i --format="%.0f" --suffix="B" "$zramtotal")"
 
+    # Ubuntu 26.04 numfmt from uutils coreutils version 0.8.0 has a bug where the above can produce a decimal instead of a rounded whole number.
+    # This differs from the behavior of GNU coreutils numfmt and crashes the math below.
+    # Strip everything after the first non-digit (catches the decimal) and re-add the suffix.
+    # For decimal numbers, this always rounds down.
+    memtotal="${memtotal%%[!0-9]*}${memtotal##*[0-9]}"
+    swaptotal="${swaptotal%%[!0-9]*}${swaptotal##*[0-9]}"
+    zramtotal="${zramtotal%%[!0-9]*}${zramtotal##*[0-9]}"
+
     # Check if zram is enabled
     unset zram_enabled
     if [ "$zramtotal" != "0B" ]; then
