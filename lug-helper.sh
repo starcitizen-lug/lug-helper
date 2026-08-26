@@ -180,6 +180,8 @@ lug_discord="https://discord.gg/QRexSTkF25"
 # RSI Installer version and url
 rsi_installer_base_url="https://install.robertsspaceindustries.com/rel/2"
 rsi_installer_latest_yml="${rsi_installer_base_url}/latest.yml"
+rsi_rc_installer_base_url="https://install.robertsspaceindustries.com/pre-rel/2"
+rsi_rc_installer_latest_yml="${rsi_rc_installer_base_url}/rc.yml"
 
 # Github repo and script version info
 repo="starcitizen-lug/lug-helper"
@@ -2464,7 +2466,14 @@ install_powershell() {
 
 # MARK: reinstall_rsi_launcher()
 # Download and re-install the latest RSI Launcher into the wine prefix
+# Accepts an optional string argument "rc" to download the latest RC version instead of the stable release
 reinstall_rsi_launcher() {
+    # Check for release candidate argument
+    download_rc="false"
+    if [ "$1" = "rc" ]; then
+        download_rc="true"
+    fi
+
     # Update directories
     getdirs
 
@@ -2480,7 +2489,11 @@ reinstall_rsi_launcher() {
         rm -r --interactive=never "${wine_prefix}/${rsilauncher_appdata_path}"
     fi
 
-    download_rsi_installer
+    if [ "$download_rc" = "true" ]; then
+        download_rsi_installer rc
+    else
+        download_rsi_installer
+    fi
     # Abort if the download failed
     if [ "$?" -eq 1 ]; then
         message error "Unable to install or update the RSI Launcher."
@@ -3589,13 +3602,27 @@ download_winetricks() {
 
 # MARK: download_rsi_installer()
 # Downloads the latest RSI setup installer to a temporary file
+# Accepts an optional string argument "rc" to download the latest RC version instead of the stable release
 download_rsi_installer() {
-    # Fetch the latest RSI installer url
-    set_latest_rsi_installer
-    # Sanity check
-    if [ "$?" -eq 1 ]; then
-        message error "Could not fetch the latest RSI installer! The latest.yml format may have changed or the site is down."
-        return 1
+    # Check for release candidate argument
+    if [ "$1" = "rc" ]; then
+        # Fetch the latest RC RSI installer url
+        set_latest_rsi_rc_installer
+
+        # Sanity check
+        if [ "$?" -eq 1 ]; then
+            message error "Could not fetch the latest RSI RC installer! The rc.yml format may have changed or the site is down."
+            return 1
+        fi
+    else
+        # Fetch the latest RSI installer url
+        set_latest_rsi_installer
+
+        # Sanity check
+        if [ "$?" -eq 1 ]; then
+            message error "Could not fetch the latest RSI installer! The latest.yml format may have changed or the site is down."
+            return 1
+        fi
     fi
 
     # Download RSI installer to tmp
@@ -3646,6 +3673,20 @@ set_latest_rsi_installer() {
     fi
 
     rsi_installer_url="${rsi_installer_base_url}/${rsi_installer}"
+}
+
+# MARK: set_latest_rsi_rc_installer()
+# Fetch and store variables for the latest RSI RC installer filename and url
+set_latest_rsi_rc_installer() {
+    # Fetch the yml and parse it for the latest filename
+    # ie. RSI Launcher-Setup-2.9.0.exe
+    rsi_installer="$(curl -s "$rsi_rc_installer_latest_yml" | grep -Eo "url:.+" | sed 's/url:[[:space:]]*//')"
+
+    if [ -z "$rsi_installer" ]; then
+        return 1
+    fi
+
+    rsi_installer_url="${rsi_rc_installer_base_url}/${rsi_installer}"
 }
 
 # MARK: set_latest_default_runner()
@@ -3831,6 +3872,7 @@ Usage: lug-helper <options>
   -c, --wine-config             Launch winecfg for the game's prefix
   -j, --wine-controllers        Launch Wine controllers configuration
   -l, --update-rsi-launcher     Update/Re-install RSI Launcher
+  -r, --install-rc-launcher     Update/Install RSI Release Candidate Launcher
   -d, --show-directories        Show all Star Citizen and Helper directories
   -w, --show-wiki               Show the LUG Wiki
   -x, --reset-helper            Delete saved lug-helper configs
@@ -3866,6 +3908,9 @@ Usage: lug-helper <options>
                 ;;
             --update-rsi-launcher | -l )
                 cargs+=("reinstall_rsi_launcher")
+                ;;
+            --install-rc-launcher | -r )
+                cargs+=("reinstall_rsi_launcher rc")
                 ;;
             --show-directories | -d )
                 cargs+=("display_dirs")
