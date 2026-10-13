@@ -145,6 +145,9 @@ for searchdir in "${data_dirs_array[@]}"; do
     fi
 done
 
+# Set the path where the joystick udev file will be created if the user selects that option
+joystick_udev_file="/etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules"
+
 ######## Runners ###########################################################
 
 # URLs for downloading Wine runners
@@ -217,9 +220,15 @@ try_exec() {
 
             # Check the exit status
             exit_code="$?"
-            if [ "$exit_code" -eq 126 ] || [ "$exit_code" -eq 127 ]; then
-                # User cancel or error
+            if [ "$exit_code" -eq 126 ]; then
+                # User cancelled
+                return 1
+            elif [ "$exit_code" -eq 127 ]; then
+                # pkexec error
                 debug_print continue "pkexec returned an error. Falling back to sudo..."
+            elif [ "$exit_code" -ne 0 ]; then
+                # Command returned an error
+                return 1
             else
                 # Successful execution, return here
                 return 0
@@ -230,20 +239,20 @@ try_exec() {
             sudo sh -c "$exec_command"
 
             # Check the exit status
-            if [ "$?" -eq 1 ]; then
+            if [ "$?" -ne 0 ]; then
                 # Error
                 return 1
             fi
         else
             # We don't know how to perform this operation with elevated privileges
-            printf "\nNeither Polkit nor sudo appear to be installed. Unable to execute the command with the required privileges.\n"
+            printf "\nNeither Polkit nor sudo appear to be working/installed. Unable to execute the command with the required privileges.\n"
             return 1
         fi
     elif [ "$exec_type" = "user" ]; then
         sh -c "$exec_command"
 
         # Check the exit status
-        if [ "$?" -eq 1 ]; then
+        if [ "$?" -ne 0 ]; then
             # Error
             return 1
         fi
@@ -2401,19 +2410,21 @@ call_launch_script() {
 # Create udev rules for common joystick vendors
 create_joystick_rules() {
     # Format the udev file path as a clickable Zenity link
-    udev_file_formatted="/etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules"
+    joystick_udev_file_formatted="$joystick_udev_file"
+    udev_dir="$(dirname "$joystick_udev_file")"
     if [ "$use_zenity" -eq 1 ]; then
-        udev_file_formatted="<a href='file://$udev_file_formatted'>$udev_file_formatted</a>"
+        joystick_udev_file_formatted="<a href='file://$joystick_udev_file_formatted'>$joystick_udev_file_formatted</a>"
     fi
 
-    debug_print continue "Creating /etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules..."
-    try_exec root 'mkdir -p "/etc/udev/rules.d" && printf "# Set the uaccess tag for raw HID access for VKB/Virpil/Thrustmaster devices in Wine\nKERNEL==\"hidraw*\", ATTRS{idVendor}==\"231d|3344|044f\", ATTRS{idProduct}==\"*\", MODE=\"0660\", TAG+=\"uaccess\"" > /etc/udev/rules.d/40-starcitizen-joystick-uaccess.rules'
+    debug_print continue "Creating ${joystick_udev_file}..."
+    try_exec root 'mkdir -p "'"${udev_dir}"'" && printf "# Set the uaccess tag for raw HID access for VKB/Virpil/Thrustmaster devices in Wine\nKERNEL==\"hidraw*\", ATTRS{idVendor}==\"231d|3344|044f\", ATTRS{idProduct}==\"*\", MODE=\"0660\", TAG+=\"uaccess\"" > '"${joystick_udev_file}"
+    # Note on quoting: posix shell script concatenates adjacent quotes. I use this to splice strings together in the above command
 
     if [ "$?" -eq 1 ]; then
         message error "Unable to create joystick udev rules! See terminal output for details."
         return 0
     else
-        message info "Joystick udev rules have been created at:\n${udev_file_formatted}\n\nUnplug and replug your device for it to take effect."
+        message info "Joystick udev rules have been created at:\n${joystick_udev_file_formatted}\n\nUnplug and replug your device for it to take effect."
     fi 
 }
 
@@ -2769,7 +2780,13 @@ uninstall_game() {
         desktop_list="\n.desktop files:\n${desktop_list}"
     fi
 
-    if message question "The following files and directories will be deleted:\n\nWine prefix:\n${wine_prefix}\n${desktop_list}\nDo you want to proceed?"; then
+    # Check if the joystick udev file was installed and needs removal
+    udev_list=""
+    if [ -f "$joystick_udev_file" ]; then
+        udev_list="Joystick udev rules:\n${joystick_udev_file}\n"
+    fi
+
+    if message question "The following files and directories will be deleted:\n\nWine prefix:\n${wine_prefix}\n${desktop_list}\n${udev_list}\nDo you want to proceed?"; then
         # Delete wine prefix
         debug_print continue "Deleting $wine_prefix..."
         rm -r --interactive=never "$wine_prefix"
@@ -2790,6 +2807,16 @@ uninstall_game() {
         if [ -n "$desktop_list" ] && [ -x "$(command -v update-desktop-database)" ]; then
             debug_print continue "Running update-desktop-database..."
             update-desktop-database "${data_dir}/applications"
+        fi
+
+        # Delete udev rules
+        if [ -f "$joystick_udev_file" ]; then
+            debug_print continue "Deleting joystick udev rules..."
+            try_exec root "rm --interactive=never \"$joystick_udev_file\""
+
+            if [ "$?" -eq 1 ]; then
+                message warning "Unable to delete joystick udev rules! See terminal output for details."
+            fi
         fi
 
         # Reset Helper prefix configs since this prefix has been removed
