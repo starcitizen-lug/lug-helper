@@ -2600,7 +2600,7 @@ display_dirs() {
         fi
     fi
 
-    # Other files installed by the Helper
+    # .desktop files installed by the Helper
     if [ -n "$wine_prefix" ] && [ -d "$wine_prefix" ]; then
         # Prepare variables containing paths to the .desktop files
         set_desktop_file_paths
@@ -2634,6 +2634,15 @@ display_dirs() {
             if [ -n "$desktop_list" ]; then
                 dirs_list+=".desktop files:\n${desktop_list}\n"
             fi
+        fi
+    fi
+
+    # Joystick udev file installed by the Helper
+    if [ -f "$joystick_udev_file" ]; then
+        if [ "$use_zenity" -eq 1 ]; then
+            dirs_list+="Joystick udev rules:\n<a href='file://${joystick_udev_file}'>${joystick_udev_file}</a>\n\n"
+        else
+            dirs_list+="Joystick udev rules:\n${joystick_udev_file}\n\n"
         fi
     fi
 
