@@ -3195,6 +3195,7 @@ install_game() {
                     printf "Installing Star Citizen onto an NTFS filesystem is not recommended.\nPlease select a Linux filesystem to avoid file corruption!\n\n"
                 elif [ ! -d "$install_dir" ]; then
                     if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
+                        have_valid_path="true"
                         break
                     fi
                 elif [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
@@ -3207,8 +3208,10 @@ install_game() {
                         return 1
                     fi
 
+                    have_valid_path="true"
                     break
                 else
+                    have_valid_path="true"
                     break
                 fi
             done
