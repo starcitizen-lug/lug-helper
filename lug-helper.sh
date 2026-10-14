@@ -3125,10 +3125,13 @@ install_game() {
                 # Get the install path from the user
                 install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
 
-                if [ "$?" -eq 1 ]; then
+                exit_code="$?"
+
+                if [ "$exit_code" -eq -1 ]; then
+                    # Zenity internal error
                     message error "An unexpected error has occurred. The Helper is unable to proceed."
                     return 1
-                elif [ -z "$install_dir" ]; then
+                elif [ "$exit_code" -eq 1 ] || [ -z "$install_dir" ]; then
                     # User clicked cancel or something else went wrong with the zenity file picker
                     message warning "Installation cancelled."
                     return 1
