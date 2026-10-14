@@ -33,7 +33,7 @@ if [ ! -x "$(command -v curl)" ]; then
     fi
     exit 1
 fi
-if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v touch)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ]; then
+if [ ! -x "$(command -v mktemp)" ] || [ ! -x "$(command -v touch)" ] || [ ! -x "$(command -v chmod)" ] || [ ! -x "$(command -v sort)" ] || [ ! -x "$(command -v basename)" ] || [ ! -x "$(command -v realpath)" ] || [ ! -x "$(command -v dirname)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v numfmt)" ] || [ ! -x "$(command -v tr)" ] || [ ! -x "$(command -v df)" ]; then
     # coreutils
     # Print to stderr and also try warning the user through zenity or notify-send
     printf "lug-helper.sh: One or more required packages were not found on this system.\nPlease check that 'coreutils' is installed!\n" 1>&2
@@ -3084,12 +3084,26 @@ install_game() {
     move_datap4k="false"
 
     # Get the install path from the user
+    have_valid_path="false"
     if message question "Would you like to use the default install path?\n\n$HOME/Games/star-citizen"; then
         # Set the default install path
         install_dir="$HOME/Games/star-citizen"
+
+        # Walk the path up to the first existing parent dir, or root
+        fs_check_path="$install_dir"
+        while [ ! -d "$fs_check_path" ] && [ "$fs_check_path" != "/" ]; do
+            fs_check_path="$(dirname "$fs_check_path")"
+        done
+
+        if df --output=fstype "$fs_check_path" | grep -qiE "ntfs3?|fuseblk"; then
+            message warning "Installing Star Citizen onto an NTFS filesystem is not recommended.\nPlease select a Linux filesystem to avoid file corruption!"
+            have_valid_path="false"
+        else
+            have_valid_path="true"
+        fi
         
         # Are we trying to re-install over an existing prefix?
-        if [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
+        if [ "$have_valid_path" = "true" ] && [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
             # star-citizen exists and is not empty
 
             # Back up the old install and check for a Data.p4k file. Sets the move_datap4k flag based on results.
@@ -3100,54 +3114,82 @@ install_game() {
                 return 1
             fi
         fi
-    else
+    fi
+    
+    # If we don't have a valid path from the above, let the user choose their own install path
+    if [ "$have_valid_path" = "false" ]; then
         if [ "$use_zenity" -eq 1 ]; then
             message info "On the next screen, select your Star Citizen install location"
 
-            # Get the install path from the user
-            install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
+            while [ "$have_valid_path" = "false" ]; do
+                # Get the install path from the user
+                install_dir="$(zenity --file-selection --directory --title="Choose your Star Citizen install directory" --filename="$HOME/" 2>/dev/null)"
 
-            if [ "$?" -eq -1 ]; then
-                message error "An unexpected error has occurred. The Helper is unable to proceed."
-                return 1
-            elif [ -z "$install_dir" ]; then
-                # User clicked cancel or something else went wrong with the zenity file picker
-                message warning "Installation cancelled."
-                return 1
-            fi
-
-            # If the selected path doesn't end in a star-citizen directory, set that as the install directory to be created
-            if [ "$(basename "$install_dir")" != "star-citizen" ]; then
-                install_dir="$install_dir/star-citizen"
-            fi
-
-            # Are we trying to re-install over an existing prefix?
-            if [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
-                # Back up the old install and check for a Data.p4k file. Sets the move_datap4k flag based on results.
-                prepare_reinstall "$install_dir"
-                
-                # Cancel installation if prepare_reinstall returns failure
                 if [ "$?" -eq 1 ]; then
+                    message error "An unexpected error has occurred. The Helper is unable to proceed."
+                    return 1
+                elif [ -z "$install_dir" ]; then
+                    # User clicked cancel or something else went wrong with the zenity file picker
+                    message warning "Installation cancelled."
                     return 1
                 fi
-            fi
+
+                if df --output=fstype "$install_dir" | grep -qiE "ntfs3?|fuseblk"; then
+                    message warning "Installing Star Citizen onto an NTFS filesystem is not recommended.\nPlease select a Linux filesystem to avoid file corruption!"
+                    have_valid_path="false"
+                    continue
+                fi
+
+                # If the selected path doesn't end in a star-citizen directory, set that as the install directory to be created
+                if [ "$(basename "$install_dir")" != "star-citizen" ]; then
+                    install_dir="$install_dir/star-citizen"
+                fi
+
+                have_valid_path="true"
+
+                # Are we trying to re-install over an existing prefix?
+                if [ -d "$install_dir" ] && [ -n "$(ls -A "$install_dir")" ]; then
+                    # Back up the old install and check for a Data.p4k file. Sets the move_datap4k flag based on results.
+                    prepare_reinstall "$install_dir"
+                    
+                    # Cancel installation if prepare_reinstall returns failure
+                    if [ "$?" -eq 1 ]; then
+                        return 1
+                    fi
+                fi
+            done
         else
             # No Zenity, use terminal-based menus
             clear
             # Get the install path from the user
             printf "Enter the desired Star Citizen install path (case sensitive)\nie. /home/${USER}/Games/star-citizen\n\n"
             while read -rp "Install path: " install_dir; do
-                # Expand ~ to the user home dir
+                # Path checks
                 case "$install_dir" in
                     ~*)
+                        # Expand ~ to the user home dir path
                         install_dir="${HOME}${install_dir#\~}"
                         ;;
+                    /*)
+                        # It's an absolute path so we're good
+                        ;;
                     *)
+                        # Not an absolute path so it may be an invalid path
+                        printf "Please enter an absolute path starting with /\n\n"
+                        continue
                         ;;
                 esac
 
+                # Walk the path up to the first existing parent dir, or root
+                fs_check_path="$install_dir"
+                while [ ! -d "$fs_check_path" ] && [ "$fs_check_path" != "/" ]; do
+                    fs_check_path="$(dirname "$fs_check_path")"
+                done
+
                 if [ -z "$install_dir" ]; then
                     printf "Invalid directory. Please try again.\n\n"
+                elif df --output=fstype "$fs_check_path" | grep -qiE "ntfs3?|fuseblk"; then
+                    printf "Installing Star Citizen onto an NTFS filesystem is not recommended.\nPlease select a Linux filesystem to avoid file corruption!\n\n"
                 elif [ ! -d "$install_dir" ]; then
                     if message question "That directory does not exist.\nWould you like it to be created for you?\n"; then
                         break
