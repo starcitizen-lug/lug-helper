@@ -4,17 +4,13 @@
 # It is meant to be used after installation via the LUG Helper.
 #
 # Usage:
-# Run from your terminal or use the .desktop files installed by the Helper.
+# Run from your terminal or start RSI Launcher from your applications menu.
 #
-# version: 2.5
+# version: 2.6
 # License: GPLv3.0
 
 ############################################################################
 # ENVIRONMENT VARIABLES
-############################################################################
-# Add additional environment variables to this section as needed
-# Example:
-# export NEW_VARIABLE="value"
 ############################################################################
 export WINEPREFIX="$HOME/Games/star-citizen"
 
@@ -38,8 +34,15 @@ export MESA_SHADER_CACHE_MAX_SIZE="10G"
 #export MANGOHUD=1
 
 ############################################################################
-# END ENVIRONMENT VARIABLES
+# Add your own environment variables to this section as needed
 ############################################################################
+# Example:
+# export NEW_VARIABLE="value"
+############################################################################
+
+
+
+
 
 ##################
 # Wine binary path
@@ -75,7 +78,7 @@ esac
 # Kill existing wine processes before launch
 update_check() {
     while "$wine_path"/winedbg --command "info proc" | grep -qi "rsi.*setup"; do
-        echo "RSI Setup process detected. Exiting."; exit 0
+        echo "RSI Setup process detected. Quitting Helper launch script."; exit 0
     done
 }
 "$wine_path"/wineserver -k
