@@ -3776,7 +3776,7 @@ set_latest_rsi_rc_installer() {
 # MARK: set_latest_default_runner()
 # Fetch and store variables for the latest default wine runner filename
 set_latest_default_runner() {
-    default_runner_file="$(curl -s https://api.github.com/repos/starcitizen-lug/lug-wine/releases/latest | grep -Eo "\"browser_download_url\": ?\"[^\"]+\"" | grep -vie "staging" | cut -d '"' -f4 | xargs basename)"
+    default_runner_file="$(curl -s https://api.github.com/repos/starcitizen-lug/lug-wine/releases/latest | grep -Eo "\"browser_download_url\": ?\"[^\"]+\"" | grep -viE "staging|wayland" | cut -d '"' -f4 | xargs basename)"
     # Important: If changing the default runner, adjust the glibc version check in the install_game function
 
     if [ -z "$default_runner_file" ]; then
